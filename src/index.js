@@ -4,7 +4,7 @@ import admin from "firebase-admin";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
-import * as holdings from "./controllers/holdings";
+import * as queue from "./queue";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -78,10 +78,13 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/cache_holdings_titans", async (req, res) => {
-  await holdings.cacheHoldings_Titans();
+  queue.publish("cache_holdings_titans");
   res.send("ok");
 });
 
-app.listen(process.env.PORT, () =>
-  console.log(`listening on ${process.env.PORT}`)
-);
+app.listen(process.env.PORT, () => {
+  console.log(`listening on ${process.env.PORT}`);
+  setInterval(() => {
+    queue.receive();
+  }, 30000);
+});
