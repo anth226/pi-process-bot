@@ -6,7 +6,8 @@
   "scripts": {
     "start": "nodemon --exec babel-node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "whalewisdom": "babel-node scripts/whalewisdom/index.js"
+    "whalewisdom": "babel-node scripts/whalewisdom/index.js",
+    "billionaires": "babel-node src/billionaires/index.js"
   },
   "repository": {
     "type": "git",
