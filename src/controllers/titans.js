@@ -13,7 +13,7 @@ export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
 export async function getBillionaires({
   sort = [],
   page = 0,
-  size = 100,
+  size = 250,
   ...query
 }) {
   return await db(`

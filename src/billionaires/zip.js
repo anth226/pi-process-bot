@@ -53,11 +53,16 @@ export async function zipPerformances_Billionaires() {
   //   console.log(performances);
 
   const mergedWithPerformance = map(investors, function (investor) {
+    console.log(investor.id);
     let cik = investor.hasOwnProperty("billionaire")
       ? investor.billionaire.cik
       : null;
 
-    let performance = find(performances.portfolios, { filer_cik: cik });
+    cik = cik ? cik.replace(/\s/g, "") : null;
+
+    let performance = find(performances.portfolios, {
+      filer_cik: cik,
+    });
 
     if (performance) {
       return {
@@ -73,6 +78,10 @@ export async function zipPerformances_Billionaires() {
 
   let sorted = sortBy(mergedWithPerformance, ["weight", "net_worth"]);
 
+  let filtered = sorted.filter((billionaire) => {
+    return billionaire != null;
+  });
+
   console.timeEnd("zipPerformances_Billionaires");
 
   let path = `results/billionaires.json`;
@@ -84,7 +93,7 @@ export async function zipPerformances_Billionaires() {
 
   params = {
     ...params,
-    Body: JSON.stringify(sorted),
+    Body: JSON.stringify(filtered),
     ContentType: "application/json",
   };
 
