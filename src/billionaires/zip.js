@@ -79,6 +79,7 @@ export async function zipPerformances_Billionaires() {
   let params = {
     Bucket: process.env.AWS_BUCKET_RI,
     Key: path,
+    ACL: "public-read",
   };
 
   params = {
