@@ -75,7 +75,7 @@ export async function zipPerformances_Billionaires() {
 
   console.timeEnd("zipPerformances_Billionaires");
 
-  let path = `performance/billionaires.json`;
+  let path = `results/billionaires.json`;
   let params = {
     Bucket: process.env.AWS_BUCKET_RI,
     Key: path,
