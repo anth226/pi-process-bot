@@ -1,5 +1,6 @@
 import "dotenv/config";
-const whalewisdom = require("../whalewisdom/whalewisdom");
+
+import * as whalewisdom from "../whalewisdom/whalewisdom";
 
 import db from "../db";
 
@@ -22,9 +23,12 @@ export async function cacheHoldings_Titans() {
   if (result.length > 0) {
     for (let i = 0; i < result.length; i += 1) {
       let cik = result[i]["cik"];
+      let id = result[i]["id"];
+
       if (cik) {
         console.log(cik);
-        await whalewisdom.fetchHoldings(cik);
+        // await whalewisdom.fetchHoldings(cik);
+        await whalewisdom.fetchHoldings_Billionaire(cik, id);
       }
     }
   }
