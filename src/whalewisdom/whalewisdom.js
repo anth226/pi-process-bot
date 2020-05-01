@@ -42,6 +42,12 @@ const uploadToS3 = async (cik, index, data) => {
 
 const cacheTicker = async (id, ticker) => {
   let result = await db(`
+    DELETE
+    FROM billionaire_holdings
+    WHERE billionaire_id = '${id}'
+  `);
+
+  result = await db(`
     SELECT *
     FROM billionaire_holdings
     WHERE ticker = '${ticker}'
