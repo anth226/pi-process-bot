@@ -20,7 +20,11 @@ const s3 = new AWS.S3({
 });
 
 (async () => {
-  await zip.zipPerformances_Billionaires();
+  //
+  // await import_Billionaires();
+  // await fetch_Billionaire_Photos();
+  //
+  // await zip.zipPerformances_Billionaires();
   // await fetch_Photo();
 })();
 
@@ -45,7 +49,7 @@ async function import_Billionaires() {
         let result = await db(`
           SELECT *
           FROM billionaires
-          WHERE cik = '${row["CIK"]}'
+          WHERE name = '${row["Name"]}'
         `);
 
         if (result) {
@@ -57,13 +61,14 @@ async function import_Billionaires() {
 
             let query = {
               text:
-                "UPDATE billionaires SET name=($1), cik=($2), net_worth=($3), description=($4), institution_name=($5)  WHERE id=($6) RETURNING *",
+                "UPDATE billionaires SET name=($1), cik=($2), net_worth=($3), description=($4), institution_name=($5), photo_source=($6) WHERE id=($7) RETURNING *",
               values: [
                 row["Name"],
                 row["CIK"],
                 parseInt(number),
                 row["Description"],
                 row["Fund"],
+                row["Photo"],
                 billionaire["id"],
               ],
             };
@@ -72,13 +77,14 @@ async function import_Billionaires() {
           } else {
             let query = {
               text:
-                "INSERT INTO billionaires (name, cik, net_worth, description, institution_name) VALUES ( $1, $2, $3, $4, $5 ) RETURNING *",
+                "INSERT INTO billionaires (name, cik, net_worth, description, institution_name, photo_source) VALUES ( $1, $2, $3, $4, $5, $6 ) RETURNING *",
               values: [
                 row["Name"],
                 row["CIK"],
                 parseInt(number),
                 row["Description"],
                 row["Fund"],
+                row["Photo"],
               ],
             };
 
@@ -92,6 +98,67 @@ async function import_Billionaires() {
     .on("end", () => {
       console.log("CSV file successfully processed");
     });
+}
+
+async function fetch_Billionaire_Photos() {
+  const browser = await puppeteer.launch({
+    args: ["--no-sandbox"],
+    headless: true,
+  });
+  const page = await browser.newPage();
+
+  let result = await db(`
+    SELECT *
+    FROM billionaires
+  `);
+
+  if (result && result.length > 0) {
+    for (let i = 0; i < result.length; i += 1) {
+      let { photo_source, id } = result[i];
+
+      if (photo_source && photo_source.startsWith("https://www.forbes.com")) {
+        await page.goto(photo_source);
+
+        // await page.waitForNavigation();
+
+        // const screenshotPath = "/tmp/headless-test-result.png";
+        // await page.screenshot({ path: screenshotPath });
+
+        //
+        // FORBES PHOTOS ONLY
+        const srcAttribute = await page.$eval(
+          ".profile-photo__img",
+          (e) => e.src
+        );
+        console.log(srcAttribute);
+
+        let path = `photos/${id}.jpg`;
+
+        put_from_url(srcAttribute, process.env.AWS_BUCKET_RI, path, function (
+          err,
+          res
+        ) {
+          if (err) throw err;
+
+          console.log(chalk.bgGreen("uploaded"), photo_source, id);
+        });
+        // FORBES PHOTOS ONLY
+        //
+
+        let query = {
+          text:
+            "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
+          values: [`https://ri-terminal.s3.amazonaws.com/photos/${id}.jpg`, id],
+        };
+
+        await db(query);
+      }
+
+      await page.waitFor(3000);
+    }
+
+    await browser.close();
+  }
 }
 
 function put_from_url(url, bucket, key, callback) {
@@ -118,7 +185,7 @@ function put_from_url(url, bucket, key, callback) {
   );
 }
 
-async function fetch_Photo() {
+async function fetch_Photos() {
   const browser = await puppeteer.launch({
     args: ["--no-sandbox"],
     headless: true,
@@ -201,40 +268,4 @@ async function fetch_Photo() {
 
       console.log(chalk.bgGreen("Done!"));
     });
-
-  // console.log(chalk.bgGreen("start_puppeteer"));
 }
-
-// const createCsvWriter = require("csv-writer").createObjectCsvWriter;
-
-// const csvWriter = createCsvWriter({
-//   path: "report.csv",
-//   header: [
-//     { id: "name", title: "name" },
-//     { id: "cik", title: "cik" }
-//   ]
-// });
-
-// let portfolios = {
-//   portfolios: []
-// };
-
-// let records = [];
-
-// fs.readFile(`../src/components/titans/data/portfolios.json`, (err, data) => {
-//   if (err) throw err;
-//   portfolios = JSON.parse(data);
-
-//   console.log(portfolios["portfolios"].length);
-
-//   portfolios["portfolios"].forEach((portfolio, index) => {
-//     records.push({
-//       name: portfolio["name"],
-//       cik: [portfolio["filer_cik"]]
-//     });
-//   });
-
-//   csvWriter
-//     .writeRecords(records)
-//     .then(() => console.log("The CSV file was written successfully"));
-// });
