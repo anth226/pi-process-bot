@@ -45,6 +45,7 @@ const cacheTicker = async (id, ticker) => {
     DELETE
     FROM billionaire_holdings
     WHERE billionaire_id = '${id}'
+    AND ticker = '${ticker}'
   `);
 
   result = await db(`
