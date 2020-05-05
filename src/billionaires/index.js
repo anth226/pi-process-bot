@@ -19,10 +19,13 @@ const s3 = new AWS.S3({
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
+// ALTER SEQUENCE billionaires_id_seq RESTART WITH 1;
+// DELETE FROM billionaires;
+
 (async () => {
   //
   // await import_Billionaires();
-  // await fetch_Billionaire_Photos();
+  await fetch_Billionaire_Photos();
   //
   // await zip.zipPerformances_Billionaires();
   // await fetch_Photo();
@@ -56,6 +59,9 @@ async function import_Billionaires() {
           let number = row["Personal Net Worth"];
           number = number.replace(/\D/g, "");
 
+          let cik = row["CIK"];
+          cik = cik.replace(/\s/g, "");
+
           if (result.length > 0) {
             let billionaire = result[0];
 
@@ -64,7 +70,7 @@ async function import_Billionaires() {
                 "UPDATE billionaires SET name=($1), cik=($2), net_worth=($3), description=($4), institution_name=($5), photo_source=($6) WHERE id=($7) RETURNING *",
               values: [
                 row["Name"],
-                row["CIK"],
+                cik,
                 parseInt(number),
                 row["Description"],
                 row["Fund"],
@@ -80,7 +86,7 @@ async function import_Billionaires() {
                 "INSERT INTO billionaires (name, cik, net_worth, description, institution_name, photo_source) VALUES ( $1, $2, $3, $4, $5, $6 ) RETURNING *",
               values: [
                 row["Name"],
-                row["CIK"],
+                cik,
                 parseInt(number),
                 row["Description"],
                 row["Fund"],
