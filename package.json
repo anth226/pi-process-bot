@@ -1,5 +1,5 @@
 {
-  "name": "tower-backend",
+  "name": "tower-bots",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tyler-tower/tower-api.git"
+    "url": "git+https://github.com/masterial/tower-bot"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/tyler-tower/tower-backend/issues"
+    "url": "https://github.com/masterial/tower-bot/issues"
   },
-  "homepage": "https://github.com/tyler-tower/tower-backend#readme",
+  "homepage": "https://github.com/masterial/tower-bot#readme",
   "devDependencies": {
     "@babel/core": "^7.7.7",
     "@babel/node": "^7.7.7",

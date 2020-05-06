@@ -10,6 +10,7 @@ var request = require("request");
 import db from "../db";
 
 import * as zip from "./zip";
+import * as holdings from "../controllers/holdings";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -25,10 +26,11 @@ const s3 = new AWS.S3({
 (async () => {
   //
   // await import_Billionaires();
-  await fetch_Billionaire_Photos();
+  // await fetch_Billionaire_Photos();
   //
   // await zip.zipPerformances_Billionaires();
-  // await fetch_Photo();
+  //
+  await holdings.cacheHoldings_Titans();
 })();
 
 async function import_Billionaires() {

@@ -1,10 +1,141 @@
 import "dotenv/config";
 
-import * as whalewisdom from "../whalewisdom/whalewisdom";
-
 import db from "../db";
 
+const chalk = require("chalk");
+
+const AWS = require("aws-sdk");
+
+const s3 = new AWS.S3({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+});
+
 import * as titans from "./titans";
+
+import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
+
+const uploadToS3 = async (key, data) => {
+  let params = {
+    Bucket: process.env.BUCKET_INTRINIO_ZAKS,
+    Key: key,
+    Body: JSON.stringify(data),
+    ContentType: "application/json",
+    ACL: "public-read",
+  };
+
+  const response = await s3.upload(params).promise();
+
+  console.log(chalk.bgYellow("s3 =>"), response);
+};
+
+const cacheTicker = async (id, ticker) => {
+  let result = await db(`
+    DELETE
+    FROM billionaire_holdings
+    WHERE billionaire_id = '${id}'
+    AND ticker = '${ticker}'
+  `);
+
+  result = await db(`
+    SELECT *
+    FROM billionaire_holdings
+    WHERE ticker = '${ticker}'
+    AND billionaire_id = '${id}'
+  `);
+
+  if (result && result.length == 0) {
+    console.log(chalk.bgYellow("caching: "), id, ticker);
+    let query = {
+      text:
+        "INSERT INTO billionaire_holdings (billionaire_id, ticker) VALUES ( $1, $2 ) RETURNING *",
+      values: [id, ticker],
+    };
+
+    result = await db(query);
+  } else {
+    console.log(chalk.bgGreen("cached: "), id, ticker);
+  }
+};
+
+export async function fetchHoldings_Billionaire(cik, billionaireId) {
+  let next_page = null;
+  let index = 0;
+  let holdings = [];
+
+  do {
+    let response = await getInstitutionalHoldings(cik, next_page);
+    next_page = response["next_page"];
+
+    let key = `holdings/${cik}/${index}.json`;
+    await uploadToS3(key, response);
+    holdings = response["holdings"];
+    console.log(holdings.length);
+
+    for (let n = 0; n < holdings.length; n += 1) {
+      await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
+    }
+    index += 1;
+    console.log(chalk.bgGreen("next_page =>"), next_page);
+  } while (next_page);
+
+  let query = {
+    text:
+      "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
+    values: [index + 1, new Date(), cik],
+  };
+
+  await db(query);
+
+  // let response = await getInstitutionalHoldings(cik);
+
+  // let next_page = null;
+
+  // let holdings = [];
+
+  // if (response) {
+  //   next_page = response["next_page"];
+
+  //   console.log(next_page);
+
+  //   let index = 0;
+
+  //   let key = `holdings/${cik}/${index}.json`;
+  //   await uploadToS3(key, response);
+  //   holdings = response["holdings"];
+  //   console.log(holdings.length);
+
+  //   for (let n = 0; n < holdings.length; n += 1) {
+  //     await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
+  //   }
+
+  //   while (next_page) {
+  //     index += 1;
+
+  //     response = await getInstitutionalHoldings(cik, next_page);
+  //     next_page = response["next_page"];
+  //     // console.log(response["holdings"][0]);
+  //     console.log(next_page);
+
+  //     key = `holdings/${cik}/${index}.json`;
+  //     await uploadToS3(key, response);
+  //     holdings = response["holdings"];
+  //     console.log(holdings.length);
+
+  //     for (let n = 0; n < holdings.length; n += 1) {
+  //       await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
+  //     }
+  //   }
+
+  //   let query = {
+  //     text:
+  //       "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
+  //     values: [index + 1, new Date(), cik],
+  //   };
+
+  //   await db(query);
+  // }
+}
 
 export async function cacheHoldings_Titans() {
   let result = await db(`
@@ -28,7 +159,7 @@ export async function cacheHoldings_Titans() {
       if (cik) {
         console.log(cik);
         // await whalewisdom.fetchHoldings(cik);
-        await whalewisdom.fetchHoldings_Billionaire(cik, id);
+        await fetchHoldings_Billionaire(cik, id);
       }
     }
   }

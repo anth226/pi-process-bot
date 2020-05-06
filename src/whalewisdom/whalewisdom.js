@@ -26,48 +26,48 @@ function init() {
     .map((name) => require(path.join(__dirname, dir, name)));
 }
 
-const uploadToS3 = async (cik, index, data) => {
-  let params = {
-    Bucket: process.env.BUCKET_INTRINIO_ZAKS,
-    Key: `holdings/${cik}/${index}.json`,
-    Body: JSON.stringify(data),
-    ContentType: "application/json",
-    ACL: "public-read",
-  };
+// const uploadToS3 = async (cik, index, data) => {
+//   let params = {
+//     Bucket: process.env.BUCKET_INTRINIO_ZAKS,
+//     Key: `holdings/${cik}/${index}.json`,
+//     Body: JSON.stringify(data),
+//     ContentType: "application/json",
+//     ACL: "public-read",
+//   };
 
-  const response = await s3.upload(params).promise();
+//   const response = await s3.upload(params).promise();
 
-  console.log(chalk.bgYellow("s3 =>"), response);
-};
+//   console.log(chalk.bgYellow("s3 =>"), response);
+// };
 
-const cacheTicker = async (id, ticker) => {
-  let result = await db(`
-    DELETE
-    FROM billionaire_holdings
-    WHERE billionaire_id = '${id}'
-    AND ticker = '${ticker}'
-  `);
+// const cacheTicker = async (id, ticker) => {
+//   let result = await db(`
+//     DELETE
+//     FROM billionaire_holdings
+//     WHERE billionaire_id = '${id}'
+//     AND ticker = '${ticker}'
+//   `);
 
-  result = await db(`
-    SELECT *
-    FROM billionaire_holdings
-    WHERE ticker = '${ticker}'
-    AND billionaire_id = '${id}'
-  `);
+//   result = await db(`
+//     SELECT *
+//     FROM billionaire_holdings
+//     WHERE ticker = '${ticker}'
+//     AND billionaire_id = '${id}'
+//   `);
 
-  if (result && result.length == 0) {
-    console.log(chalk.bgYellow("caching: "), id, ticker);
-    let query = {
-      text:
-        "INSERT INTO billionaire_holdings (billionaire_id, ticker) VALUES ( $1, $2 ) RETURNING *",
-      values: [id, ticker],
-    };
+//   if (result && result.length == 0) {
+//     console.log(chalk.bgYellow("caching: "), id, ticker);
+//     let query = {
+//       text:
+//         "INSERT INTO billionaire_holdings (billionaire_id, ticker) VALUES ( $1, $2 ) RETURNING *",
+//       values: [id, ticker],
+//     };
 
-    result = await db(query);
-  } else {
-    console.log(chalk.bgGreen("cached: "), id, ticker);
-  }
-};
+//     result = await db(query);
+//   } else {
+//     console.log(chalk.bgGreen("cached: "), id, ticker);
+//   }
+// };
 
 export async function seedInstitutions() {
   let pages = init();
@@ -96,86 +96,86 @@ export async function seedInstitutions() {
     }
   }
 }
-export async function fetchHoldings(cik) {
-  let response = await getInstitutionalHoldings(cik);
+// export async function fetchHoldings(cik) {
+//   let response = await getInstitutionalHoldings(cik);
 
-  let next_page = null;
-  if (response) {
-    next_page = response["next_page"];
+//   let next_page = null;
+//   if (response) {
+//     next_page = response["next_page"];
 
-    console.log(next_page);
+//     console.log(next_page);
 
-    let index = 0;
-    await uploadToS3(cik, index, response);
+//     let index = 0;
+//     await uploadToS3(cik, index, response);
 
-    while (next_page) {
-      index += 1;
+//     while (next_page) {
+//       index += 1;
 
-      response = await getInstitutionalHoldings(cik, next_page);
-      next_page = response["next_page"];
-      console.log(response["holdings"][0]);
-      console.log(next_page);
+//       response = await getInstitutionalHoldings(cik, next_page);
+//       next_page = response["next_page"];
+//       console.log(response["holdings"][0]);
+//       console.log(next_page);
 
-      await uploadToS3(cik, index, response);
-    }
+//       await uploadToS3(cik, index, response);
+//     }
 
-    let query = {
-      text:
-        "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
-      values: [index + 1, new Date(), cik],
-    };
+//     let query = {
+//       text:
+//         "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
+//       values: [index + 1, new Date(), cik],
+//     };
 
-    await db(query);
-  }
-}
-export async function fetchHoldings_Billionaire(cik, billionaireId) {
-  let response = await getInstitutionalHoldings(cik);
+//     await db(query);
+//   }
+// }
+// export async function fetchHoldings_Billionaire(cik, billionaireId) {
+//   let response = await getInstitutionalHoldings(cik);
 
-  let next_page = null;
+//   let next_page = null;
 
-  let holdings = [];
+//   let holdings = [];
 
-  if (response) {
-    next_page = response["next_page"];
+//   if (response) {
+//     next_page = response["next_page"];
 
-    console.log(next_page);
+//     console.log(next_page);
 
-    let index = 0;
+//     let index = 0;
 
-    await uploadToS3(cik, index, response);
-    holdings = response["holdings"];
-    console.log(holdings.length);
+//     await uploadToS3(cik, index, response);
+//     holdings = response["holdings"];
+//     console.log(holdings.length);
 
-    for (let n = 0; n < holdings.length; n += 1) {
-      await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
-    }
+//     for (let n = 0; n < holdings.length; n += 1) {
+//       await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
+//     }
 
-    while (next_page) {
-      index += 1;
+//     while (next_page) {
+//       index += 1;
 
-      response = await getInstitutionalHoldings(cik, next_page);
-      next_page = response["next_page"];
-      // console.log(response["holdings"][0]);
-      console.log(next_page);
+//       response = await getInstitutionalHoldings(cik, next_page);
+//       next_page = response["next_page"];
+//       // console.log(response["holdings"][0]);
+//       console.log(next_page);
 
-      await uploadToS3(cik, index, response);
-      holdings = response["holdings"];
-      console.log(holdings.length);
+//       await uploadToS3(cik, index, response);
+//       holdings = response["holdings"];
+//       console.log(holdings.length);
 
-      for (let n = 0; n < holdings.length; n += 1) {
-        await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
-      }
-    }
+//       for (let n = 0; n < holdings.length; n += 1) {
+//         await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
+//       }
+//     }
 
-    let query = {
-      text:
-        "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
-      values: [index + 1, new Date(), cik],
-    };
+//     let query = {
+//       text:
+//         "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
+//       values: [index + 1, new Date(), cik],
+//     };
 
-    await db(query);
-  }
-}
+//     await db(query);
+//   }
+// }
 
 // {
 //   company: { ticker: 'SU', name: 'SUNCOR ENERGY', exchange: 'NYSE' },
