@@ -27,6 +27,8 @@ const uploadToS3 = async (key, data) => {
   const response = await s3.upload(params).promise();
 
   console.log(chalk.bgYellow("s3 =>"), response);
+
+  return response;
 };
 
 const cacheTicker = async (id, ticker) => {
@@ -63,6 +65,8 @@ export async function fetchHoldings_Billionaire(cik, billionaireId) {
   let index = 0;
   let holdings = [];
 
+  let buffer = [];
+
   do {
     let response = await getInstitutionalHoldings(cik, next_page);
     next_page = response["next_page"];
@@ -70,6 +74,9 @@ export async function fetchHoldings_Billionaire(cik, billionaireId) {
     let key = `holdings/${cik}/${index}.json`;
     await uploadToS3(key, response);
     holdings = response["holdings"];
+
+    buffer = buffer.concat(holdings);
+
     console.log(holdings.length);
 
     for (let n = 0; n < holdings.length; n += 1) {
@@ -87,54 +94,18 @@ export async function fetchHoldings_Billionaire(cik, billionaireId) {
 
   await db(query);
 
-  // let response = await getInstitutionalHoldings(cik);
+  if (buffer.length > 0) {
+    // Cache all data
+    // let key = `holdings/${cik}/${Number(new Date())}.json`;
+    // let response = await uploadToS3(key, buffer);
+    // let query = {
+    //   text: "INSERT INTO holdings (cik, data_url) VALUES ( $1, $2) RETURNING *",
+    //   values: [cik, response["Location"]],
+    // };
+    // await db(query);
 
-  // let next_page = null;
-
-  // let holdings = [];
-
-  // if (response) {
-  //   next_page = response["next_page"];
-
-  //   console.log(next_page);
-
-  //   let index = 0;
-
-  //   let key = `holdings/${cik}/${index}.json`;
-  //   await uploadToS3(key, response);
-  //   holdings = response["holdings"];
-  //   console.log(holdings.length);
-
-  //   for (let n = 0; n < holdings.length; n += 1) {
-  //     await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
-  //   }
-
-  //   while (next_page) {
-  //     index += 1;
-
-  //     response = await getInstitutionalHoldings(cik, next_page);
-  //     next_page = response["next_page"];
-  //     // console.log(response["holdings"][0]);
-  //     console.log(next_page);
-
-  //     key = `holdings/${cik}/${index}.json`;
-  //     await uploadToS3(key, response);
-  //     holdings = response["holdings"];
-  //     console.log(holdings.length);
-
-  //     for (let n = 0; n < holdings.length; n += 1) {
-  //       await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
-  //     }
-  //   }
-
-  //   let query = {
-  //     text:
-  //       "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
-  //     values: [index + 1, new Date(), cik],
-  //   };
-
-  //   await db(query);
-  // }
+    console.log(chalk.bgYellow("buffer.length:"), buffer.length);
+  }
 }
 
 export async function cacheHoldings_Titans() {
