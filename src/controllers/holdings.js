@@ -60,7 +60,11 @@ const cacheTicker = async (id, ticker) => {
   }
 };
 
-export async function fetchHoldings_Billionaire(cik, billionaireId) {
+export async function fetchHoldings_Billionaire(
+  cik,
+  billionaireId,
+  batchId = null
+) {
   let next_page = null;
   let index = 0;
   let holdings = [];
@@ -96,15 +100,16 @@ export async function fetchHoldings_Billionaire(cik, billionaireId) {
 
   if (buffer.length > 0) {
     // Cache all data
-    // let key = `holdings/${cik}/${Number(new Date())}.json`;
-    // let response = await uploadToS3(key, buffer);
-    // let query = {
-    //   text: "INSERT INTO holdings (cik, data_url) VALUES ( $1, $2) RETURNING *",
-    //   values: [cik, response["Location"]],
-    // };
-    // await db(query);
+    let key = `holdings/${cik}/${Number(new Date())}.json`;
+    let response = await uploadToS3(key, buffer);
+    let query = {
+      text:
+        "INSERT INTO holdings (cik, batch_id, data_url) VALUES ( $1, $2, $3 ) RETURNING *",
+      values: [cik, batchid, response["Location"]],
+    };
+    await db(query);
 
-    console.log(chalk.bgYellow("buffer.length:"), buffer.length);
+    console.log(chalk.bgGreen("batch complete."), cik, batchId, buffer.length);
   }
 }
 
@@ -118,6 +123,20 @@ export async function cacheHoldings_Titans() {
 
   // console.log(result);
 
+  // find batch_id
+  result = await db(`
+    SELECT *
+    FROM holdings
+    ORDER BY batch_id DESC
+    LIMIT 1
+  `);
+
+  let batchId = 0;
+  if (result.length > 0) {
+    batchId = result[i]["batch_id"];
+  }
+
+  //
   result = await titans.getTitans({});
 
   console.log(result);
@@ -130,7 +149,7 @@ export async function cacheHoldings_Titans() {
       if (cik) {
         console.log(cik);
         // await whalewisdom.fetchHoldings(cik);
-        await fetchHoldings_Billionaire(cik, id);
+        await fetchHoldings_Billionaire(cik, id, batchId);
       }
     }
   }
