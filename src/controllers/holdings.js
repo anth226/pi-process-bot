@@ -104,7 +104,7 @@ export async function fetchHoldings_Billionaire(
     let response = await uploadToS3(key, buffer);
     let query = {
       text:
-        "INSERT INTO holdings (cik, batch_id, data_url) VALUES ( $1, $2, $3 ) RETURNING *",
+        "INSERT INTO holdings (cik, batch_id, data_url, created_at ) VALUES ( $1, $2, $3, now() ) RETURNING *",
       values: [cik, batchid, response["Location"]],
     };
     await db(query);
