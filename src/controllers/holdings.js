@@ -100,7 +100,7 @@ export async function fetchHoldings_Billionaire(
 
   if (buffer.length > 0) {
     // Cache all data
-    let key = `holdings/${cik}/${Number(new Date())}.json`;
+    let key = `holdings/historical/${cik}/${Number(new Date())}.json`;
     let response = await uploadToS3(key, buffer);
     let query = {
       text:
