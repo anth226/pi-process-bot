@@ -105,7 +105,7 @@ export async function fetchHoldings_Billionaire(
     let query = {
       text:
         "INSERT INTO holdings (cik, batch_id, data_url, created_at ) VALUES ( $1, $2, $3, now() ) RETURNING *",
-      values: [cik, batchid, response["Location"]],
+      values: [cik, batchId, response["Location"]],
     };
     await db(query);
 
