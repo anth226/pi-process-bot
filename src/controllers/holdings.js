@@ -63,7 +63,8 @@ const cacheTicker = async (id, ticker) => {
 export async function fetchHoldings_Billionaire(
   cik,
   billionaireId,
-  batchId = null
+  batchId = null,
+  cache = true
 ) {
   let next_page = null;
   let index = 0;
@@ -71,21 +72,25 @@ export async function fetchHoldings_Billionaire(
 
   let buffer = [];
 
+  let key = null;
+
   do {
     let response = await getInstitutionalHoldings(cik, next_page);
     next_page = response["next_page"];
 
-    let key = `holdings/${cik}/${index}.json`;
-    await uploadToS3(key, response);
+    if (cache) {
+      key = `holdings/${cik}/${index}.json`;
+      await uploadToS3(key, response);
+    }
+
     holdings = response["holdings"];
-
     buffer = buffer.concat(holdings);
-
     console.log(holdings.length);
 
     for (let n = 0; n < holdings.length; n += 1) {
       await cacheTicker(billionaireId, holdings[n]["company"]["ticker"]);
     }
+
     index += 1;
     console.log(chalk.bgGreen("next_page =>"), next_page);
   } while (next_page);
@@ -100,14 +105,16 @@ export async function fetchHoldings_Billionaire(
 
   if (buffer.length > 0) {
     // Cache all data
-    let key = `holdings/historical/${cik}/${Number(new Date())}.json`;
-    let response = await uploadToS3(key, buffer);
-    let query = {
-      text:
-        "INSERT INTO holdings (cik, batch_id, data_url, created_at ) VALUES ( $1, $2, $3, now() ) RETURNING *",
-      values: [cik, batchId, response["Location"]],
-    };
-    await db(query);
+    if (cache) {
+      key = `holdings/historical/${cik}/${Number(new Date())}.json`;
+      let response = await uploadToS3(key, buffer);
+      let query = {
+        text:
+          "INSERT INTO holdings (cik, batch_id, data_url, created_at ) VALUES ( $1, $2, $3, now() ) RETURNING *",
+        values: [cik, batchId, response["Location"]],
+      };
+      await db(query);
+    }
 
     console.log(chalk.bgGreen("batch complete."), cik, batchId, buffer.length);
   }
@@ -156,9 +163,13 @@ export async function cacheHoldings_Titans() {
           AND cik='${cik}'
         `);
 
-        if (result.length == 0) {
-          await fetchHoldings_Billionaire(cik, id, batchId);
+        let cache = true;
+
+        if (result.length > 0) {
+          cache = false;
         }
+
+        await fetchHoldings_Billionaire(cik, id, batchId, cache);
       }
     }
   }
