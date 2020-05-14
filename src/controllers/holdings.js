@@ -133,7 +133,7 @@ export async function cacheHoldings_Titans() {
 
   let batchId = 0;
   if (result.length > 0) {
-    batchId = result[0]["batch_id"] + 1;
+    batchId = Number(result[0]["batch_id"]) + 1;
   }
 
   //
