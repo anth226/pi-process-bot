@@ -148,8 +148,6 @@ export async function cacheHoldings_Titans() {
 
       if (cik) {
         console.log(cik);
-        // await whalewisdom.fetchHoldings(cik);
-        result = await db(query);
 
         result = await db(`
           SELECT *
