@@ -139,12 +139,12 @@ export async function cacheHoldings_Titans() {
   //
   result = await titans.getTitans({});
 
-  console.log(result);
+  let records = result;
 
-  if (result.length > 0) {
-    for (let i = 0; i < result.length; i += 1) {
-      let cik = result[i]["cik"];
-      let id = result[i]["id"];
+  if (records.length > 0) {
+    for (let i = 0; i < records.length; i += 1) {
+      let cik = records[i]["cik"];
+      let id = records[i]["id"];
 
       if (cik) {
         console.log(cik);
