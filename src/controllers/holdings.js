@@ -149,7 +149,18 @@ export async function cacheHoldings_Titans() {
       if (cik) {
         console.log(cik);
         // await whalewisdom.fetchHoldings(cik);
-        await fetchHoldings_Billionaire(cik, id, batchId);
+        result = await db(query);
+
+        result = await db(`
+          SELECT *
+          FROM holdings
+          WHERE batch_id=${batchId} 
+          AND cik=${cik}
+        `);
+
+        if (result.length == 0) {
+          await fetchHoldings_Billionaire(cik, id, batchId);
+        }
       }
     }
   }
