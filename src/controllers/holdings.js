@@ -153,7 +153,7 @@ export async function cacheHoldings_Titans() {
           SELECT *
           FROM holdings
           WHERE batch_id=${batchId} 
-          AND cik=${cik}
+          AND cik='${cik}'
         `);
 
         if (result.length == 0) {
