@@ -20,7 +20,7 @@ const consumer_1 = Consumer.create({
       sqsMessage.cik,
       Number(sqsMessage.id),
       Number(sqsMessage.batchId),
-      sqsMessage.cache === "true" ? true : false
+      sqsMessage.cache
     );
   },
 });

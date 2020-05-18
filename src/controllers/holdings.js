@@ -110,15 +110,23 @@ export async function fetchHoldings_Billionaire(
     if (cache) {
       key = `holdings/historical/${cik}/${Number(new Date())}.json`;
       let response = await uploadToS3(key, buffer);
+
       let query = {
         text:
           "INSERT INTO holdings (cik, batch_id, data_url, created_at ) VALUES ( $1, $2, $3, now() ) RETURNING *",
         values: [cik, batchId, response["Location"]],
       };
       await db(query);
+      console.log("holdings_historical => cached");
     }
 
-    console.log(chalk.bgGreen("batch complete."), cik, batchId, buffer.length);
+    console.log(
+      chalk.bgGreen("batch complete."),
+      cik,
+      batchId,
+      cache,
+      buffer.length
+    );
   }
 }
 
