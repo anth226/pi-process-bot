@@ -154,7 +154,7 @@ export async function cacheHoldings_Billionaires() {
   }
 
   //
-  result = await titans.getBillionaires({size = 1000});
+  result = await titans.getBillionaires({ size: 1000 });
 
   let records = result;
 
