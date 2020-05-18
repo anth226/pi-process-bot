@@ -130,7 +130,7 @@ export async function fetchHoldings_Billionaire(
   }
 }
 
-export async function cacheHoldings_Titans() {
+export async function cacheHoldings_Billionaires() {
   let result = await db(`
     SELECT *
     FROM institutions
@@ -154,7 +154,7 @@ export async function cacheHoldings_Titans() {
   }
 
   //
-  result = await titans.getTitans({size = 1000});
+  result = await titans.getBillionaires({size = 1000});
 
   let records = result;
 

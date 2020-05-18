@@ -4,7 +4,7 @@ export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
     SELECT *
     FROM billionaires
-    ORDER BY id DESC
+    ORDER BY id ASC
     LIMIT ${size}
     OFFSET ${page * size}
   `);
@@ -19,7 +19,7 @@ export async function getBillionaires({
   return await db(`
     SELECT *
     FROM billionaires
-    ORDER BY id DESC
+    ORDER BY id ASC
     LIMIT ${size}
     OFFSET ${page * size}
   `);

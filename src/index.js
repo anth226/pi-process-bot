@@ -44,7 +44,7 @@ const consumer_2 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await holdings.cacheHoldings_Titans();
+    await holdings.cacheHoldings_Billionaires();
   },
 });
 
