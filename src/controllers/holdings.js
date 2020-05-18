@@ -13,6 +13,8 @@ const s3 = new AWS.S3({
 
 import * as titans from "./titans";
 
+import * as queue from "../queue";
+
 import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
 
 const uploadToS3 = async (key, data) => {
@@ -169,7 +171,9 @@ export async function cacheHoldings_Titans() {
           cache = false;
         }
 
-        await fetchHoldings_Billionaire(cik, id, batchId, cache);
+        // await fetchHoldings_Billionaire(cik, id, batchId, cache);
+
+        queue.publish_ProcessHoldings(cik, id, batchId, cache);
       }
     }
   }

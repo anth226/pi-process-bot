@@ -4,6 +4,61 @@ import admin from "firebase-admin";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
+import * as holdings from "./controllers/holdings";
+
+const { Consumer } = require("sqs-consumer");
+
+// Billionaire Holdings (Individual)
+const consumer_1 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await holdings.fetchHoldings_Billionaire(
+      sqsMessage.cik,
+      sqsMessage.id,
+      sqsMessage.batchId,
+      sqsMessage.cache
+    );
+  },
+});
+
+consumer_1.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_1.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// consumer_1.start();
+//
+
+// Billionaire Holdings
+const consumer_2 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await holdings.cacheHoldings_Titans();
+  },
+});
+
+consumer_2.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_2.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// consumer_2.start();
+//
+
 import * as queue from "./queue";
 
 var bugsnag = require("@bugsnag/js");
@@ -84,7 +139,10 @@ app.get("/cache_holdings_titans", async (req, res) => {
 
 app.listen(process.env.PORT, () => {
   console.log(`listening on ${process.env.PORT}`);
-  setInterval(() => {
-    queue.receive();
-  }, 30000);
+
+  consumer_1.start();
+  consumer_2.start();
+  // setInterval(() => {
+  //   queue.receive();
+  // }, 30000);
 });
