@@ -85,7 +85,7 @@ export function publish_ProcessHoldings(cik, id, batchId, cache) {
     },
     MessageBody: JSON.stringify(data),
     // MessageDeduplicationId: req.body["userEmail"],
-    MessageGroupId: "Holdings",
+    // MessageGroupId: "Holdings",
     QueueUrl: queueUrl,
   };
 
