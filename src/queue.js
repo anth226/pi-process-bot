@@ -71,16 +71,16 @@ export function publish_ProcessHoldings(cik, id, batchId, cache) {
         StringValue: data.cik,
       },
       id: {
-        DataType: "Number",
-        StringValue: data.id,
+        DataType: "String",
+        StringValue: `${data.id}`,
       },
       batchId: {
-        DataType: "Number",
-        StringValue: data.batchId,
+        DataType: "String",
+        StringValue: `${data.batchId}`,
       },
       cache: {
-        DataType: "Boolean",
-        StringValue: data.cache,
+        DataType: "String",
+        StringValue: `${data.cache}`,
       },
     },
     MessageBody: JSON.stringify(data),

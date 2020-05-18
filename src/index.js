@@ -18,9 +18,9 @@ const consumer_1 = Consumer.create({
 
     await holdings.fetchHoldings_Billionaire(
       sqsMessage.cik,
-      sqsMessage.id,
-      sqsMessage.batchId,
-      sqsMessage.cache
+      Number(sqsMessage.id),
+      Number(sqsMessage.batchId),
+      sqsMessage.cache === "true" ? true : false
     );
   },
 });
