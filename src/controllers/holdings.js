@@ -154,7 +154,7 @@ export async function cacheHoldings_Titans() {
   }
 
   //
-  result = await titans.getTitans({});
+  result = await titans.getTitans({size = 1000});
 
   let records = result;
 
