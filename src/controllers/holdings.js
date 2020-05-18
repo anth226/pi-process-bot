@@ -158,6 +158,8 @@ export async function cacheHoldings_Billionaires() {
 
   let records = result;
 
+  let buffer = [];
+
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
       let cik = records[i]["cik"];
@@ -166,22 +168,11 @@ export async function cacheHoldings_Billionaires() {
       if (cik) {
         console.log(cik);
 
-        result = await db(`
-          SELECT *
-          FROM holdings
-          WHERE batch_id=${batchId} 
-          AND cik='${cik}'
-        `);
+        queue.publish_ProcessHoldings(cik, id, batchId, !buffer.includes(cik));
 
-        let cache = true;
-
-        if (result.length > 0) {
-          cache = false;
+        if (buffer.includes(cik)) {
+          buffer.push(cik);
         }
-
-        // await fetchHoldings_Billionaire(cik, id, batchId, cache);
-
-        queue.publish_ProcessHoldings(cik, id, batchId, cache);
       }
     }
   }
