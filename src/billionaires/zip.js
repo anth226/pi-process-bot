@@ -28,9 +28,11 @@ export async function zipPerformances_Billionaires() {
   let { url } = response;
 
   let investors = billionaires.map((billionaire) => {
-    console.log(chalk.bgYellow("billionaire.id"), billionaire.id);
+    console.log(chalk.bgYellow("billionaire.uri"), billionaire.uri);
+
     return {
       id: billionaire.id,
+      uri: billionaire.uri,
       billionaire,
     };
   });
@@ -65,7 +67,7 @@ export async function zipPerformances_Billionaires() {
     });
 
     if (performance) {
-      console.log(chalk.bgGreen("success"), investor.id);
+      console.log(chalk.bgGreen("success"), investor.uri);
 
       return {
         ...investor,
@@ -73,7 +75,7 @@ export async function zipPerformances_Billionaires() {
         weight: investor.hasOwnProperty("billionaire") ? 1 : 0,
       };
     } else {
-      console.log(chalk.bgRed("fail"), investor.id, cik);
+      console.log(chalk.bgRed("fail"), investor.uri, cik);
 
       return {
         ...investor,
