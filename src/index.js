@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
 import * as holdings from "./controllers/holdings";
+import * as performances from "./controllers/performance";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -53,6 +54,31 @@ consumer_2.on("error", (err) => {
 });
 
 consumer_2.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// Billionaire Holdings (Individual)
+const consumer_3 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await performances.calculatePerformance_Billionaire(
+      sqsMessage.cik,
+      Number(sqsMessage.id),
+      Number(sqsMessage.batchId),
+      sqsMessage.cache
+    );
+  },
+});
+
+consumer_3.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_3.on("processing_error", (err) => {
   console.error(err.message);
 });
 
@@ -137,12 +163,15 @@ app.get("/cache_holdings_titans", async (req, res) => {
   res.send("ok");
 });
 
+app.get("/cache_performances_titans", async (req, res) => {
+  await performances.cachePerformances_Billionaires();
+  res.send("ok");
+});
+
 app.listen(process.env.PORT, () => {
   console.log(`listening on ${process.env.PORT}`);
 
   consumer_1.start();
   consumer_2.start();
-  // setInterval(() => {
-  //   queue.receive();
-  // }, 30000);
+  consumer_3.start();
 });
