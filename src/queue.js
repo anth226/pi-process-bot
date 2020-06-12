@@ -109,3 +109,31 @@ export function publish_ProcessPerformances(cik, id, batchId, cache) {
     }
   });
 }
+
+export function publish_ProcessCompanyLookup(identifier) {
+  let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
+
+  let data = {
+    identifier,
+  };
+
+  let params = {
+    MessageAttributes: {
+      identifier: {
+        DataType: "String",
+        StringValue: data.identifier,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}

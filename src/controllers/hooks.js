@@ -1,6 +1,6 @@
 // https://ri-terminal.s3.amazonaws.com/portfolios.json
 
-import * as performance from "./performance";
+import * as performances from "./performances";
 import * as titans from "./titans";
 import axios from "axios";
 
@@ -9,7 +9,7 @@ require("dotenv").config();
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
 
 import { find, map, sortBy } from "lodash";
@@ -21,14 +21,14 @@ export async function zipPerformances_Billionaires() {
   let billionaires = await titans.getBillionaires({});
 
   // Performances Url
-  let response = await performance.getPortfolios();
+  let response = await performances.getPortfolios();
 
   let { url } = response;
 
-  let investors = billionaires.map(billionaire => {
+  let investors = billionaires.map((billionaire) => {
     return {
       id: billionaire.id,
-      billionaire
+      billionaire,
     };
   });
 
@@ -38,8 +38,8 @@ export async function zipPerformances_Billionaires() {
     withCredentials: false,
     headers: {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*"
-    }
+      "Access-Control-Allow-Origin": "*",
+    },
   });
 
   let performances = [];
@@ -50,7 +50,7 @@ export async function zipPerformances_Billionaires() {
 
   //   console.log(performances);
 
-  const mergedWithPerformance = map(investors, function(investor) {
+  const mergedWithPerformance = map(investors, function (investor) {
     let cik = investor.hasOwnProperty("billionaire")
       ? investor.billionaire.cik
       : null;
@@ -60,7 +60,7 @@ export async function zipPerformances_Billionaires() {
     return {
       ...investor,
       performance,
-      weight: investor.hasOwnProperty("billionaire") ? 1 : 0
+      weight: investor.hasOwnProperty("billionaire") ? 1 : 0,
     };
   });
 
@@ -71,13 +71,13 @@ export async function zipPerformances_Billionaires() {
   let path = `performance/billionaires.json`;
   let params = {
     Bucket: process.env.AWS_BUCKET_RI,
-    Key: path
+    Key: path,
   };
 
   params = {
     ...params,
     Body: JSON.stringify(sorted),
-    ContentType: "application/json"
+    ContentType: "application/json",
   };
 
   response = await s3.upload(params).promise();

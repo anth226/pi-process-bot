@@ -1,6 +1,6 @@
 // https://ri-terminal.s3.amazonaws.com/portfolios.json
 
-import * as performance from "../controllers/performance";
+import * as performances from "../controllers/performances";
 import * as titans from "../controllers/titans";
 import axios from "axios";
 
@@ -23,7 +23,7 @@ export async function zipPerformances_Billionaires() {
   let billionaires = await titans.getBillionaires({});
 
   // Performances Url
-  let response = await performance.getPortfolios();
+  let response = await performances.getPortfolios();
 
   let { url } = response;
 

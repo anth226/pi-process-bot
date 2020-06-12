@@ -4,12 +4,13 @@ import admin from "firebase-admin";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
+import * as companies from "./controllers/companies";
 import * as holdings from "./controllers/holdings";
-import * as performances from "./controllers/performance";
+import * as performances from "./controllers/performances";
 
 const { Consumer } = require("sqs-consumer");
 
-// Billionaire Holdings (Individual)
+// AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
   handleMessage: async (message) => {
@@ -34,18 +35,15 @@ consumer_1.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// consumer_1.start();
-//
-
-// Billionaire Holdings
+// AWS_SQS_URL_COMPANY_LOOKUP (Individual)
 const consumer_2 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL,
+  queueUrl: process.env.AWS_SQS_URL_COMPANY_LOOKUP,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
     console.log(sqsMessage);
 
-    await holdings.cacheHoldings_Billionaires();
+    await companies.lookupCompany(sqsMessage.identifier);
   },
 });
 
@@ -57,7 +55,7 @@ consumer_2.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// Billionaire Holdings (Individual)
+// AWS_SQS_URL_BILLIONAIRE_PERFORMANCES (Individual)
 const consumer_3 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES,
   handleMessage: async (message) => {
@@ -81,11 +79,6 @@ consumer_3.on("error", (err) => {
 consumer_3.on("processing_error", (err) => {
   console.error(err.message);
 });
-
-// consumer_2.start();
-//
-
-import * as queue from "./queue";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -159,7 +152,7 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/cache_holdings_titans", async (req, res) => {
-  queue.publish("cache_holdings_titans");
+  await holdings.cacheHoldings_Billionaires();
   res.send("ok");
 });
 

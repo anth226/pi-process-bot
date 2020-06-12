@@ -11,7 +11,8 @@ import db from "../db";
 
 import * as zip from "./zip";
 import * as holdings from "../controllers/holdings";
-import * as performances from "../controllers/performance";
+import * as performances from "../controllers/performances";
+import * as companies from "../controllers/companies";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -35,7 +36,8 @@ const s3 = new AWS.S3({
   //
 
   let cik = "0001067983";
-  await performances.calculatePerformance_Billionaire(cik);
+  // await performances.calculatePerformance_Billionaire(cik);
+  await companies.cacheCompanies_Portfolio(cik);
   //
 })();
 
