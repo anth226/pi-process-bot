@@ -69,6 +69,8 @@ const consumer_3 = Consumer.create({
       Number(sqsMessage.batchId),
       sqsMessage.cache
     );
+
+    await companies.cacheCompanies_Portfolio(sqsMessage.cik);
   },
 });
 
