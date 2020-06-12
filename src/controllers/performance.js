@@ -1,4 +1,6 @@
-// https://ri-terminal.s3.amazonaws.com/portfolios.json
+import axios from "axios";
+
+const chalk = require("chalk");
 
 import * as titans from "./titans";
 import * as queue from "../queue";
@@ -9,14 +11,64 @@ export async function getPortfolios() {
   };
 }
 
+function getHistoricalData(cik, frequency, next_page = null) {
+  let url = `${process.env.INTRINIO_BASE_PATH}/historical_data/${cik}/marketcap?frequency=${frequency}&api_key=${process.env.INTRINIO_API_KEY}`;
+
+  if (next_page) {
+    url = `${process.env.INTRINIO_BASE_PATH}/historical_data/${cik}/marketcap?frequency=${frequency}&next_page=${next_page}&api_key=${process.env.INTRINIO_API_KEY}`;
+  }
+
+  let data = axios
+    .get(url)
+    .then(function (res) {
+      return res.data;
+    })
+    .catch(function (err) {
+      console.log(err);
+      return {};
+    });
+
+  return data;
+}
+
 export async function calculatePerformance_Billionaire(
   cik,
   billionaireId,
   batchId = null,
   cache = true
 ) {
-  // https://api-v2.intrinio.com/historical_data/AAPL/marketcap?frequency=monthly&api_key=OjljMjViZjQzNWU4NGExZWZlZTFmNTY4ZDU5ZmI5ZDI0
-  //
+  let frequencies = [
+    // "daily",
+    // "weekly",
+    // "monthly",
+    "quarterly",
+    "yearly",
+  ];
+
+  let marketcaps = {};
+
+  for (let i = 0; i < frequencies.length; i += 1) {
+    let frequency = frequencies[i];
+
+    let next_page = null;
+    let historical_data = [];
+    let buffer = [];
+
+    do {
+      let response = await getHistoricalData(cik, frequency, next_page);
+      next_page = response["next_page"];
+
+      buffer = response["historical_data"];
+      historical_data = historical_data.concat(buffer);
+
+      console.log(chalk.bgGreen("next_page =>"), next_page);
+    } while (next_page);
+
+    marketcaps[frequency] = historical_data;
+  }
+
+  console.log("marketcaps", marketcaps);
+
   // let next_page = null;
   // let index = 0;
   // let holdings = [];
@@ -38,6 +90,7 @@ export async function calculatePerformance_Billionaire(
   //   index += 1;
   //   console.log(chalk.bgGreen("next_page =>"), next_page);
   // } while (next_page);
+
   // let query = {
   //   text:
   //     "UPDATE institutions SET holdings_page_count=($1), holdings_updated_at=($2) WHERE cik=($3) RETURNING *",
