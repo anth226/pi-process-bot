@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
 import * as companies from "./controllers/companies";
+import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
 
@@ -35,28 +36,8 @@ consumer_1.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_COMPANY_LOOKUP (Individual)
-const consumer_2 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_COMPANY_LOOKUP,
-  handleMessage: async (message) => {
-    let sqsMessage = JSON.parse(message.Body);
-
-    console.log(sqsMessage);
-
-    await companies.lookupCompany(sqsMessage.identifier);
-  },
-});
-
-consumer_2.on("error", (err) => {
-  console.error(err.message);
-});
-
-consumer_2.on("processing_error", (err) => {
-  console.error(err.message);
-});
-
 // AWS_SQS_URL_BILLIONAIRE_PERFORMANCES (Individual)
-const consumer_3 = Consumer.create({
+const consumer_2 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
@@ -70,7 +51,27 @@ const consumer_3 = Consumer.create({
       sqsMessage.cache
     );
 
-    await companies.cacheCompanies_Portfolio(sqsMessage.cik);
+    await titans.cacheCompanies_Portfolio(sqsMessage.cik);
+  },
+});
+
+consumer_2.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_2.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_COMPANY_LOOKUP (Individual)
+const consumer_3 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_COMPANY_LOOKUP,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await companies.lookupCompany(sqsMessage.identifier);
   },
 });
 

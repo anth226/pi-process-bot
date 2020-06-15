@@ -2,7 +2,6 @@ import axios from "axios";
 
 const chalk = require("chalk");
 
-import * as queue from "../queue";
 import db from "../db";
 
 async function lookup(identifier) {
@@ -13,40 +12,6 @@ async function lookup(identifier) {
     data = await axios.get(url);
   } catch {}
   return data;
-}
-
-export async function cacheCompanies_Portfolio(cik) {
-  let result = await db(`
-    SELECT *
-    FROM holdings
-    WHERE cik = '${cik}'
-    ORDER BY batch_id DESC
-    LIMIT 1
-  `);
-
-  if (result.length > 0) {
-    let { data_url } = result[0];
-    try {
-      let result = await axios.get(data_url, {
-        crossdomain: true,
-        withCredentials: false,
-        headers: {
-          "Content-Type": "application/json",
-          // "Access-Control-Allow-Origin": "*"
-        },
-      });
-
-      let holdings = result.data;
-
-      holdings.forEach((holding) => {
-        let {
-          company: { ticker },
-        } = holding;
-        console.log(ticker);
-        queue.publish_ProcessCompanyLookup(ticker);
-      });
-    } catch {}
-  }
 }
 
 export async function lookupCompany(identifier) {
