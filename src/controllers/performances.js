@@ -52,7 +52,7 @@ export async function calculatePerformance_Billionaire(
 
     let next_page = null;
     let historical_data = [];
-    let buffer = [];
+    let buffer = {};
 
     do {
       let response = await getHistoricalData(cik, frequency, next_page);
@@ -68,6 +68,11 @@ export async function calculatePerformance_Billionaire(
   }
 
   console.log("marketcaps", marketcaps);
+
+  let key = `marketcaps/${cik}.json`;
+  let response = await uploadToS3(key, marketcaps);
+
+  console.log(response["Location"]);
 
   // let next_page = null;
   // let index = 0;
