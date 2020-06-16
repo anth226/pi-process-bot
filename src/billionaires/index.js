@@ -13,6 +13,7 @@ import * as zip from "./zip";
 import * as holdings from "../controllers/holdings";
 import * as performances from "../controllers/performances";
 import * as companies from "../controllers/companies";
+import * as titans from "../controllers/titans";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -37,7 +38,8 @@ const s3 = new AWS.S3({
 
   let cik = "0001067983";
   // await performances.calculatePerformance_Billionaire(cik);
-  await companies.cacheCompanies_Portfolio(cik);
+  // await companies.cacheCompanies_Portfolio(cik);
+  await titans.generateSummary(cik);
   //
 })();
 

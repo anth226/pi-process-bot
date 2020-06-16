@@ -1,5 +1,7 @@
 import "dotenv/config";
 
+import axios from "axios";
+
 import db from "../db";
 
 const chalk = require("chalk");
@@ -176,4 +178,35 @@ export async function cacheHoldings_Billionaires() {
       }
     }
   }
+}
+
+export async function fetchAll(cik) {
+  let result = await db(`
+    SELECT *
+    FROM holdings
+    WHERE cik='${cik}'
+    ORDER BY batch_id DESC
+    LIMIT 1
+  `);
+
+  console.log(result);
+
+  if (result.length > 0) {
+    let { data_url } = result[0];
+    try {
+      let result = await axios.get(data_url, {
+        crossdomain: true,
+        withCredentials: false,
+        headers: {
+          "Content-Type": "application/json",
+          // "Access-Control-Allow-Origin": "*"
+        },
+      });
+
+      let holdings = result.data;
+      return holdings;
+    } catch {}
+  }
+
+  return [];
 }
