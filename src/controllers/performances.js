@@ -5,8 +5,6 @@ const chalk = require("chalk");
 import * as titans from "./titans";
 import * as queue from "../queue";
 
-const chalk = require("chalk");
-
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
