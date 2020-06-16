@@ -49,7 +49,7 @@ function getHistoricalData(cik, frequency, next_page = null) {
       return res.data;
     })
     .catch(function (err) {
-      console.log(err);
+      console.log("error", cik);
       return {};
     });
 
