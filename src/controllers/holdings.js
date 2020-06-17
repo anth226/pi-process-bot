@@ -189,7 +189,7 @@ export async function fetchAll(cik) {
     LIMIT 1
   `);
 
-  console.log(result);
+  // console.log(result);
 
   if (result.length > 0) {
     let { data_url } = result[0];
