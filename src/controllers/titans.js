@@ -59,7 +59,9 @@ export async function cacheCompanies_Portfolio(cik) {
           company: { ticker },
         } = holding;
         console.log(ticker);
+
         queue.publish_ProcessCompanyLookup(ticker);
+        queue.publish_ProcessSecurityPrices(ticker);
       });
     } catch {}
   }

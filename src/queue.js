@@ -1,3 +1,11 @@
+import * as companies from "./controllers/companies";
+import * as titans from "./controllers/titans";
+import * as holdings from "./controllers/holdings";
+import * as performances from "./controllers/performances";
+import * as prices from "./controllers/prices";
+
+const { Consumer } = require("sqs-consumer");
+
 const AWS = require("aws-sdk");
 AWS.config.update({ region: "us-east-1" });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
@@ -137,3 +145,123 @@ export function publish_ProcessCompanyLookup(identifier) {
     }
   });
 }
+
+export function publish_ProcessSecurityPrices(identifier) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITY_PRICES;
+
+  let data = {
+    identifier,
+  };
+
+  let params = {
+    MessageAttributes: {
+      identifier: {
+        DataType: "String",
+        StringValue: data.identifier,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+// AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
+export const consumer_1 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await holdings.fetchHoldings_Billionaire(
+      sqsMessage.cik,
+      Number(sqsMessage.id),
+      Number(sqsMessage.batchId),
+      sqsMessage.cache
+    );
+  },
+});
+
+consumer_1.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_1.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_BILLIONAIRE_PERFORMANCES (Individual)
+export const consumer_2 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await performances.calculatePerformance_Billionaire(
+      sqsMessage.cik,
+      Number(sqsMessage.id),
+      Number(sqsMessage.batchId),
+      sqsMessage.cache
+    );
+
+    await titans.cacheCompanies_Portfolio(sqsMessage.cik);
+  },
+});
+
+consumer_2.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_2.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_COMPANY_LOOKUP (Individual)
+export const consumer_3 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_COMPANY_LOOKUP,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await companies.lookupCompany(sqsMessage.identifier);
+  },
+});
+
+consumer_3.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_3.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_SECURITY_PRICES (Individual)
+export const consumer_4 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_SECURITY_PRICES,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await prices.fetchTape(sqsMessage.identifier);
+  },
+});
+
+consumer_4.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_4.on("processing_error", (err) => {
+  console.error(err.message);
+});
