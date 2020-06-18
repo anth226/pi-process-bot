@@ -10,24 +10,6 @@ const AWS = require("aws-sdk");
 AWS.config.update({ region: "us-east-1" });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 
-// export function publish(job) {
-//   const params = {
-//     MessageBody: JSON.stringify({
-//       job,
-//       date: new Date().toISOString(),
-//     }),
-//     QueueUrl: process.env.AWS_SQS_URL,
-//     MessageGroupId: "0",
-//   };
-//   sqs.sendMessage(params, (err, data) => {
-//     if (err) {
-//       console.log("Error", err);
-//     } else {
-//       console.log("Successfully added message", data.MessageId);
-//     }
-//   });
-// }
-
 export function publish_ProcessHoldings(cik, id, batchId, cache) {
   let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS;
 
@@ -133,6 +115,8 @@ export function publish_ProcessCompanyLookup(identifier) {
       },
     },
     MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${identifier}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
     QueueUrl: queueUrl,
   };
 
@@ -161,6 +145,8 @@ export function publish_ProcessSecurityPrices(identifier) {
       },
     },
     MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${identifier}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
     QueueUrl: queueUrl,
   };
 
