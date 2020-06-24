@@ -52,8 +52,10 @@ const s3 = new AWS.S3({
   // }
   // //
 
-  let ticker = "AAPL";
-  await queue.publish_ProcessSecurityPrices(ticker);
+  // let ticker = "AAPL";
+  // await queue.publish_ProcessSecurityPrices(ticker);
+
+  await fetch_Billionaire_Photos_Pending();
 })();
 
 async function import_Billionaires() {
@@ -189,6 +191,44 @@ async function fetch_Billionaire_Photos() {
     }
 
     await browser.close();
+  }
+}
+
+async function fetch_Billionaire_Photos_Pending() {
+  let result = await db(`
+    SELECT *
+    FROM billionaires
+    WHERE status='pending'
+  `);
+
+  if (result && result.length > 0) {
+    for (let i = 0; i < result.length; i += 1) {
+      let { photo_source, id } = result[i];
+
+      if (photo_source) {
+        // console.log(photo_source);
+
+        let parts = photo_source.split("?");
+        let url = `https:${parts[0]}`;
+        console.log(url);
+
+        let path = `photos/${id}.jpg`;
+
+        put_from_url(url, process.env.AWS_BUCKET_RI, path, function (err, res) {
+          if (err) throw err;
+
+          console.log(chalk.bgGreen("uploaded"), photo_source, id);
+        });
+
+        let query = {
+          text:
+            "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
+          values: [`https://ri-terminal.s3.amazonaws.com/photos/${id}.jpg`, id],
+        };
+
+        await db(query);
+      }
+    }
   }
 }
 
