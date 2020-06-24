@@ -7,7 +7,8 @@
     "start": "nodemon --exec babel-node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "whalewisdom": "babel-node src/whalewisdom/index.js",
-    "billionaires": "babel-node src/billionaires/index.js"
+    "billionaires": "babel-node src/billionaires/index.js",
+    "subscribers": "babel-node src/subscribers/index.js"
   },
   "repository": {
     "type": "git",
@@ -42,8 +43,9 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "firebase": "^7.6.1",
-    "firebase-admin": "^8.9.0",
+    "firebase-admin": "^8.12.1",
     "intrinio-sdk": "^5.0.0",
+    "json2csv": "^5.0.1",
     "mqtt": "^3.0.0",
     "pg": "8.1.0",
     "puppeteer": "^2.1.1",
