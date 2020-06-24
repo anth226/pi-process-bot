@@ -4,6 +4,8 @@ import * as queue from "../queue";
 
 import * as holdings from "./holdings";
 
+import { orderBy } from "lodash";
+
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
     SELECT *
@@ -57,18 +59,105 @@ export async function cacheCompanies_Portfolio(cik) {
           company: { ticker },
         } = holding;
         console.log(ticker);
+
         queue.publish_ProcessCompanyLookup(ticker);
+        queue.publish_ProcessSecurityPrices(ticker);
       });
     } catch {}
   }
 }
 
 export async function generateSummary(cik) {
-  // Calculate performances
-  // Calculate sectors
+  console.log(cik);
 
   let data = await holdings.fetchAll(cik);
 
+  // Calculate fund performances
+
+  // Calculate sectors
+  await evaluateSectorCompositions(data);
+
+  // Evaluate Top Stock
+  await evaluateTopStocks(data);
+
+  // Calculate portfolio performance
+  await evaluateFundPerformace(cik);
+}
+
+const evaluateTopStocks = async (data) => {
+  let sorted = orderBy(data, ["shares_held_percent"], ["desc"]);
+
+  console.log(sorted.length);
+};
+
+const evaluateFundPerformace = async (cik) => {
+  let data_url = `https://intrinio-zaks.s3.amazonaws.com/marketcaps/${cik}.json`;
+
+  try {
+    let result = await axios.get(data_url, {
+      crossdomain: true,
+      withCredentials: false,
+      headers: {
+        "Content-Type": "application/json",
+        // "Access-Control-Allow-Origin": "*"
+      },
+    });
+
+    let marketcaps = result.data;
+    // console.log(marketcaps);
+
+    const findChange = (values, offset) => {
+      try {
+        let current = {};
+        let previous = {};
+        let index_current = -1;
+        let index_previous = -1;
+
+        for (let i = 0; i < values.length; i += 1) {
+          let item = values[i];
+
+          if (item["value"]) {
+            index_current = i;
+            index_previous = i + offset;
+            break;
+          }
+        }
+
+        current = values[index_current];
+        previous = values[index_previous];
+
+        let delta = current["value"] - previous["value"];
+
+        // % increase = Increase ÷ Original Number × 100.
+
+        let percent_change = (delta / current["value"]) * 100;
+
+        return percent_change;
+      } catch (e) {
+        // console.error(e);
+        return null;
+      }
+    };
+
+    let change = 0;
+    let quarterly = marketcaps["quarterly"];
+
+    change = findChange(quarterly, 1);
+
+    console.log("1 quarter", change);
+    let yearly = marketcaps["yearly"];
+
+    change = findChange(yearly, 1);
+    console.log("1 year", change);
+
+    change = findChange(yearly, 5);
+    console.log("5 year", change);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const evaluateSectorCompositions = async (data) => {
   // console.log(data);
 
   let tickers = data.map(({ company }) => company["ticker"]);
@@ -92,34 +181,41 @@ export async function generateSummary(cik) {
 
   let merged = mergeById(result, data);
 
-  console.log(merged);
+  // console.log(merged);
 
   // //
 
-  // let sectors = result.map(({ json }) => json["sector"]);
-
+  let sectors = merged.map(({ json }) => json["sector"]);
   // console.log(sectors);
 
-  // let counts = {};
-  // let total = 0;
+  let buffer = {};
+  let total = 0;
 
-  // for (var i = 0; i < sectors.length; i++) {
-  //   let sector = sectors[i];
-  //   counts[`${sector}`] = counts[`${sector}`] ? counts[`${sector}`] + 1 : 1;
-  //   total += 1;
-  // }
+  for (let i = 0; i < merged.length; i += 1) {
+    // if (counts.hasOwnProperty(key)) {
+    //   counts[key] = (counts[key] / total) * 100;
+    // }
+    let sector = merged[i]["json"]["sector"];
+    let market_value = merged[i]["market_value"];
 
-  // // console.log(counts);
+    buffer[`${sector}`] = buffer[`${sector}`]
+      ? buffer[`${sector}`] + market_value
+      : market_value;
 
-  // for (let key in counts) {
-  //   if (counts.hasOwnProperty(key)) {
-  //     counts[key] = (counts[key] / total) * 100;
-  //   }
-  // }
+    total += market_value;
+  }
 
-  // console.log(counts);
+  // console.log(buffer);
+  // console.log(total);
 
-  // //
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      buffer[key] = (buffer[key] / total) * 100;
+      // buffer[key] = buffer[key].toFixed(2);
+    }
+  }
 
-  // calculate composition by market value
-}
+  console.log(buffer);
+
+  return buffer;
+};

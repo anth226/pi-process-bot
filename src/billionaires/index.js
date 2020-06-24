@@ -14,6 +14,7 @@ import * as holdings from "../controllers/holdings";
 import * as performances from "../controllers/performances";
 import * as companies from "../controllers/companies";
 import * as titans from "../controllers/titans";
+import * as queue from "../queue";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -35,12 +36,24 @@ const s3 = new AWS.S3({
   //
   // await holdings.cacheHoldings_Titans();
   //
-
-  let cik = "0001067983";
+  // let cik = "0001067983";
   // await performances.calculatePerformance_Billionaire(cik);
   // await companies.cacheCompanies_Portfolio(cik);
-  await titans.generateSummary(cik);
+  // await titans.generateSummary(cik);
   //
+  // //
+  // let result = await titans.getBillionaires({});
+  // for (let i = 0; i < result.length; i += 1) {
+  //   let cik = result[i]["cik"];
+  //   if (cik) {
+  //     await titans.generateSummary(cik);
+  //     console.log();
+  //   }
+  // }
+  // //
+
+  let ticker = "AAPL";
+  await queue.publish_ProcessSecurityPrices(ticker);
 })();
 
 async function import_Billionaires() {
