@@ -31,6 +31,22 @@ export async function getBillionaires({
   `);
 }
 
+export async function getBillionaires_Complete({
+  sort = [],
+  page = 0,
+  size = 250,
+  ...query
+}) {
+  return await db(`
+    SELECT *
+    FROM billionaires
+    WHERE status='complete'
+    ORDER BY id ASC
+    LIMIT ${size}
+    OFFSET ${page * size}
+  `);
+}
+
 export async function cacheCompanies_Portfolio(cik) {
   let result = await db(`
     SELECT *
@@ -72,22 +88,128 @@ export async function generateSummary(cik) {
 
   let data = await holdings.fetchAll(cik);
 
-  // Calculate fund performances
-
-  // Calculate sectors
-  await evaluateSectorCompositions(data);
+  //
+  // EVALUATE Allocations and top stocks
+  //
 
   // Evaluate Top Stock
-  await evaluateTopStocks(data);
+  let top = await evaluateTopStocks(data);
 
-  // Calculate portfolio performance
-  await evaluateFundPerformace(cik);
+  let query = {
+    text:
+      "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+    values: [{ top }, cik],
+  };
+
+  await db(query);
+
+  // Calculate sectors
+  let allocations = await evaluateSectorCompositions(data);
+
+  query = {
+    text:
+      "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+    values: [{ allocations }, cik],
+  };
+
+  await db(query);
+
+  //
+  // EVALUATE Performances
+  //
+
+  // Calculate fund performances
+
+  // // Calculate portfolio performance
+  // await evaluateFundPerformace(cik);
 }
 
 const evaluateTopStocks = async (data) => {
   let sorted = orderBy(data, ["shares_held_percent"], ["desc"]);
 
-  console.log(sorted.length);
+  console.log(sorted);
+
+  return sorted;
+};
+
+const evaluateSectorCompositions = async (data) => {
+  // console.log(data);
+
+  let tickers = data.map(({ company }) => company["ticker"]);
+
+  // console.log(tickers);
+
+  let query = {
+    text: "SELECT * FROM companies WHERE ticker = ANY($1::text[])",
+    values: [tickers],
+  };
+
+  let result = await db(query);
+
+  // console.log(result);
+
+  const mergeById = (a1, a2) =>
+    a1.map((i1) => ({
+      ...a2.find((i2) => i2.company.ticker === i1.ticker && i2),
+      ...i1,
+    }));
+
+  let merged = mergeById(result, data);
+
+  // console.log(merged);
+
+  // //
+
+  let sectors = merged.map(({ json }) => json["sector"]);
+  // console.log(sectors);
+
+  let buffer = {};
+  let total = 0;
+
+  for (let i = 0; i < merged.length; i += 1) {
+    // if (counts.hasOwnProperty(key)) {
+    //   counts[key] = (counts[key] / total) * 100;
+    // }
+    let sector = merged[i]["json"]["sector"];
+    let market_value = merged[i]["market_value"];
+
+    buffer[`${sector}`] = buffer[`${sector}`]
+      ? buffer[`${sector}`] + market_value
+      : market_value;
+
+    total += market_value;
+  }
+
+  // console.log(buffer);
+  // console.log(total);
+
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      buffer[key] = (buffer[key] / total) * 100;
+      // buffer[key] = buffer[key].toFixed(2);
+    }
+  }
+
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      if (key == "null" || key == null) {
+        buffer["Other"] = buffer[key];
+        delete buffer[key];
+      }
+
+      if (buffer[key] == NaN) {
+        delete buffer[key];
+      }
+
+      if (buffer[key] == 0) {
+        delete buffer[key];
+      }
+    }
+  }
+
+  console.log(buffer);
+
+  return buffer;
 };
 
 const evaluateFundPerformace = async (cik) => {
@@ -155,67 +277,4 @@ const evaluateFundPerformace = async (cik) => {
   } catch (e) {
     console.error(e);
   }
-};
-
-const evaluateSectorCompositions = async (data) => {
-  // console.log(data);
-
-  let tickers = data.map(({ company }) => company["ticker"]);
-
-  // console.log(tickers);
-
-  let query = {
-    text: "SELECT * FROM companies WHERE ticker = ANY($1::text[])",
-    values: [tickers],
-  };
-
-  let result = await db(query);
-
-  // console.log(result);
-
-  const mergeById = (a1, a2) =>
-    a1.map((i1) => ({
-      ...a2.find((i2) => i2.company.ticker === i1.ticker && i2),
-      ...i1,
-    }));
-
-  let merged = mergeById(result, data);
-
-  // console.log(merged);
-
-  // //
-
-  let sectors = merged.map(({ json }) => json["sector"]);
-  // console.log(sectors);
-
-  let buffer = {};
-  let total = 0;
-
-  for (let i = 0; i < merged.length; i += 1) {
-    // if (counts.hasOwnProperty(key)) {
-    //   counts[key] = (counts[key] / total) * 100;
-    // }
-    let sector = merged[i]["json"]["sector"];
-    let market_value = merged[i]["market_value"];
-
-    buffer[`${sector}`] = buffer[`${sector}`]
-      ? buffer[`${sector}`] + market_value
-      : market_value;
-
-    total += market_value;
-  }
-
-  // console.log(buffer);
-  // console.log(total);
-
-  for (let key in buffer) {
-    if (buffer.hasOwnProperty(key)) {
-      buffer[key] = (buffer[key] / total) * 100;
-      // buffer[key] = buffer[key].toFixed(2);
-    }
-  }
-
-  console.log(buffer);
-
-  return buffer;
 };
