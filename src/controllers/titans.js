@@ -207,9 +207,20 @@ const evaluateSectorCompositions = async (data) => {
     }
   }
 
-  console.log(buffer);
+  let response = [];
 
-  return buffer;
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      response.push({
+        sector: key,
+        concentration: buffer[key],
+      });
+    }
+  }
+
+  console.log(response);
+
+  return response;
 };
 
 const evaluateFundPerformace = async (cik) => {
