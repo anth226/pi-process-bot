@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon --exec babel-node src/index.js",
+    "start": "babel-node src/index.js",
+    "dev": "nodemon --exec babel-node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "whalewisdom": "babel-node src/whalewisdom/index.js",
     "billionaires": "babel-node src/billionaires/index.js",
@@ -21,14 +22,14 @@
   },
   "homepage": "https://github.com/masterial/tower-bot#readme",
   "devDependencies": {
-    "@babel/core": "^7.7.7",
-    "@babel/node": "^7.7.7",
-    "@babel/preset-env": "^7.7.7",
     "csv-parser": "^2.3.2",
     "csv-writer": "^1.6.0",
     "nodemon": "^2.0.2"
   },
   "dependencies": {
+    "@babel/core": "^7.7.7",
+    "@babel/node": "^7.7.7",
+    "@babel/preset-env": "^7.7.7",
     "@bugsnag/js": "^6.5.2",
     "@bugsnag/plugin-express": "^6.5.1",
     "amqplib": "^0.5.5",
