@@ -129,7 +129,7 @@ const evaluateTopStocks = async (data) => {
 
   console.log(sorted);
 
-  return sorted;
+  return sorted.slice(0, 10);
 };
 
 const evaluateSectorCompositions = async (data) => {
@@ -218,9 +218,11 @@ const evaluateSectorCompositions = async (data) => {
     }
   }
 
-  console.log(response);
+  let sorted = orderBy(response, ["concentration"], ["desc"]);
 
-  return response;
+  console.log(sorted);
+
+  return sorted;
 };
 
 const evaluateFundPerformace = async (cik) => {
