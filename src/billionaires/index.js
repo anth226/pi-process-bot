@@ -15,6 +15,7 @@ import * as performances from "../controllers/performances";
 import * as companies from "../controllers/companies";
 import * as titans from "../controllers/titans";
 import * as queue from "../queue";
+import * as edgar from "../controllers/edgar";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -44,14 +45,28 @@ const s3 = new AWS.S3({
 
   //
   let result = await titans.getBillionaires_Complete({});
-  for (let i = 0; i < result.length; i += 1) {
-    let cik = result[i]["cik"];
-    if (cik) {
-      await titans.generateSummary(cik);
-      console.log();
-    }
+
+  let records = result;
+  for (let i = 0; i < records.length; i += 1) {
+    // let name = records[i]["name"];
+    // console.log(name);
+
+    await edgar.cache(records[i]);
   }
+
   //
+
+  // // GENERATE SUMMARY
+  // //
+  // let result = await titans.getBillionaires_Complete({});
+  // for (let i = 0; i < result.length; i += 1) {
+  //   let cik = result[i]["cik"];
+  //   if (cik) {
+  //     await titans.generateSummary(cik);
+  //     console.log();
+  //   }
+  // }
+  // //
 
   // let ticker = "AAPL";
   // await queue.publish_ProcessSecurityPrices(ticker);
