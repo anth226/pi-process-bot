@@ -44,7 +44,8 @@ const s3 = new AWS.S3({
   // await titans.generateSummary(cik);
 
   //
-  let result = await titans.getBillionaires_Complete({});
+  // let result = await titans.getBillionaires_Complete({});
+  let result = await titans.getBillionaires({ size: 5000 });
 
   let records = result;
   for (let i = 0; i < records.length; i += 1) {

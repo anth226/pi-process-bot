@@ -47,7 +47,7 @@ export async function cache(billionaire) {
 
       let query = {
         text:
-          "UPDATE edgar_search_results SET query=($1), result=($2), updated_at=(now()) WHERE titan_id=($3) RETURNING *",
+          "UPDATE edgar_search_results SET query=($1), json=($2), updated_at=(now()) WHERE titan_id=($3) RETURNING *",
         values: [name, result, titan_id],
       };
 
