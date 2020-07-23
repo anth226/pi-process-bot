@@ -45,15 +45,39 @@ const s3 = new AWS.S3({
 
   //
   // let result = await titans.getBillionaires_Complete({});
-  let result = await titans.getBillionaires({ size: 5000 });
+  let result = await titans.getBillionairesCiks({ size: 5000 });
 
   let records = result;
+  let c = 0;
   for (let i = 0; i < records.length; i += 1) {
+    
+    let ciks = records[i].ciks;
+    let id = records[i].id;
+    
+
+      //filter for primary and 00's
+      if (ciks && ciks.length > 0) {
+        for (let j = 0; j < ciks.length; j += 1){
+          if (ciks[j].cik != "0000000000" && ciks[j].is_primary == true){
+            console.log(ciks[j].cik);
+          }
+          else if (ciks[j].cik == "0000000000" && ciks[j].is_primary == true){
+            console.log("update required");
+            c++;
+          }
+          else{
+            //console.log("invalid");
+          }
+        }
+      }
+
+      
     // let name = records[i]["name"];
     // console.log(name);
-
-    await edgar.cache(records[i]);
+    //console.log(records[i]);
+    //await edgar.cache(records[i]);
   }
+  console.log(c);
 
   //
 
