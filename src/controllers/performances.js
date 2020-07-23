@@ -149,7 +149,7 @@ export async function calculatePerformance_Billionaire(
 }
 
 export async function cachePerformances_Billionaires() {
-  let result = await titans.getBillionaires({ size: 1000 });
+  let result = await titans.getBillionairesCiks({ size: 1000 });
 
   let records = result;
 
@@ -158,8 +158,8 @@ export async function cachePerformances_Billionaires() {
 
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
-      let cik = records[i]["cik"];
-      let id = records[i]["id"];
+      let cik = records[i].cik;
+      let id = records[i].id;
 
       if (cik) {
         console.log(cik);
