@@ -158,23 +158,46 @@ export async function cachePerformances_Billionaires() {
 
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
-      let cik = records[i].cik;
+      let ciks = records[i].ciks;
       let id = records[i].id;
+      
+      if (ciks && ciks.length > 0) {
+        for (let j = 0; j < ciks.length; j += 1){
+          if (ciks[j].cik != "0000000000" && ciks[j].is_primary == true){
+            console.log(ciks[j].cik);
 
-      if (cik) {
-        console.log(cik);
+            queue.publish_ProcessPerformances(ciks[j].cik, id, batchId, !buffer.includes(ciks[j].cik));
 
-        queue.publish_ProcessPerformances(
-          cik,
-          id,
-          batchId,
-          !buffer.includes(cik)
-        );
-
-        if (buffer.includes(cik)) {
-          buffer.push(cik);
+            if (buffer.includes(ciks[j].cik)) {
+              buffer.push(ciks[j].cik);
+            }
+          }
         }
       }
+      /* This is case to include old way of grabbing ciks from the
+          billionaires table just in case we have both kinds of data
+          can be taken out if we do full transition
+      
+      else {
+        let cik = records[i].cik;
+        let id = records[i].id;
+
+        if (cik) {
+          console.log(cik);
+  
+          queue.publish_ProcessPerformances(
+            cik,
+            id,
+            batchId,
+            !buffer.includes(cik)
+          );  
+          
+          if (buffer.includes(cik)) {
+            buffer.push(cik);
+          }
+        }
+      }
+      */
     }
   }
 }
