@@ -169,18 +169,19 @@ export async function cacheHoldings_Billionaires() {
 
       if (ciks && ciks.length > 0) {
         for (let j = 0; j < ciks.length; j += 1){
-          if (ciks[j].cik != "0000000000" && ciks[j].is_primary == true){
-            console.log(ciks[j].cik);
+          let cik = ciks[j]
+          if (cik.cik != "0000000000" && cik.is_primary == true){
+            console.log(cik.cik);
 
-            queue.publish_ProcessHoldings(ciks[j].cik, id, batchId, !buffer.includes(ciks[j].cik));
+            queue.publish_ProcessHoldings(cik.cik, id, batchId, !buffer.includes(cik.cik));
 
-            if (buffer.includes(ciks[j].cik)) {
-              buffer.push(ciks[j].cik);
+            if (buffer.includes(cik.cik)) {
+              buffer.push(cik.cik);
             }
           }
           /*  TODO Automated message to fix cik
 
-          else if (ciks[j].cik == "0000000000" && ciks[j].is_primary == true){
+          else if (cik.cik == "0000000000" && cik.is_primary == true){
             // send automated message to data entry position 
             // of cik that needs updating
           }
