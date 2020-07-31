@@ -92,7 +92,10 @@ app.get("/cache_performances_titans", async (req, res) => {
   res.send("ok");
 });
 
-//add endpoint
+app.get("/generate_summaries_titans", async (req, res) => {
+  await performances.generateSummaries_Billionaires();
+  res.send("ok");
+});
 
 app.listen(process.env.PORT, () => {
   console.log(`listening on ${process.env.PORT}`);
@@ -101,4 +104,5 @@ app.listen(process.env.PORT, () => {
   queue.consumer_2.start();
   queue.consumer_3.start();
   queue.consumer_4.start();
+  queue.consumer_5.start();
 });

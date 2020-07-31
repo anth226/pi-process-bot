@@ -202,3 +202,27 @@ export async function cachePerformances_Billionaires() {
     }
   }
 }
+
+export async function generateSummaries_Billionaires() {
+  let result = await titans.getBillionairesCiks({ size: 1000 });
+
+  let records = result;
+
+  if (records.length > 0) {
+    for (let i = 0; i < records.length; i += 1) {
+      let ciks = records[i].ciks;
+      
+      if (ciks && ciks.length > 0) {
+        for (let j = 0; j < ciks.length; j += 1){
+          let cik = ciks[j];
+          if (cik.cik != "0000000000" && cik.is_primary == true){
+            console.log(cik.cik);
+
+            await queue.publish_ProcessSummaries(cik.cik);
+            
+          }
+        }
+      }
+    }
+  }
+}
