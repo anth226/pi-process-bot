@@ -290,7 +290,7 @@ export const consumer_5 = Consumer.create({
 
     console.log(sqsMessage);
 
-    //await titans.generateSummary(sqsMessage.cik);
+    await titans.generateSummary(sqsMessage.cik);
   },
 });
 
