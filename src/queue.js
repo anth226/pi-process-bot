@@ -100,6 +100,36 @@ export function publish_ProcessPerformances(cik, id, batchId, cache) {
   });
 }
 
+export function publish_ProcessSummaries(cik) {
+  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES;
+
+  let data = {
+    cik,
+  };
+
+  let params = {
+    MessageAttributes: {
+      cik: {
+        DataType: "String",
+        StringValue: data.cik,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${cik}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 export function publish_ProcessCompanyLookup(identifier) {
   let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
 
@@ -249,5 +279,25 @@ consumer_4.on("error", (err) => {
 });
 
 consumer_4.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_BILLIONAIRE_SUMMARIES
+export const consumer_5 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    //await titans.generateSummary(sqsMessage.cik);
+  },
+});
+
+consumer_5.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_5.on("processing_error", (err) => {
   console.error(err.message);
 });
