@@ -8,6 +8,7 @@ import * as companies from "./controllers/companies";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
+import * as institutions from "./controllers/institutions";
 
 import * as queue from "./queue";
 
@@ -39,6 +40,8 @@ app.use(cookieParser());
 app.use(bodyParser.json({ verify: rawBodySaver }));
 app.use(bodyParser.urlencoded({ verify: rawBodySaver, extended: true }));
 app.use(bodyParser.raw({ verify: rawBodySaver, type: "*/*" }));
+//for frontend
+app.use(express.static("dist"));
 
 app.use(middleware.requestHandler);
 app.use(middleware.errorHandler);
@@ -79,9 +82,10 @@ function checkAuth(req, res, next) {
 
 // index
 app.get("/", async (req, res) => {
-  res.send("hello");
+  res.render("/public/index");
 });
 
+// SQS routes
 app.get("/cache_holdings_titans", async (req, res) => {
   await holdings.cacheHoldings_Billionaires();
   res.send("ok");
@@ -97,8 +101,17 @@ app.get("/generate_summaries_titans", async (req, res) => {
   res.send("ok");
 });
 
-app.listen(process.env.BOT_PORT, () => {
-  console.log(`listening on ${process.env.BOT_PORT}`);
+//DB Routes
+app.get("/bot/institutions/", async (req, res) => {
+  let data = await institutions.getInstitutionsUpdated({ size: 1000 });
+  if (data.length > 0){
+    res.send({ data });
+  }
+});
+
+// Start Server
+app.listen(process.env.PORT || 8080, () => {
+  console.log(`listening on ${process.env.PORT || 8080}`);
 
   queue.consumer_1.start();
   queue.consumer_2.start();
