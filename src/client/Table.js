@@ -42,23 +42,28 @@ const numberFormatter = (cell, row) => {
 const columns = [
   {
     dataField: "cik",
+    text: "CIK",
+    sort: true,
+    sortCaret: sortCaret,
+    headerSortingClasses
+  },
+  {
+    dataField: "name",
     text: "Name",
     sort: true,
-    //formatter: linkFormatter,
     sortCaret: sortCaret,
     headerSortingClasses
   },
   {
     dataField: "holdings_page_count",
-    text: "x",
+    text: "Holdings Page Count",
     sort: true,
-    // formatter: nullFormatter,
     sortCaret: sortCaret,
     headerSortingClasses
   },
   {
     dataField: "holdings_updated_at",
-    text: "x",
+    text: "Holdings Updated At",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses
@@ -88,16 +93,8 @@ const columns = [
     headerSortingClasses
   },*/
   {
-    dataField: "name",
-    text: "x",
-    //formatter: numberFormatter,
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses
-  },
-  {
     dataField: "updated_at",
-    text: "updated_at",
+    text: "Updated At",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses
