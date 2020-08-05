@@ -97,8 +97,8 @@ app.get("/generate_summaries_titans", async (req, res) => {
   res.send("ok");
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`listening on ${process.env.PORT}`);
+app.listen(process.env.BOT_PORT, () => {
+  console.log(`listening on ${process.env.BOT_PORT}`);
 
   queue.consumer_1.start();
   queue.consumer_2.start();
