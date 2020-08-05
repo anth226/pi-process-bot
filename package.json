@@ -12,6 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "whalewisdom": "babel-node src/whalewisdom/index.js",
     "billionaires": "babel-node src/billionaires/index.js",
+    "forbes": "babel-node src/forbes/index.js",
     "subscribers": "babel-node src/subscribers/index.js"
   },
   "repository": {
