@@ -53,7 +53,7 @@ export async function updateNetWorth_Billionaires() {
     for (let i = 0; i < records.length; i += 1) {
       let id = records[i].id;
       if (id > 0) {
-        await queue.publish_ProcessNetworth(id);
+        await queue.publish_ProcessNetWorth(id);
       }
       
     }

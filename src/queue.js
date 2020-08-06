@@ -344,10 +344,10 @@ export const consumer_6 = Consumer.create({
   },
 });
 
-consumer_5.on("error", (err) => {
+consumer_6.on("error", (err) => {
   console.error(err.message);
 });
 
-consumer_5.on("processing_error", (err) => {
+consumer_6.on("processing_error", (err) => {
   console.error(err.message);
 });
