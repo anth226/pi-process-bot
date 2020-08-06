@@ -234,6 +234,12 @@ export const consumer_1 = Consumer.create({
       Number(sqsMessage.batchId),
       sqsMessage.cache
     );
+
+    /*
+    await insitituions.backfillInstitution_Billionaire(
+      sqsMessage.cik,
+      Number(sqsMessage.id));
+      */
   },
 });
 
