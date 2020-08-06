@@ -130,6 +130,36 @@ export function publish_ProcessSummaries(cik) {
   });
 }
 
+export function publish_ProcessNetWorth(id) {
+  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_NETWORTH;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "String",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 export function publish_ProcessCompanyLookup(identifier) {
   let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
 
@@ -291,6 +321,26 @@ export const consumer_5 = Consumer.create({
     console.log(sqsMessage);
 
     await titans.generateSummary(sqsMessage.cik);
+  },
+});
+
+consumer_5.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_5.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_BILLIONAIRE_NETWORTH
+export const consumer_6 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_NETWORTH,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    //await titans.updateNetWorth(sqsMessage.id);
   },
 });
 
