@@ -14,6 +14,7 @@ import * as holdings from "../controllers/holdings";
 import * as performances from "../controllers/performances";
 import * as companies from "../controllers/companies";
 import * as titans from "../controllers/titans";
+import * as institutions from "../controllers/institutions";
 import * as queue from "../queue";
 import * as edgar from "../controllers/edgar";
 
@@ -38,18 +39,26 @@ const s3 = new AWS.S3({
   // await holdings.cacheHoldings_Titans();
   //
 
-  // let cik = "0001067983";
+  //let cik = "0001067983";
+  let cik = "0000000000";
   // // await performances.calculatePerformance_Billionaire(cik);
   // // await companies.cacheCompanies_Portfolio(cik);
   // await titans.generateSummary(cik);
 
+
+
+
+  let inst = await institutions.getInstitutionByCIK(cik);
+  console.log(inst);
+
   //
   // let result = await titans.getBillionaires_Complete({});
+  /*
   let result = await titans.getBillionairesCiks({ size: 5000 });
 
   let records = result;
   let c = 0;
-  let d = 0;
+  let d = "(";
   for (let i = 0; i < records.length; i += 1) {
     let ciks = records[i].ciks;
     let id = records[i].id;
@@ -58,11 +67,13 @@ const s3 = new AWS.S3({
     if (ciks && ciks.length > 0) {
       for (let j = 0; j < ciks.length; j += 1) {
         if (ciks[j].cik != "0000000000" && ciks[j].is_primary == true) {
-          console.log(ciks[j].cik);
-          d++;
+          d += "\'" + ciks[j].cik + "\' ,"
+        /*
         } else if (ciks[j].cik == "0000000000" && ciks[j].is_primary == true) {
-          console.log("update required");
-          c++;
+          console.log("\nNo Valid CIK \nUpdate required");
+          console.log("Titan ID:");
+          console.log(id);
+          c++; 
         } else {
           //console.log("invalid");
         }
@@ -76,7 +87,7 @@ const s3 = new AWS.S3({
   }
   console.log(d);
   console.log(c);
-
+  */
   //
 
   // // GENERATE SUMMARY

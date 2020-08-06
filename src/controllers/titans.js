@@ -33,15 +33,22 @@ export async function getBillionaires({
   `);
 }
 
-export async function getBillionaireURI({
-  id = 0,
-  ...query
-}) {
-  return await db(`
+export async function getBillionaire(id) {
+   let result = await db(`
+    SELECT *
+    FROM billionaires
+    WHERE ${id} = id
+  `);
+  return result[0];
+}
+
+export async function getBillionaireURI(id) {
+  let result = await db(`
     SELECT uri
     FROM billionaires
     WHERE ${id} = id
   `);
+  return result[0].uri;
 }
 
 export async function getBillionairesCiks({
