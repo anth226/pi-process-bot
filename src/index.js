@@ -88,21 +88,38 @@ app.get("/", async (req, res) => {
 
 // SQS routes
 app.get("/cache_holdings_titans", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
   await holdings.cacheHoldings_Billionaires();
   res.send("ok");
 });
 
 app.get("/cache_performances_titans", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
   await performances.cachePerformances_Billionaires();
   res.send("ok");
 });
 
 app.get("/generate_summaries_titans", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
   await performances.generateSummaries_Billionaires();
   res.send("ok");
 });
 
 app.get("/update_networth_titans", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  // /update_networth_titans?token=XXX
   await networth.updateNetWorth_Billionaires();
   res.send("ok");
 });
