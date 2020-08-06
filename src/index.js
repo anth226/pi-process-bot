@@ -9,6 +9,7 @@ import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
 import * as institutions from "./controllers/institutions";
+import * as networth from "./controllers/networth";
 
 import * as queue from "./queue";
 
