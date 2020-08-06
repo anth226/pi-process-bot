@@ -49,6 +49,7 @@ const s3 = new AWS.S3({
 
   let records = result;
   let c = 0;
+  let d = 0;
   for (let i = 0; i < records.length; i += 1) {
     let ciks = records[i].ciks;
     let id = records[i].id;
@@ -58,6 +59,7 @@ const s3 = new AWS.S3({
       for (let j = 0; j < ciks.length; j += 1) {
         if (ciks[j].cik != "0000000000" && ciks[j].is_primary == true) {
           console.log(ciks[j].cik);
+          d++;
         } else if (ciks[j].cik == "0000000000" && ciks[j].is_primary == true) {
           console.log("update required");
           c++;
@@ -72,6 +74,7 @@ const s3 = new AWS.S3({
     //console.log(records[i]);
     //await edgar.cache(records[i]);
   }
+  console.log(d);
   console.log(c);
 
   //

@@ -101,6 +101,11 @@ app.get("/generate_summaries_titans", async (req, res) => {
   res.send("ok");
 });
 
+app.get("/update_networth_titans", async (req, res) => {
+  await networth.updateNetWorth_Billionaires();
+  res.send("ok");
+});
+
 //DB Routes
 app.get("/bot/institutions/", async (req, res) => {
   let data = await institutions.getInstitutionsUpdated({ size: 1000 });
@@ -118,4 +123,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_3.start();
   queue.consumer_4.start();
   queue.consumer_5.start();
+  queue.consumer_6.start();
 });

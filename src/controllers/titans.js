@@ -4,6 +4,8 @@ import * as queue from "../queue";
 
 import * as holdings from "./holdings";
 
+import * as forbes from "../forbes";
+
 import { orderBy } from "lodash";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
@@ -28,6 +30,17 @@ export async function getBillionaires({
     ORDER BY id ASC
     LIMIT ${size}
     OFFSET ${page * size}
+  `);
+}
+
+export async function getBillionaireURI({
+  id = 0,
+  ...query
+}) {
+  return await db(`
+    SELECT uri
+    FROM billionaires
+    WHERE ${id} = id
   `);
 }
 
@@ -311,3 +324,28 @@ const evaluateFundPerformace = async (cik) => {
     console.error(e);
   }
 };
+
+
+
+export async function updateNetWorth(id) {
+  console.log(id);
+
+  // Grab full list of billionaires from forbes
+  let data = await forbes.fetchBillionaireList();
+
+  // Get URI from billionaires table based on primary cik
+  let uri = await getBillionaireURI(id);
+
+  // Get Net Worth
+  let netWorth = await forbes.getNetworth(data,uri)
+
+  // Update billionaires table
+  let query = {
+    text:
+      "UPDATE billionaires SET net_worth=($1), updated_at=now() WHERE id=($2) RETURNING *",
+    values: [{ netWorth }, id],
+  };
+
+  await db(query);
+
+}
