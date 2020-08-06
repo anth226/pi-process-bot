@@ -336,8 +336,9 @@ export async function updateNetWorth(id) {
   // Get URI from billionaires table based on primary cik
   let uri = await getBillionaireURI(id);
 
-  // Get Net Worth
+  // Get Net Worth, convert from millions to dollars
   let netWorth = await forbes.getNetworth(data,uri)
+  netWorth = netWorth * 1000000;
 
   // Update billionaires table
   let query = {

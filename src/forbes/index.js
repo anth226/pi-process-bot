@@ -4,7 +4,7 @@ import { find } from "lodash";
 
 (async () => {
   let list = await fetchBillionaireList();
-  let value = await getNetworth(list, "mehmet-hattat");
+  let value = await getNetworth(list, "warren-buffett");
 
   console.log(value);
 })();
