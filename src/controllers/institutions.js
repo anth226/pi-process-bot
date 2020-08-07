@@ -52,7 +52,8 @@ export async function backfillInstitution_Billionaire(cik, id) {
   }
   let { name } = titan;
   let query = {
-    text: "INSERT INTO institutions (name, cik) VALUES ( $1, $2 ) RETURNING *",
+    text:
+      "INSERT INTO institutions (name, cik, updated_at) VALUES ( $1, $2, now() ) RETURNING *",
     values: [name, cik],
   };
   await db(query);
