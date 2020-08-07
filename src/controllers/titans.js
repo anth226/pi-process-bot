@@ -4,7 +4,7 @@ import * as queue from "../queue";
 
 import * as holdings from "./holdings";
 
-import { orderBy } from "lodash";
+import { orderBy, find } from "lodash";
 
 import redis, { KEY_FORBES_TITANS } from "../redis";
 
@@ -387,8 +387,8 @@ export async function updateNetWorth(id) {
 
   // Grab full list of billionaires from forbes
   let data = await fetchBillionaireList();
-  console.log("UPDATE NET WORTH");
-  console.log(data);
+  //console.log("UPDATE NET WORTH");
+  //console.log(data);
 
   // Get URI from billionaires table based on primary cik
   let uri = await getBillionaireURI(id);
