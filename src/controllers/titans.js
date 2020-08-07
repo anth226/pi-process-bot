@@ -401,7 +401,7 @@ export async function updateNetWorth(id) {
   let query = {
     text:
       "UPDATE billionaires SET net_worth=($1), updated_at=now() WHERE id=($2) RETURNING *",
-    values: [{ netWorth }, id],
+    values: [netWorth, id],
   };
 
   await db(query);
