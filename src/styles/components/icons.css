@@ -1,0 +1,54 @@
+/* start icon styles */
+/* start burger icon */
+.burger-frame {
+  height: 30px;
+  width: 22px;
+  position: relative;
+}
+
+.burger-frame .line {
+  height: 4px;
+  width: 22px;
+  background-color: #007bff;
+  border-radius: 5px;
+  position: absolute;
+  transition: all 0.3s ease-in;
+  -webkit-transition: all 0.3s ease-in;
+}
+
+.burger-frame .left-lines .line {
+  width: 6px;
+  left: -10px;
+  border-radius: 15px;
+}
+
+/* right lines */
+.right-lines .line.one {
+  top: 9px;
+  left: 0px;
+}
+
+.right-lines .line.two {
+  top: 17px;
+  left: 0px;
+}
+
+.right-lines .line.three {
+  top: 25px;
+  left: 0px;
+}
+
+/* left lines */
+.left-lines .line.four {
+  top: 9px;
+}
+
+.left-lines .line.five {
+  top: 17px;
+}
+
+.left-lines .line.six {
+  top: 25px;
+}
+/* end burger icon */
+/* end icon styles */

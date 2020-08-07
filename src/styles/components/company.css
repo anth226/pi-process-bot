@@ -1,0 +1,295 @@
+/* start company styles */
+
+/* start tabs styles */
+.company-tabs {
+  align-items: flex-end;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  background-color: #fff;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.company-tabs .nav-tabs .nav-item {
+  margin-bottom: 0;
+}
+
+.co-show-tabs {
+  border-bottom: none !important;
+}
+
+.co-show-tabs .nav-item {
+  flex-basis: auto !important;
+}
+
+.co-show-tab-pill > a {
+  color: #212529;
+  background-color: #fff;
+  border: none !important;
+  border-radius: 0 !important;
+  padding-top: 0.7rem;
+  padding-bottom: 0.7rem;
+  box-shadow: inset 0 0 3px #e4dadaa3;
+}
+
+.co-show-tab-pill > a.active {
+  background-color: #ebeaea !important;
+  font-weight: 500;
+}
+
+.custom-report-tab .ant-card-bordered {
+  border: none;
+}
+
+/* end tabs styles */
+
+.company-basics .company-basics-desc {
+  background-color: #fff;
+  padding: 20px 20px 0px;
+  border-bottom: 5px solid #007bff;
+}
+
+.analyst-snapshot,
+.average-rating {
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 20px 20px 0px;
+  border-bottom: 5px solid #007bff;
+  display: flex;
+  flex-direction: column;
+  height: 210px;
+  justify-content: space-around;
+}
+
+.average-rating-summary {
+  text-align: center;
+  font-weight: 500 !important;
+}
+
+.analyst-snapshot-table {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  margin-bottom: 0 !important;
+}
+
+.analyst-snapshot-table tr > td {
+  padding: 0px 5px;
+}
+
+.analyst-snapshot-table tr > td > h5 {
+  margin-bottom: 0;
+}
+
+.analyst-snapshot-table tr > td:first-child {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.analyst-snapshot-table tr > td:nth-child(2) {
+  white-space: nowrap;
+  width: auto;
+  padding-left: 20px;
+}
+
+/* start company metrics styles */
+.company-metrics {
+  background-color: #fff;
+  border-radius: 5px;
+  padding: 20px;
+}
+
+.company-metrics .metrics-value {
+  font-weight: 500;
+}
+/* end company metrics styles */
+
+/* start company news styles */
+.company-summary-tab .company-news {
+  border-radius: 5px;
+}
+
+.company-news {
+  background-color: #fff;
+}
+
+@media (min-width: 1200px) {
+  .company-news {
+    padding: 20px 15px;
+  }
+}
+
+.company-news-block {
+  border-bottom: 1px solid #007bff;
+  padding-bottom: 20px;
+  padding-top: 20px;
+}
+
+.company-news-item:last-child .company-news-block {
+  border-bottom: none;
+}
+
+/* end company news styles */
+
+/* start comnpany history styles */
+.company-history-container {
+  background-color: #fff;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+.company-chart .company-responsive-chart {
+  padding: 15px 20px 0px;
+}
+
+.company-chart .company-chart-footer {
+  box-shadow: 0 0 10px #e4dadaa3;
+  border-bottom-right-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+.company-chart .company-chart-footer p {
+  margin-bottom: 0;
+}
+
+.company-chart .company-chart-filter .btn {
+  background-color: #1890ff33;
+}
+
+.company-chart .company-chart-filter .btn.active {
+  font-weight: 500;
+  color: #fff !important;
+  background-color: #007bff;
+  background-image: linear-gradient(90deg, #4185f3 0%, #2159b7 100%);
+}
+
+.price-chart.custom-tooltip p {
+  margin-bottom: 0;
+}
+/* end comnpany history styles */
+
+/* start company price styles */
+
+.company-price-box p {
+  margin-bottom: 0;
+}
+
+.company-price-box .co-show-company-price .price {
+  font-size: 30px;
+}
+
+.company-price-box .co-show-company-change .price-change {
+  font-size: 16px;
+}
+
+.company-price-box .co-show-company-change svg {
+  font-size: 18px;
+}
+
+.company-price-box {
+  height: 40px;
+}
+
+@media (min-width: 1200px) {
+  .company-price-box {
+    height: 60px;
+  }
+
+  .company-price-box .co-show-company-price .price {
+    font-size: 40px;
+  }
+
+  .company-price-box .co-show-company-change .price-change {
+    font-size: 26px;
+  }
+}
+/* end company price styles */
+
+/* start owner styles */
+.company-owners {
+  margin-top: 20px;
+}
+
+.company-owners .company-owner-item {
+  margin-bottom: 50px;
+}
+
+.company-owner {
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  border-bottom: 5px solid #007bff;
+  border-radius: 5px;
+}
+
+.company-owner .owner-avatar {
+  position: relative;
+  height: 90px;
+}
+
+.owner-avatar .avatar {
+  transform: translateY(-20px);
+}
+
+.company-owner .owner-name {
+  height: 100%;
+  min-height: 30px;
+}
+/* end owner styles */
+
+/* start growth rates styles */
+.growth-rates {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  height: 100%;
+}
+
+.growth-rates p {
+  text-transform: capitalize;
+}
+
+.growth-rates span {
+  font-weight: 500;
+}
+
+.growth-rates .indicator-mark {
+  margin-left: 3px;
+}
+
+.longterm-growth-rates {
+  padding: 20px;
+  flex: 1 1 auto;
+  background-color: #fff;
+  border-radius: 5px;
+}
+
+.eps-surprises {
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 5px;
+  border-radius: 5px;
+}
+
+.longterm-growth-rates p {
+  text-transform: capitalize;
+}
+
+.longterm-growth-rates span {
+  font-weight: 500;
+}
+
+.longterm-growth-rates .indicator-mark {
+  margin-left: 3px;
+}
+
+.eps-gr-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.zack-estimates-table {
+  background-color: #fff;
+}
+/* end growth rates styles */
+
+/* end company styles */

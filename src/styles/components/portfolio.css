@@ -1,0 +1,202 @@
+/* start portfolio card styles */
+
+.portfolio-card {
+  position: relative;
+  background-color: #fff;
+  /* padding: 20px; */
+  border-radius: 5px;
+}
+
+.portfolio-card h5,
+.portfolio-card p {
+  margin-bottom: 0;
+}
+
+.portfolio-card .portfolio-card-title {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #007bff;
+}
+
+.portfolio-card .portfolio-card-text {
+  margin-bottom: 25px;
+}
+
+.portfolio-card .performance-indicators .performance-year {
+  border-right: 1px solid #bad4ff;
+  border-left: 1px solid #bad4ff;
+}
+
+.portfolio-card-body {
+  min-height: 1px;
+  flex: 1 1 auto;
+}
+
+.portfolio-card .portfolio-card-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  padding-top: 15px;
+  border-top: 1px solid #bad4ff;
+}
+
+.portfolio-card .portfolio-card-footer .btn {
+  margin: 0px 5px;
+  width: 100%;
+}
+
+@media (min-width: 577px) {
+  .portfolio-card .portfolio-card-footer .btn {
+    width: auto;
+    min-width: 140px;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1200px) {
+  .portfolio-card-list .portfolio-item {
+    padding-right: 0;
+  }
+
+  .portfolio-card-list [class^="col-"]:nth-child(2n),
+  .portfolio-card-list [class*=" col-"]:nth-child(2n) {
+    padding-right: 15px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .portfolio-card-list .portfolio-item {
+    padding-right: 0;
+  }
+
+  .portfolio-card-list [class^="col-"]:nth-child(3n),
+  .portfolio-card-list [class*=" col-"]:nth-child(3n) {
+    padding-right: 15px !important;
+  }
+}
+
+/* end portfolio card styles */
+
+/* start portfolio details styles */
+
+/* start chart styles */
+@media (max-width: 576px) {
+  .portfolio-details .recharts-wrapper,
+  .portfolio-details .recharts-wrapper svg {
+    width: 300px !important;
+    height: 300px !important;
+    margin: 0 auto;
+  }
+}
+/* end chart styles */
+
+@media (max-width: 576px) {
+  .portfolio-details {
+    display: block;
+  }
+}
+/* end portfolio details styles */
+
+/* start portfolio summary styles */
+.portfolio-summary p {
+  margin-bottom: 0;
+}
+
+.portfolio-summary .titan-info .titan-label {
+  display: none;
+  text-transform: uppercase;
+}
+
+.portfolio-summary .summary-box {
+  box-shadow: 0 0 10px #e4dadaa3;
+  justify-content: center;
+}
+
+.performance-indicators .fund-box {
+  box-shadow: 0 0 10px #e4dadaa3;
+  justify-content: center;
+}
+
+@media (max-width: 576px) {
+  .portfolio-summary .titan-info h1 {
+    font-size: 24px;
+  }
+
+  .portfolio-summary .titan-info h5 {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .performance-indicators .fund-box {
+    box-shadow: none;
+  }
+}
+/* end portfolio summary styles */
+
+.portfolio-search-bar input[type="text"],
+.portfolio-search-bar .form-control {
+  border: none;
+  /* color: #bfbfbf; */
+  color: #424242;
+}
+
+.portfolio-search-bar .dropdown-item.active,
+.portfolio-search-bar .dropdown-item:active {
+  color: #212529;
+  background-color: #f5f5f5;
+}
+/* end porfolio search bar styles */
+
+/* start filter styles */
+.filter-actions {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-gap: 20px;
+}
+
+.filter-actions .btn {
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .filter-actions {
+    display: block;
+  }
+
+  .filter-actions .btn {
+    width: auto;
+  }
+}
+/* end filter styles */
+
+/* start titan page styles */
+
+.titan-actions {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-gap: 20px;
+}
+
+.titan-actions .btn {
+  width: 100%;
+}
+
+@media (min-width: 786px) {
+  .titan-actions {
+    display: block;
+  }
+
+  .titan-actions .btn {
+    width: auto;
+  }
+}
+
+.holdings .pagination {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.holdings .pagination .page-item .page-link {
+  padding: 5px 15px;
+}
+
+/* end titan page styles */

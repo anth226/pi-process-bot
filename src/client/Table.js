@@ -99,17 +99,16 @@ const columns = [
 
 const rowStyle = (row, rowIndex) => {
   const style = {};
-  if (row.numbOfHits === 1) {
-    if (!row.cik) {
-      style.color = "#fff";
-      style.backgroundColor = "#fed069";
-    } else if (row.cik !== row.hitsCik) {
-      style.backgroundColor = "#ff000094";
-      style.color = "#fff";
-    }
-  }
-
+  style.color = "#000";
+  style.backgroundColor = "#f7faff";
+  style.fontSize = "medium";
   return style;
+};
+
+const bordered = (cell, row, rowIndex, colIndex) => {
+  return {
+    bordered: true,
+  };
 };
 
 const Institutions = (props) => {
@@ -118,13 +117,15 @@ const Institutions = (props) => {
   return (
     <div className="container">
       <div className="row">
-        <h4>Institutions</h4>
+        <h1>Portfolios</h1>
 
         <Table
           defaultSorted={defaultSorted}
           keyField={"cik"}
           columns={columns}
           data={institutions}
+          rowStyle={rowStyle}
+          bordered={bordered}
         />
       </div>
     </div>
