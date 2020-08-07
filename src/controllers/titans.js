@@ -378,7 +378,12 @@ export async function getNetworth(list, uri) {
 
   console.log(billionaire);
 
+  if (!billionaire) {
+    return;
+  }
+
   value = billionaire["realTimeWorth"];
+  value = value * 1000000;
   return value;
 }
 
@@ -393,9 +398,11 @@ export async function updateNetWorth(id) {
   // Get URI from billionaires table based on primary cik
   let uri = await getBillionaireURI(id);
 
-  // Get Net Worth, convert from millions to dollars
+  // Get Net Worth, Don't update missing entries
   let netWorth = await getNetworth(data, uri);
-  netWorth = netWorth * 1000000;
+  if (!netWorth) {
+    return;
+  }
 
   // Update billionaires table
   let query = {
