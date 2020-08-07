@@ -40,16 +40,26 @@ const s3 = new AWS.S3({
   //
 
   //let cik = "0001067983";
-  let cik = "0000000000";
+  //let cik = "0000000000";
   // // await performances.calculatePerformance_Billionaire(cik);
   // // await companies.cacheCompanies_Portfolio(cik);
   // await titans.generateSummary(cik);
 
+  let data = await titans.fetchBillionaireList();
+  //console.log("UPDATE NET WORTH");
+  //console.log(data);
 
+  for (let i = 1; i < 5; i++) {
+    // Get URI from billionaires table based on primary cik
+    let uri = await titans.getBillionaireURI(i);
+    console.log("uri");
+    console.log(uri);
 
-
-  let inst = await institutions.getInstitutionByCIK(cik);
-  console.log(inst);
+    // Get Net Worth, convert from millions to dollars
+    let netWorth = await titans.getNetworth(data, uri);
+    console.log("netWorth");
+    console.log(netWorth);
+  }
 
   //
   // let result = await titans.getBillionaires_Complete({});
