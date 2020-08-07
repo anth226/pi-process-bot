@@ -1,0 +1,32 @@
+.header .search-icon-box {
+  background-color: #ebeaea;
+  width: 30px;
+  height: 100%;
+}
+
+.header .search-icon-box .search-icon {
+  width: 20px;
+  height: 20px;
+  fill: #fff;
+}
+
+  
+.header .search-bar .ant-select-selection {
+    /* border: none; */
+    border-color: #cccccc40;
+}
+
+.header .search-bar .ant-select-arrow {
+  top: 0;
+  right: 0;
+  height: 100%;
+  margin-top: 0;
+}
+
+.header .search-bar .ant-select-selection__rendered {
+  margin-right: 0;
+}
+
+.header .search-bar .search-icon-box .search-icon {
+  height: 100%;
+}

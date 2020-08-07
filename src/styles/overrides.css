@@ -1,0 +1,71 @@
+/* start fontawesome overrides */
+.fa,
+.far {
+  color: #e0dddde3;
+  font-size: 15px;
+}
+/* end fontawesome overrides */
+
+/* start antd overrides */
+.ant-message .anticon {
+  top: -3px !important;
+}
+
+.ant-steps-item-icon > .ant-steps-icon {
+  top: -3px !important;
+}
+
+.ant-form .ant-input {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.ant-select-dropdown-menu {
+  padding-left: 0 !important;
+}
+
+.ant-input:not(:focus) {
+  border-color: #e9ebed !important;
+}
+
+.ant-select-selection:not(:focus) {
+  border-color: #e9ebed !important;
+}
+
+.ant-select-dropdown-menu-item-selected {
+  font-weight: 500 !important;
+}
+/* end antd overrides */
+
+/* start bootstrap overrides */
+
+.dropdown .dropdown-menu {
+  border: none;
+  box-shadow: 0 0 10px #00000026;
+}
+
+.dropdown .dropdown-menu .dropdown-item:hover,
+.dropdown .dropdown-menu .dropdown-item:active {
+  background-color: #f5f5f5;
+  color: #212529;
+}
+
+.btn.btn-lg {
+  padding: 0.4rem 1rem;
+}
+
+.search-label {
+  width: 100%;
+}
+
+.filter-label {
+  margin-bottom: 0;
+  width: 60%;
+}
+
+._loading_overlay_overlay {
+  background-color: #0000004d !important;
+  /* background-color: rgba(255, 255, 255, 0.8)!important; */
+}
+
+/* end bootstrap overrides */

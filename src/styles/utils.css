@@ -1,0 +1,416 @@
+/* start common styles */
+.no-padding-full {
+  padding: 0 !important;
+}
+
+@media (min-width: 992px) {
+  .no-padding {
+    padding: 0 !important;
+  }
+}
+
+.no-row-margin {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+/* custom container */
+@media (min-width: 1200px) {
+  .custom-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+  }
+}
+
+/* custom width */
+@media (min-width: 768px) {
+  .custom-width {
+    width: 576px;
+    margin: 0 auto !important;
+  }
+}
+
+.wrapper {
+  padding-top: 25px;
+}
+
+@media (min-width: 992px) {
+  .wrapper {
+    padding-top: 50px;
+  }
+}
+
+.same-height {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.column-center {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  text-align: center;
+}
+
+.page-center {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.wrapper-box {
+  padding: 8px;
+  border-radius: 5px;
+}
+
+.primary-box {
+  background-color: #fff;
+  border-radius: 5px;
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  padding: 3px;
+}
+
+.box-shadow-default {
+  box-shadow: 0 0 10px #e4dadaa3;
+}
+
+.border-bottom-default {
+  border-bottom: 1px solid #bad4ff;
+  padding-bottom: 0.5rem;
+}
+
+.text-gray {
+  color: #979ba0;
+}
+
+.text-blue {
+  color: #007bff;
+}
+
+.text-dark-blue {
+  color: #144597;
+}
+
+.text-light-blue {
+}
+
+.text-pale-blue {
+  color: #b9d3ff;
+}
+
+.text-summer-sky {
+  color: #21bbee;
+}
+
+.text-light-black {
+  color: #424242;
+}
+
+.text-black {
+  color: #212529;
+}
+
+.text-xsmall {
+  font-size: 15px;
+}
+
+.text-small {
+  font-size: 16px;
+}
+
+.text-medium {
+  font-size: 17px;
+}
+
+.text-large {
+  font-size: 19px;
+}
+
+.text-xlarge {
+  font-size: 27px;
+}
+
+.text-xxlarge {
+  font-size: 30px;
+}
+
+.text-huge {
+  font-size: 40px;
+}
+
+.text-bold {
+  font-weight: 500 !important;
+}
+
+.text-bolder {
+  font-weight: 600 !important;
+}
+
+.text-boldest {
+  font-weight: 700 !important;
+}
+
+/* .text-uppercase {
+  text-transform: uppercase;
+} */
+
+.text-ellipsis {
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.word-break {
+  word-break: break-all;
+}
+
+.bg-summer-sky {
+  background-color: #45b4f1 !important;
+}
+
+.bg-blue {
+  background-color: #4285f4 !important;
+}
+
+.bg-light-blue {
+  background-color: #2d88ff1a !important;
+}
+
+.bg-dark-blue {
+  background-color: #144597;
+}
+
+.bg-transparent-secondary {
+  background-color: #00000030;
+}
+
+.bg-gradient-primary {
+  background-image: linear-gradient(90deg, #4185f3 0%, #2159b7 100%);
+}
+
+.text-decoration-none {
+  text-decoration: none;
+}
+
+.text-underline {
+  text-decoration: underline;
+}
+
+.text-underline-position-under {
+  text-underline-position: under;
+}
+
+.line-through {
+  text-decoration: line-through;
+}
+
+.line-clamp-one-line {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-short {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-long {
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.arrow-up-positive {
+  transform: rotate(360deg);
+  border-style: solid;
+  border-width: 0 10px 10px 0;
+  border-color: transparent #18bb5c transparent transparent;
+  font-size: 0;
+  margin-bottom: 5px;
+}
+
+.arrow-down-negative {
+  transform: rotate(360deg);
+  border-style: solid;
+  border-width: 0 0 10px 10px;
+  border-color: transparent transparent #ff433d transparent;
+  font-size: 0;
+  margin-bottom: 5px;
+}
+
+.border-radius-0 {
+  border-radius: 0 !important;
+}
+
+.z-index-1 {
+  z-index: 1;
+}
+
+.opacity-hover:hover {
+  opacity: 0.8;
+}
+
+.animate-up {
+  transition: all linear 0.2s !important;
+  -webkit-transition: all linear 0.2s !important;
+}
+
+.animate-up:hover {
+  transform: translate3d(0, -3px, 0);
+  -webkit-transform: translate3d(0, -3px, 0);
+  transition: all linear 0.2s !important;
+  -webkit-transition: all linear 0.2s !important;
+}
+/* end common styles */
+
+.btn-wave {
+  background-color: #45b4f1 !important;
+  color: #fff !important;
+}
+
+.btn-wave:hover {
+  background-color: #fff !important;
+  color: #45b4f1 !important;
+}
+
+.btn-gradient-primary {
+  background-image: linear-gradient(90deg, #4185f3 0%, #2159b7 100%);
+  color: #fff !important;
+  border: none !important;
+}
+
+.btn-outline {
+  color: #007bff !important;
+  border-color: #007bff !important;
+}
+
+.btn-transparent {
+  background-color: transparent !important;
+  border: 1px solid #fff !important;
+  color: #fff !important;
+}
+
+.btn-transparent:hover {
+  border-color: transparent !important;
+  background-color: #144597 !important;
+}
+
+.btn .icon-right {
+  margin-left: 5px;
+}
+
+.btn .icon-left {
+  margin-right: 5px;
+}
+
+.btn-label-right {
+  margin-right: 5px;
+}
+
+.btn-label-left {
+  margin-left: 5px;
+}
+
+.btn-text:hover {
+  background-color: #e2e6ea;
+  border-color: #dae0e5;
+}
+
+.btn.btn-md .btn-label {
+  font-size: 0.9rem;
+}
+
+.btn.btn-lg .btn-label {
+  font-size: 1rem;
+  line-height: 35px;
+}
+
+/* end button styles */
+
+.label.label-custom {
+  margin-bottom: 0;
+  color: #007bff;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.positive-text-color {
+  color: #20c997;
+}
+
+.negative-text-color {
+  color: #dc3545;
+}
+
+.positive-bg {
+  background-color: #20c997;
+}
+
+.negative-bg {
+  background-color: #dc3545;
+}
+
+.wave-border {
+  width: 100%;
+  height: 8px;
+  background-color: #3f7de6;
+  background-image: linear-gradient(
+    90deg,
+    #4484ed 0%,
+    #4185f3 35%,
+    #00c1cf 100%
+  ) !important;
+  border-radius: 3px;
+}
+
+.logo {
+  margin-bottom: 0;
+  font-size: 0;
+}
+
+.logo a,
+.logo span {
+  font-weight: 600;
+  letter-spacing: -2.4px;
+  font-family: Open Sans, sans-serif;
+  font-size: 32px;
+  text-decoration: none !important;
+}
+
+.fa-cc-visa {
+  color: #007bff !important;
+}
+
+.empty-space {
+  height: 50px;
+}
+
+@media (min-width: 768px) {
+  .empty-space {
+    height: 100px;
+  }
+}

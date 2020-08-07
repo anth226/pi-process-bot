@@ -38,13 +38,12 @@ const s3 = new AWS.S3({
   //
   // await holdings.cacheHoldings_Titans();
   //
-
-  //let cik = "0001067983";
+  //let cik = "0000921669";
   //let cik = "0000000000";
   // // await performances.calculatePerformance_Billionaire(cik);
   // // await companies.cacheCompanies_Portfolio(cik);
   // await titans.generateSummary(cik);
-
+  /*
   let data = await titans.fetchBillionaireList();
   //console.log("UPDATE NET WORTH");
   //console.log(data);
@@ -60,7 +59,7 @@ const s3 = new AWS.S3({
     console.log("netWorth");
     console.log(netWorth);
   }
-
+  */
   //
   // let result = await titans.getBillionaires_Complete({});
   /*
@@ -99,7 +98,6 @@ const s3 = new AWS.S3({
   console.log(c);
   */
   //
-
   // // GENERATE SUMMARY
   // //
   // let result = await titans.getBillionaires_Complete({});
@@ -111,10 +109,8 @@ const s3 = new AWS.S3({
   //   }
   // }
   // //
-
   // let ticker = "AAPL";
   // await queue.publish_ProcessSecurityPrices(ticker);
-
   // await fetch_Billionaire_Photos_Pending();
 })();
 

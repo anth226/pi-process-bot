@@ -1,8 +1,13 @@
-h1 {
-  color: green;
+body {
+  text-align: -webkit-center;
+  margin: auto;
 }
 
-body {
+.custom-react-table td {
+  border: 0.2px solid rgb(238, 238, 238);
   text-align: center;
-  margin: auto;
+}
+
+.react-bootstrap-table table {
+  border-spacing: unset;
 }
