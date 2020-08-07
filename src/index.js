@@ -87,6 +87,8 @@ app.get("/", async (req, res) => {
 });
 
 // SQS routes
+
+// /cache_holdings_titans?token=XXX
 app.get("/cache_holdings_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
@@ -96,6 +98,7 @@ app.get("/cache_holdings_titans", async (req, res) => {
   res.send("ok");
 });
 
+// /cache_performances_titans?token=XXX
 app.get("/cache_performances_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
@@ -105,6 +108,7 @@ app.get("/cache_performances_titans", async (req, res) => {
   res.send("ok");
 });
 
+// /generate_summaries_titans?token=XXX
 app.get("/generate_summaries_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
@@ -114,12 +118,12 @@ app.get("/generate_summaries_titans", async (req, res) => {
   res.send("ok");
 });
 
+// /update_networth_titans?token=XXX
 app.get("/update_networth_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
   }
-  // /update_networth_titans?token=XXX
   await networth.updateNetWorth_Billionaires();
   res.send("ok");
 });
@@ -127,7 +131,7 @@ app.get("/update_networth_titans", async (req, res) => {
 //DB Routes
 app.get("/bot/institutions/", async (req, res) => {
   let data = await institutions.getInstitutionsUpdated({ size: 1000 });
-  if (data.length > 0){
+  if (data.length > 0) {
     res.send({ data });
   }
 });
