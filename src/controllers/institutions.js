@@ -40,9 +40,9 @@ export async function getInstitutionsUpdated({
 }
 
 export async function backfillInstitution_Billionaire(cik, id) {
-  let institution = getInstitutionByCIK(cik);
+  let institution = await getInstitutionByCIK(cik);
 
-  if (institution.length > 0) {
+  if (institution[0]) {
     return;
   }
 
