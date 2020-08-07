@@ -4,7 +4,7 @@ import * as queue from "../queue";
 
 import * as holdings from "./holdings";
 
-import * as forbes from "../forbes";
+import { fetchBillionaireList, getNetworth } from "../forbes";
 
 import { orderBy } from "lodash";
 
@@ -34,7 +34,7 @@ export async function getBillionaires({
 }
 
 export async function getBillionaire(id) {
-   let result = await db(`
+  let result = await db(`
     SELECT *
     FROM billionaires
     WHERE ${id} = id
@@ -332,19 +332,17 @@ const evaluateFundPerformace = async (cik) => {
   }
 };
 
-
-
 export async function updateNetWorth(id) {
   console.log(id);
 
   // Grab full list of billionaires from forbes
-  let data = await forbes.fetchBillionaireList();
+  let data = await fetchBillionaireList();
 
   // Get URI from billionaires table based on primary cik
   let uri = await getBillionaireURI(id);
 
   // Get Net Worth, convert from millions to dollars
-  let netWorth = await forbes.getNetworth(data,uri)
+  let netWorth = await getNetworth(data, uri);
   netWorth = netWorth * 1000000;
 
   // Update billionaires table
@@ -355,5 +353,4 @@ export async function updateNetWorth(id) {
   };
 
   await db(query);
-
 }
