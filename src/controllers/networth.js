@@ -43,7 +43,6 @@ const uploadToS3 = async (key, data) => {
 
 */
 
-
 export async function updateNetWorth_Billionaires() {
   let result = await titans.getBillionaires({ size: 5000 });
 
@@ -55,7 +54,6 @@ export async function updateNetWorth_Billionaires() {
       if (id > 0) {
         await queue.publish_ProcessNetWorth(id);
       }
-      
     }
   }
 }
