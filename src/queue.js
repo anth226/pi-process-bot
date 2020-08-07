@@ -1,6 +1,7 @@
 import * as companies from "./controllers/companies";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
+import * as institutions from "./controllers/institutions";
 import * as performances from "./controllers/performances";
 import * as prices from "./controllers/prices";
 
@@ -228,7 +229,7 @@ export const consumer_1 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await insitituions.backfillInstitution_Billionaire(
+    await institutions.backfillInstitution_Billionaire(
       sqsMessage.cik,
       Number(sqsMessage.id)
     );
