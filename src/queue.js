@@ -228,18 +228,17 @@ export const consumer_1 = Consumer.create({
 
     console.log(sqsMessage);
 
+    await insitituions.backfillInstitution_Billionaire(
+      sqsMessage.cik,
+      Number(sqsMessage.id)
+    );
+
     await holdings.fetchHoldings_Billionaire(
       sqsMessage.cik,
       Number(sqsMessage.id),
       Number(sqsMessage.batchId),
       sqsMessage.cache
     );
-
-    /*
-    await insitituions.backfillInstitution_Billionaire(
-      sqsMessage.cik,
-      Number(sqsMessage.id));
-      */
   },
 });
 
@@ -346,7 +345,7 @@ export const consumer_6 = Consumer.create({
 
     console.log(sqsMessage);
 
-    //await titans.updateNetWorth(sqsMessage.id);
+    await titans.updateNetWorth(sqsMessage.id);
   },
 });
 

@@ -16,13 +16,12 @@ export async function getInstitutions({
   `);
 }
 
-export const getInstitutionByCIK = async cik =>
+export const getInstitutionByCIK = async (cik) =>
   db(`
     SELECT *
     FROM institutions
     WHERE cik = '${cik}'
   `);
-
 
 export async function getInstitutionsUpdated({
   sort = [],
@@ -40,20 +39,21 @@ export async function getInstitutionsUpdated({
   `);
 }
 
-export async function backfillInstitution_Billionaire(cik,id) {
-  institution = getInstitutionByCIK(cik);
-  if (institution.length > 0){
-    let titan = await titans.getBillionaire(id);
-    if (titan){
-      let name = titan.name;
-      let query = {
-        text:
-          "INSERT INTO institutions (name, cik) VALUES ( $1, $2 ) RETURNING *",
-        values: [name, cik],
-      };
-      let result = await db(query);
-    }
-  }
-}
+export async function backfillInstitution_Billionaire(cik, id) {
+  let institution = getInstitutionByCIK(cik);
 
-    //  do i need json collumn somehow? or check if it's already there from cik in there?
+  if (institution.length > 0) {
+    return;
+  }
+
+  let titan = await titans.getBillionaire(id);
+  if (!titan) {
+    return;
+  }
+  let { name } = titan;
+  let query = {
+    text: "INSERT INTO institutions (name, cik) VALUES ( $1, $2 ) RETURNING *",
+    values: [name, cik],
+  };
+  await db(query);
+}
