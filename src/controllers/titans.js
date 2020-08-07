@@ -370,6 +370,7 @@ export async function updateNetWorth(id) {
 
   // Grab full list of billionaires from forbes
   let data = await fetchBillionaireList();
+  console.log(data);
 
   // Get URI from billionaires table based on primary cik
   let uri = await getBillionaireURI(id);
