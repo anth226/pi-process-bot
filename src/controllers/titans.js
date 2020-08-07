@@ -383,7 +383,7 @@ export async function getNetworth(list, uri) {
   }
 
   value = billionaire["realTimeWorth"];
-  value = value * 1000000;
+  value = Math.round(value * 1000000);
   return value;
 }
 
