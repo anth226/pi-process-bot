@@ -6,6 +6,8 @@ import * as holdings from "./holdings";
 
 import { orderBy } from "lodash";
 
+import redis, { KEY_FORBES_TITANS } from "../redis";
+
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
     SELECT *
@@ -331,16 +333,29 @@ const evaluateFundPerformace = async (cik) => {
 };
 
 export async function fetchBillionaireList() {
-  let billionaires = [];
+  let cache = await redis.get(`${KEY_FORBES_TITANS}`);
 
-  try {
-    let url = `https://www.forbes.com/ajax/list/data?year=2020&uri=billionaires&type=person`;
-    const result = await axios.get(url);
-    billionaires = result.data;
-  } catch (e) {
-    console.error(e);
+  if (!cache) {
+    let billionaires = [];
+
+    try {
+      let url = `https://www.forbes.com/ajax/list/data?year=2020&uri=billionaires&type=person`;
+      const result = await axios.get(url);
+      billionaires = result.data;
+    } catch (e) {
+      console.error(e);
+    }
+
+    redis.set(
+      `${KEY_FORBES_TITANS}`,
+      JSON.stringify(billionaires),
+      "EX",
+      60 * 30 // 30 Minutes
+    );
+    return billionaires;
+  } else {
+    return JSON.parse(cache);
   }
-  return billionaires;
 }
 
 export async function getNetworth(list, uri) {
@@ -370,7 +385,6 @@ export async function updateNetWorth(id) {
 
   // Grab full list of billionaires from forbes
   let data = await fetchBillionaireList();
-  console.log(data);
 
   // Get URI from billionaires table based on primary cik
   let uri = await getBillionaireURI(id);
