@@ -7,16 +7,17 @@ let db;
 
 export let KEY_NEWS_HEADLINES = "KEY_NEWS_HEADLINES";
 export let KEY_NEWS_SOURCES = "KEY_NEWS_SOURCES";
+export let KEY_FORBES_TITANS = "KEY_FORBES_TITANS";
 
 function connectDatabase() {
   let credentials = {
     host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT
+    port: process.env.REDIS_PORT,
   };
 
   if (!db) {
     const client = redis.createClient(credentials);
-    client.on("error", function(error) {
+    client.on("error", function (error) {
       //   reportError(error);
     });
 
