@@ -1,15 +1,11 @@
 import React from "react";
 
-import { Pagination } from "react-bootstrap";
-
 import Table from "../components/common/Table";
 import {
   sortCaret,
   headerSortingClasses,
   nullFormatter,
 } from "../components/common/Table/helpers";
-
-import { Link } from "react-router-dom";
 
 const defaultSorted = [
   {
@@ -18,12 +14,13 @@ const defaultSorted = [
   },
 ];
 
-const isFormatter = (cell, row) => {
-  if (cell) {
+const jsonFormatter = (cell, row) => {
+  let data = cell[0];
+  if (data && Object.keys(data).length > 0) {
+    //let json = JSON.stringify(data);
     return "True";
-  } else {
-    return "False";
   }
+  return "";
 };
 
 /*
@@ -73,17 +70,17 @@ const columns = [
     headerSortingClasses,
   },
   {
-    dataField: "json_allocations",
+    dataField: "json_allocations.allocations",
     text: "Allocations",
-    formatter: isFormatter,
+    formatter: jsonFormatter,
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
   },
   {
-    dataField: "json_top_10_holdings",
+    dataField: "json_top_10_holdings.top",
     text: "Top 10 Holdings",
-    formatter: isFormatter,
+    formatter: jsonFormatter,
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
@@ -105,11 +102,13 @@ const rowStyle = (row, rowIndex) => {
   return style;
 };
 
+/*
 const bordered = (cell, row, rowIndex, colIndex) => {
   return {
     bordered: true,
   };
 };
+*/
 
 const Institutions = (props) => {
   const { institutions, items } = props;
@@ -125,7 +124,7 @@ const Institutions = (props) => {
           columns={columns}
           data={institutions}
           rowStyle={rowStyle}
-          bordered={bordered}
+          //bordered={bordered}
         />
       </div>
     </div>
