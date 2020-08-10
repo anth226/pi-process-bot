@@ -168,12 +168,17 @@ export async function cacheHoldings_Billionaires() {
       let id = records[i].id;
 
       if (ciks && ciks.length > 0) {
-        for (let j = 0; j < ciks.length; j += 1){
-          let cik = ciks[j]
-          if (cik.cik != "0000000000" && cik.is_primary == true){
+        for (let j = 0; j < ciks.length; j += 1) {
+          let cik = ciks[j];
+          if (cik.cik != "0000000000" && cik.is_primary == true) {
             console.log(cik.cik);
 
-            queue.publish_ProcessHoldings(cik.cik, id, batchId, !buffer.includes(cik.cik));
+            queue.publish_ProcessHoldings(
+              cik.cik,
+              id,
+              batchId,
+              !buffer.includes(cik.cik)
+            );
 
             if (buffer.includes(cik.cik)) {
               buffer.push(cik.cik);

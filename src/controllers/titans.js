@@ -7,6 +7,7 @@ import * as holdings from "./holdings";
 import { orderBy, find } from "lodash";
 
 import redis, { KEY_FORBES_TITANS } from "../redis";
+import { nullFormatter } from "../components/common/Table/helpers";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
@@ -127,29 +128,32 @@ export async function generateSummary(cik) {
   console.log(cik);
 
   let data = await holdings.fetchAll(cik);
+  let filtered = data.filter((o) => {
+    return o.shares_held != 0;
+  });
 
   //
   // EVALUATE Allocations and top stocks
   //
 
   // Evaluate Top Stock
-  let top = await evaluateTopStocks(data);
+  let top = await evaluateTopStocks(filtered);
 
   let query = {
     text:
       "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [{ top }, cik],
+    values: [top.length > 0 ? { top } : null, cik],
   };
 
   await db(query);
 
   // Calculate sectors
-  let allocations = await evaluateSectorCompositions(data);
+  let allocations = await evaluateSectorCompositions(filtered);
 
   query = {
     text:
       "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [{ allocations }, cik],
+    values: [allocations.length > 0 ? { allocations } : null, cik],
   };
 
   await db(query);
