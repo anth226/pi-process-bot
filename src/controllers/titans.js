@@ -346,8 +346,6 @@ export async function fetchBillionaireList() {
       let url = `https://www.forbes.com/ajax/list/data?year=2020&uri=billionaires&type=person`;
       const result = await axios.get(url);
       billionaires = result.data;
-      console.log("FETCH");
-      console.log(result.data);
     } catch (e) {
       console.error(e);
     }

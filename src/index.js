@@ -10,8 +10,10 @@ import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
 import * as institutions from "./controllers/institutions";
 import * as networth from "./controllers/networth";
+import * as mutualfunds from "./controllers/mutualfunds";
 
 import * as queue from "./queue";
+//import * as queue2 from "./queue2";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -128,6 +130,16 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
+// /update_db_mutualfunds?token=XXX
+app.get("/update_db_mutualfunds", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await mutualfunds.updateDB_MutualFunds();
+  res.send("ok");
+});
+
 //DB Routes
 app.get("/bot/institutions/", async (req, res) => {
   let data = await institutions.getInstitutionsUpdated({ size: 1000 });
@@ -140,10 +152,13 @@ app.get("/bot/institutions/", async (req, res) => {
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);
 
+  //queue2.runConsumers();
+
   queue.consumer_1.start();
   queue.consumer_2.start();
   queue.consumer_3.start();
   queue.consumer_4.start();
   queue.consumer_5.start();
   queue.consumer_6.start();
+  queue.consumer_7.start();
 });
