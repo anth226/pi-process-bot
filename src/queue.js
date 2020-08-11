@@ -222,21 +222,16 @@ export function publish_ProcessNetWorth(id) {
   });
 }
 
-export function publish_ProcessMutualFunds(cik, json, ticker) {
+export function publish_ProcessMutualFunds(json, ticker) {
   let queueUrl = process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES;
 
   let data = {
-    cik,
     json,
     ticker,
   };
 
   let params = {
     MessageAttributes: {
-      cik: {
-        DataType: "String",
-        StringValue: data.cik,
-      },
       json: {
         DataType: "String",
         StringValue: data.json,
@@ -247,7 +242,7 @@ export function publish_ProcessMutualFunds(cik, json, ticker) {
       },
     },
     MessageBody: JSON.stringify(data),
-    MessageDeduplicationId: `${cik}-${queueUrl}`,
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
     MessageGroupId: this.constructor.name,
     QueueUrl: queueUrl,
   };
@@ -407,11 +402,7 @@ export const consumer_7 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await mutualfunds.insertMutualFund(
-      sqsMessage.cik,
-      sqsMessage.json,
-      sqsMessage.ticker
-    );
+    await mutualfunds.insertMutualFund(sqsMessage.json, sqsMessage.ticker);
   },
 });
 
