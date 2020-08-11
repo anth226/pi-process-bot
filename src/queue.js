@@ -223,7 +223,7 @@ export function publish_ProcessNetWorth(id) {
 }
 
 export function publish_ProcessMutualFunds(cik, json, ticker) {
-  let queueUrl = process.env.AWS_SQS_URL_MUTUALFUNDS;
+  let queueUrl = process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES;
 
   let data = {
     cik,
@@ -401,7 +401,7 @@ consumer_6.on("processing_error", (err) => {
 
 // AWS_SQS_URL_BILLIONAIRE_NETWORTH
 export const consumer_7 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_MUTUALFUNDS,
+  queueUrl: process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
