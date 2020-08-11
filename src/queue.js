@@ -4,6 +4,7 @@ import * as holdings from "./controllers/holdings";
 import * as institutions from "./controllers/institutions";
 import * as performances from "./controllers/performances";
 import * as prices from "./controllers/prices";
+import * as mutualfunds from "./controllers/mutualfunds";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -101,6 +102,66 @@ export function publish_ProcessPerformances(cik, id, batchId, cache) {
   });
 }
 
+export function publish_ProcessCompanyLookup(identifier) {
+  let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
+
+  let data = {
+    identifier,
+  };
+
+  let params = {
+    MessageAttributes: {
+      identifier: {
+        DataType: "String",
+        StringValue: data.identifier,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${identifier}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+export function publish_ProcessSecurityPrices(identifier) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITY_PRICES;
+
+  let data = {
+    identifier,
+  };
+
+  let params = {
+    MessageAttributes: {
+      identifier: {
+        DataType: "String",
+        StringValue: data.identifier,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${identifier}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 export function publish_ProcessSummaries(cik) {
   let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES;
 
@@ -161,52 +222,32 @@ export function publish_ProcessNetWorth(id) {
   });
 }
 
-export function publish_ProcessCompanyLookup(identifier) {
-  let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
+export function publish_ProcessMutualFunds(cik, json, ticker) {
+  let queueUrl = process.env.AWS_SQS_URL_MUTUALFUNDS;
 
   let data = {
-    identifier,
+    cik,
+    json,
+    ticker,
   };
 
   let params = {
     MessageAttributes: {
-      identifier: {
+      cik: {
         DataType: "String",
-        StringValue: data.identifier,
+        StringValue: data.cik,
+      },
+      json: {
+        DataType: "String",
+        StringValue: data.json,
+      },
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
       },
     },
     MessageBody: JSON.stringify(data),
-    MessageDeduplicationId: `${identifier}-${queueUrl}`,
-    MessageGroupId: this.constructor.name,
-    QueueUrl: queueUrl,
-  };
-
-  // Send the order data to the SQS queue
-  sqs.sendMessage(params, (err, data) => {
-    if (err) {
-      console.log("error", err);
-    } else {
-      console.log("queue success =>", data.MessageId);
-    }
-  });
-}
-
-export function publish_ProcessSecurityPrices(identifier) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITY_PRICES;
-
-  let data = {
-    identifier,
-  };
-
-  let params = {
-    MessageAttributes: {
-      identifier: {
-        DataType: "String",
-        StringValue: data.identifier,
-      },
-    },
-    MessageBody: JSON.stringify(data),
-    MessageDeduplicationId: `${identifier}-${queueUrl}`,
+    MessageDeduplicationId: `${cik}-${queueUrl}`,
     MessageGroupId: this.constructor.name,
     QueueUrl: queueUrl,
   };
@@ -355,5 +396,29 @@ consumer_6.on("error", (err) => {
 });
 
 consumer_6.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_BILLIONAIRE_NETWORTH
+export const consumer_7 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_MUTUALFUNDS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await mutualfunds.insertMutualFund(
+      sqsMessage.cik,
+      sqsMessage.json,
+      sqsMessage.ticker
+    );
+  },
+});
+
+consumer_7.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_7.on("processing_error", (err) => {
   console.error(err.message);
 });
