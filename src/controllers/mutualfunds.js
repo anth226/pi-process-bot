@@ -65,26 +65,25 @@ export async function updateDB_MutualFunds() {
 
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
-      let cik = records[i].cik;
       let json = JSON.stringify(records[i]);
       let ticker = records[i].ticker;
 
       if (cik > 0) {
-        await queue.publish_ProcessMutualFunds(cik, json, ticker);
+        await queue.publish_ProcessMutualFunds(json, ticker);
       }
     }
   }
 }
 
-export async function insertMutualFund(cik, json, ticker) {
-  if (!cik || !json || !ticker) {
+export async function insertMutualFund(json, ticker) {
+  if (!json || !ticker) {
     return;
   }
 
   let query = {
     text:
-      "INSERT INTO mutual_funds (id, json, updated_at, ticker ) VALUES ( $1, $2, now(), $3 ) RETURNING *",
-    values: [cik, json, ticker],
+      "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
+    values: [json, ticker],
   };
   await db(query);
 }
