@@ -68,7 +68,7 @@ export async function updateDB_MutualFunds() {
       let json = JSON.stringify(records[i]);
       let ticker = records[i].ticker;
 
-      if (cik > 0) {
+      if (!json) {
         await queue.publish_ProcessMutualFunds(json, ticker);
       }
     }
