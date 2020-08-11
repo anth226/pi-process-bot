@@ -66,7 +66,7 @@ export async function updateDB_MutualFunds() {
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
       let cik = records[i].cik;
-      let json = records[i];
+      let json = JSON.stringify(records[i]);
       let ticker = records[i].ticker;
 
       if (cik > 0) {
