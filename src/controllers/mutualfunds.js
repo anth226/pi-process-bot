@@ -92,21 +92,21 @@ export async function insertMutualFund(json, ticker) {
   };
   let result = await db(query);
 
-  console.log(result);
+  // console.log(result);
 
-  // if (result.length > 0) {
-  //   let query = {
-  //     text:
-  //       "UPDATE mutual_funds (json, updated_at) VALUES ( $1, now() ) WHERE ticker = $2",
-  //     values: [json, ticker],
-  //   };
-  //   await db(query);
-  // } else {
-  //   let query = {
-  //     text:
-  //       "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
-  //     values: [json, ticker],
-  //   };
-  //   await db(query);
-  // }
+  if (result.length > 0) {
+    let query = {
+      text:
+        "UPDATE mutual_funds (json, updated_at) VALUES ( $1, now() ) WHERE ticker = $2",
+      values: [json, ticker],
+    };
+    await db(query);
+  } else {
+    let query = {
+      text:
+        "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
+      values: [json, ticker],
+    };
+    await db(query);
+  }
 }
