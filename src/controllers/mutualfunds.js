@@ -82,17 +82,17 @@ export async function insertMutualFund(json, ticker) {
     return;
   }
 
-  console.log("\ninsert func");
-  console.log(ticker);
-  console.log(json + "\n");
+  // console.log("\ninsert func");
+  // console.log(ticker);
+  // console.log(json + "\n");
 
-  // let query = {
-  //   text: "SELECT * FROM mutual_funds WHERE ticker = $1",
-  //   values: [ticker],
-  // };
-  // let result = await db(query);
+  let query = {
+    text: "SELECT * FROM mutual_funds WHERE ticker = $1",
+    values: [ticker],
+  };
+  let result = await db(query);
 
-  // console.log(result);
+  console.log(result);
 
   // if (result.length > 0) {
   //   let query = {
