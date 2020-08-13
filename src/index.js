@@ -12,8 +12,8 @@ import * as institutions from "./controllers/institutions";
 import * as networth from "./controllers/networth";
 import * as mutualfunds from "./controllers/mutualfunds";
 
-import * as queue from "./queue";
-//import * as queue2 from "./queue2";
+//import * as queue from "./queue";
+import * as queue from "./queue2";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -152,13 +152,13 @@ app.get("/bot/institutions/", async (req, res) => {
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);
 
-  //queue2.runConsumers();
+  queue.runConsumers();
 
-  queue.consumer_1.start();
-  queue.consumer_2.start();
-  queue.consumer_3.start();
-  queue.consumer_4.start();
-  queue.consumer_5.start();
-  queue.consumer_6.start();
-  queue.consumer_7.start();
+  // queue.consumer_1.start();
+  // queue.consumer_2.start();
+  // queue.consumer_3.start();
+  // queue.consumer_4.start();
+  // queue.consumer_5.start();
+  // queue.consumer_6.start();
+  // queue.consumer_7.start();
 });
