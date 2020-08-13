@@ -75,6 +75,8 @@ export async function updateDB_MutualFunds() {
   }
 }
 
+//Useless comment
+
 export async function insertMutualFund(json, ticker) {
   if (!json || !ticker) {
     return;
