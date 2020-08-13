@@ -15,12 +15,24 @@ const defaultSorted = [
 ];
 
 const jsonFormatter = (cell, row) => {
-  let data = cell[0];
-  if (data && Object.keys(data).length > 0) {
-    //let json = JSON.stringify(data);
-    return "True";
+  if (cell) {
+    let data = cell[0];
+    if (data && Object.keys(data).length > 0) {
+      //let json = JSON.stringify(data);
+      return "True";
+    }
   }
   return "";
+};
+
+const columnStyle = (cell, row, rowIndex, colIndex) => {
+  if (!cell) {
+    return {
+      // red
+      backgroundColor: "#ff000094",
+      color: "#fff",
+    };
+  }
 };
 
 /*
@@ -76,6 +88,7 @@ const columns = [
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
+    style: columnStyle,
   },
   {
     dataField: "json_top_10_holdings.top",
@@ -84,6 +97,7 @@ const columns = [
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
+    style: columnStyle,
   },
   {
     dataField: "updated_at",
@@ -102,14 +116,6 @@ const rowStyle = (row, rowIndex) => {
   return style;
 };
 
-/*
-const bordered = (cell, row, rowIndex, colIndex) => {
-  return {
-    bordered: true,
-  };
-};
-*/
-
 const Institutions = (props) => {
   const { institutions, items } = props;
 
@@ -124,7 +130,6 @@ const Institutions = (props) => {
           columns={columns}
           data={institutions}
           rowStyle={rowStyle}
-          //bordered={bordered}
         />
       </div>
     </div>
