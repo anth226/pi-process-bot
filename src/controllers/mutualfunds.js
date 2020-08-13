@@ -81,9 +81,24 @@ export async function insertMutualFund(json, ticker) {
   }
 
   let query = {
-    text:
-      "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
-    values: [json, ticker],
+    text: "SELECT * FROM mutual_funds WHERE ticker = $1",
+    values: [ticker],
   };
-  await db(query);
+  let record = await db(query);
+
+  if (record) {
+    let query = {
+      text:
+        "UPDATE mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) WHERE ticker = $2 RETURNING *",
+      values: [json, ticker],
+    };
+    await db(query);
+  } else {
+    let query = {
+      text:
+        "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
+      values: [json, ticker],
+    };
+    await db(query);
+  }
 }
