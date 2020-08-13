@@ -100,13 +100,17 @@ export async function insertMutualFund(json, ticker) {
         "UPDATE mutual_funds (json, updated_at) VALUES ( $1, now() ) WHERE ticker = $2",
       values: [json, ticker],
     };
-    await db(query);
+    let update = await db(query);
+    console.log("\nupdate");
+    console.log(update);
   } else {
     let query = {
       text:
         "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
       values: [json, ticker],
     };
-    await db(query);
+    let insert = await db(query);
+    console.log("\ninsert");
+    console.log(insert);
   }
 }
