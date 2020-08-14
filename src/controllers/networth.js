@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import * as titans from "./titans";
 
-import * as queue from "../queue";
+import * as queue from "../queue2";
 
 /*
 import axios from "axios";

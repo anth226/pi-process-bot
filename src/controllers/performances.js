@@ -3,7 +3,7 @@ import axios from "axios";
 const chalk = require("chalk");
 
 import * as titans from "./titans";
-import * as queue from "../queue";
+import * as queue from "../queue2";
 
 const AWS = require("aws-sdk");
 
@@ -160,14 +160,19 @@ export async function cachePerformances_Billionaires() {
     for (let i = 0; i < records.length; i += 1) {
       let ciks = records[i].ciks;
       let id = records[i].id;
-      
+
       if (ciks && ciks.length > 0) {
-        for (let j = 0; j < ciks.length; j += 1){
+        for (let j = 0; j < ciks.length; j += 1) {
           let cik = ciks[j];
-          if (cik.cik != "0000000000" && cik.is_primary == true){
+          if (cik.cik != "0000000000" && cik.is_primary == true) {
             console.log(cik.cik);
 
-            queue.publish_ProcessPerformances(cik.cik, id, batchId, !buffer.includes(cik.cik));
+            queue.publish_ProcessPerformances(
+              cik.cik,
+              id,
+              batchId,
+              !buffer.includes(cik.cik)
+            );
 
             if (buffer.includes(cik.cik)) {
               buffer.push(cik.cik);
@@ -211,15 +216,14 @@ export async function generateSummaries_Billionaires() {
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
       let ciks = records[i].ciks;
-      
+
       if (ciks && ciks.length > 0) {
-        for (let j = 0; j < ciks.length; j += 1){
+        for (let j = 0; j < ciks.length; j += 1) {
           let cik = ciks[j];
-          if (cik.cik != "0000000000" && cik.is_primary == true){
+          if (cik.cik != "0000000000" && cik.is_primary == true) {
             console.log(cik.cik);
 
             await queue.publish_ProcessSummaries(cik.cik);
-            
           }
         }
       }
