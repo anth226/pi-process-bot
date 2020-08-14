@@ -142,7 +142,21 @@ app.get("/update_db_mutualfunds", async (req, res) => {
 
 //DB Routes
 app.get("/bot/institutions/", async (req, res) => {
-  let data = await institutions.getInstitutionsUpdated({ size: 1000 });
+  let data = await institutions.getInstitutionsUpdated({ size: 5000 });
+  if (data.length > 0) {
+    res.send({ data });
+  }
+});
+
+app.get("/bot/billionaires/", async (req, res) => {
+  let data = await titans.getBillionairesCiksAndNotes({ size: 5000 });
+  if (data.length > 0) {
+    res.send({ data });
+  }
+});
+
+app.get("/bot/holdings/", async (req, res) => {
+  let data = await holdings.getAllMaxBatch();
   if (data.length > 0) {
     res.send({ data });
   }

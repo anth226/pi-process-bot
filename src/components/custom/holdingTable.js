@@ -9,7 +9,7 @@ import {
 
 const defaultSorted = [
   {
-    dataField: "cik",
+    dataField: "maxbatch",
     order: "asc",
   },
 ];
@@ -33,6 +33,13 @@ const columnStyle = (cell, row, rowIndex, colIndex) => {
       color: "#fff",
     };
   }
+};
+
+const isFormatter = (cell, row) => {
+  if (cell) {
+    return "True";
+  }
+  return "";
 };
 
 /*
@@ -61,47 +68,30 @@ const columns = [
     headerSortingClasses,
   },
   {
-    dataField: "name",
-    text: "Name",
+    dataField: "data_url",
+    text: "Data URL",
+    formatter: isFormatter,
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
   },
   {
-    dataField: "holdings_page_count",
-    text: "Holdings Page Count",
+    dataField: "id",
+    text: "ID",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
   },
   {
-    dataField: "holdings_updated_at",
-    text: "Holdings Updated At",
+    dataField: "created_at",
+    text: "Created At",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
   },
   {
-    dataField: "json_allocations.allocations",
-    text: "Allocations",
-    formatter: jsonFormatter,
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
-    style: columnStyle,
-  },
-  {
-    dataField: "json_top_10_holdings.top",
-    text: "Top 10 Holdings",
-    formatter: jsonFormatter,
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
-    style: columnStyle,
-  },
-  {
-    dataField: "updated_at",
-    text: "Updated At",
+    dataField: "maxbatch",
+    text: "Latest Batch",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
@@ -120,18 +110,16 @@ const Holdings = (props) => {
   const { data, items } = props;
 
   return (
-    <div className="container">
-      <div className="row">
-        <h1>Holdings</h1>
+    <div className="row">
+      <h1>Holdings</h1>
 
-        <Table
-          defaultSorted={defaultSorted}
-          keyField={"cik"}
-          columns={columns}
-          data={data}
-          rowStyle={rowStyle}
-        />
-      </div>
+      <Table
+        defaultSorted={defaultSorted}
+        keyField={"cik"}
+        columns={columns}
+        data={data}
+        rowStyle={rowStyle}
+      />
     </div>
   );
 };

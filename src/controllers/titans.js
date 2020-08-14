@@ -72,6 +72,31 @@ export async function getBillionairesCiks({
   `);
 }
 
+export async function getBillionairesCiksAndNotes({
+  sort = [],
+  page = 0,
+  size = 250,
+  ...query
+}) {
+  return await db(`
+    SELECT b.name, b.net_worth, b.uri, b.updated_at, b.industry, b.id, b_c.ciks, b_n.notes
+    FROM billionaires AS b
+    LEFT JOIN (
+      SELECT titan_id, json_agg(json_build_object('cik', cik, 'name', name, 'is_primary', is_primary) ORDER BY rank ASC) AS ciks
+      FROM billionaire_ciks
+      GROUP BY titan_id
+    ) AS b_c ON b.id = b_c.titan_id
+    LEFT JOIN (
+      SELECT billionaire_id, json_agg(json_build_object('note', note, 'created_at', created_at) ORDER BY created_at DESC) AS notes
+      FROM billionaire_notes
+      GROUP BY billionaire_id
+    ) AS b_n ON b.id = b_n.billionaire_id
+      ORDER BY b.id ASC
+      LIMIT ${size}
+      OFFSET ${page * size}
+  `);
+}
+
 export async function getBillionaires_Complete({
   sort = [],
   page = 0,
