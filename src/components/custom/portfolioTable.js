@@ -120,18 +120,16 @@ const Portfolios = (props) => {
   const { data, items } = props;
 
   return (
-    <div className="container">
-      <div className="row">
-        <h1>Portfolios</h1>
+    <div className="row">
+      <h1>Portfolios</h1>
 
-        <Table
-          defaultSorted={defaultSorted}
-          keyField={"cik"}
-          columns={columns}
-          data={data}
-          rowStyle={rowStyle}
-        />
-      </div>
+      <Table
+        defaultSorted={defaultSorted}
+        keyField={"cik"}
+        columns={columns}
+        data={data}
+        rowStyle={rowStyle}
+      />
     </div>
   );
 };

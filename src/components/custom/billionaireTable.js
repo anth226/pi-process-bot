@@ -9,27 +9,64 @@ import {
 
 const defaultSorted = [
   {
-    dataField: "cik",
+    dataField: "id",
     order: "asc",
   },
 ];
 
-const jsonFormatter = (cell, row) => {
+const notesFormatter = (cell, row) => {
   if (cell) {
-    let data = cell[0];
-    if (data && Object.keys(data).length > 0) {
-      //let json = JSON.stringify(data);
-      return "True";
+    let notes = [];
+    for (let i = 0; i < cell.length; i++) {
+      let note = cell[i].note;
+      if (note != "") {
+        notes.push(note + "\n");
+      }
+    }
+    if (notes.length > 0) {
+      return notes;
     }
   }
   return "";
 };
 
-const columnStyle = (cell, row, rowIndex, colIndex) => {
+const ciksFormatter = (cell, row) => {
+  if (cell) {
+    for (let i = 0; i < cell.length; i++) {
+      let cik = cell[i].cik;
+      let isPrimary = cell[i].is_primary;
+      if (cik != "0000000000" && isPrimary == true) {
+        return cik;
+      } else if (cik == "0000000000" && isPrimary == true) {
+        return cik;
+      }
+    }
+  } else {
+    return "No Entry in Ciks Table";
+  }
+};
+
+const columnStyleNotes = (cell, row, rowIndex, colIndex) => {
+  if (!cell) {
+    return {
+      // yellow
+      backgroundColor: "#fed069",
+      color: "#fff",
+    };
+  }
+};
+
+const columnStyleCiks = (cell, row, rowIndex, colIndex) => {
   if (!cell) {
     return {
       // red
-      backgroundColor: "#03fc03",
+      backgroundColor: "#ff000094",
+      color: "#fff",
+    };
+  } else if (cell[0].cik == "0000000000") {
+    return {
+      // yellow
+      backgroundColor: "#fed069",
       color: "#fff",
     };
   }
@@ -54,13 +91,6 @@ const numberFormatter = (cell, row) => {
 
 const columns = [
   {
-    dataField: "cik",
-    text: "CIK",
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
-  },
-  {
     dataField: "name",
     text: "Name",
     sort: true,
@@ -68,36 +98,18 @@ const columns = [
     headerSortingClasses,
   },
   {
-    dataField: "holdings_page_count",
-    text: "Holdings Page Count",
+    dataField: "net_worth",
+    text: "Net Worth",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
   },
   {
-    dataField: "holdings_updated_at",
-    text: "Holdings Updated At",
+    dataField: "uri",
+    text: "URI",
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
-  },
-  {
-    dataField: "json_allocations.allocations",
-    text: "Allocations",
-    formatter: jsonFormatter,
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
-    style: columnStyle,
-  },
-  {
-    dataField: "json_top_10_holdings.top",
-    text: "Top 10 Holdings",
-    formatter: jsonFormatter,
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
-    style: columnStyle,
   },
   {
     dataField: "updated_at",
@@ -105,6 +117,38 @@ const columns = [
     sort: true,
     sortCaret: sortCaret,
     headerSortingClasses,
+  },
+  {
+    dataField: "industry",
+    text: "Industry",
+    sort: true,
+    sortCaret: sortCaret,
+    headerSortingClasses,
+  },
+  {
+    dataField: "id",
+    text: "Billionaire ID",
+    sort: true,
+    sortCaret: sortCaret,
+    headerSortingClasses,
+  },
+  {
+    dataField: "ciks",
+    text: "Primary CIK",
+    formatter: ciksFormatter,
+    sort: true,
+    sortCaret: sortCaret,
+    headerSortingClasses,
+    style: columnStyleCiks,
+  },
+  {
+    dataField: "notes",
+    text: "Notes",
+    formatter: notesFormatter,
+    sort: true,
+    sortCaret: sortCaret,
+    headerSortingClasses,
+    style: columnStyleNotes,
   },
 ];
 
@@ -120,18 +164,16 @@ const Billionaires = (props) => {
   const { data, items } = props;
 
   return (
-    <div className="container">
-      <div className="row">
-        <h1>Billionaires</h1>
+    <div className="row">
+      <h1>Billionaires</h1>
 
-        <Table
-          defaultSorted={defaultSorted}
-          keyField={"cik"}
-          columns={columns}
-          data={data}
-          rowStyle={rowStyle}
-        />
-      </div>
+      <Table
+        defaultSorted={defaultSorted}
+        keyField={"cik"}
+        columns={columns}
+        data={data}
+        rowStyle={rowStyle}
+      />
     </div>
   );
 };

@@ -184,13 +184,6 @@ export async function cacheHoldings_Billionaires() {
               buffer.push(cik.cik);
             }
           }
-          /*  TODO Automated message to fix cik
-
-          else if (cik.cik == "0000000000" && cik.is_primary == true){
-            // send automated message to data entry position 
-            // of cik that needs updating
-          }
-          */
         }
       }
       /* This is case to include old way of grabbing ciks from the
@@ -245,4 +238,16 @@ export async function fetchAll(cik) {
   }
 
   return [];
+}
+
+export async function getAllMaxBatch() {
+  return await db(`
+  SELECT *
+  FROM holdings h
+  INNER JOIN (
+      SELECT cik, MAX(batch_id) AS MaxBatch
+      FROM holdings
+      GROUP BY cik
+  ) hb ON h.cik = hb.cik AND h.batch_id = hb.MaxBatch
+  `);
 }
