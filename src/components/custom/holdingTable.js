@@ -1,11 +1,11 @@
 import React from "react";
 
-import Table from "../components/common/Table";
+import Table from "../common/Table";
 import {
   sortCaret,
   headerSortingClasses,
   nullFormatter,
-} from "../components/common/Table/helpers";
+} from "../common/Table/helpers";
 
 const defaultSorted = [
   {
@@ -29,7 +29,7 @@ const columnStyle = (cell, row, rowIndex, colIndex) => {
   if (!cell) {
     return {
       // red
-      backgroundColor: "#ff000094",
+      backgroundColor: "#87fff9",
       color: "#fff",
     };
   }
@@ -116,19 +116,19 @@ const rowStyle = (row, rowIndex) => {
   return style;
 };
 
-const Institutions = (props) => {
-  const { institutions, items } = props;
+const Holdings = (props) => {
+  const { data, items } = props;
 
   return (
     <div className="container">
       <div className="row">
-        <h1>Portfolios</h1>
+        <h1>Holdings</h1>
 
         <Table
           defaultSorted={defaultSorted}
           keyField={"cik"}
           columns={columns}
-          data={institutions}
+          data={data}
           rowStyle={rowStyle}
         />
       </div>
@@ -136,4 +136,4 @@ const Institutions = (props) => {
   );
 };
 
-export default Institutions;
+export default Holdings;
