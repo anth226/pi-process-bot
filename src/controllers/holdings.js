@@ -15,7 +15,8 @@ const s3 = new AWS.S3({
 
 import * as titans from "./titans";
 
-import * as queue from "../queue2";
+import * as queue from "../queue";
+// import * as queue from "../queue2";
 
 import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
 

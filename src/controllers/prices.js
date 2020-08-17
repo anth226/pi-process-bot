@@ -1,6 +1,8 @@
 import axios from "axios";
 import db from "../db";
-import * as queue from "../queue2";
+import * as queue from "../queue";
+//import * as queue from "../queue2";
+
 const chalk = require("chalk");
 
 // export async function cachePrices_Portfolio(cik) {
