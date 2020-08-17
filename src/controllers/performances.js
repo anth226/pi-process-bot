@@ -3,7 +3,8 @@ import axios from "axios";
 const chalk = require("chalk");
 
 import * as titans from "./titans";
-import * as queue from "../queue2";
+import * as queue from "../queue";
+// import * as queue from "../queue2";
 
 const AWS = require("aws-sdk");
 

@@ -4,7 +4,8 @@ import db from "../db";
 
 import * as titans from "./titans";
 
-import * as queue from "../queue2";
+import * as queue from "../queue";
+// import * as queue from "../queue2";
 
 /*
 import axios from "axios";
