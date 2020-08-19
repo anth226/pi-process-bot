@@ -10,8 +10,6 @@ phases:
       nodejs: 10
     commands:
       - echo Hello, world!
-      - printenv | grep REACT_APP > .env
-      - cat .env
   pre_build:
     commands:
       - echo Installing source NPM dependencies...
