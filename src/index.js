@@ -130,6 +130,7 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
+// useless comment
 // /update_json_mutualfunds?token=XXX
 app.get("/update_json_mutualfunds", async (req, res) => {
   let { query } = req;
