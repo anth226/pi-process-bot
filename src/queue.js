@@ -222,11 +222,12 @@ export function publish_ProcessNetWorth(id) {
   });
 }
 
-export function publish_ProcessMutualFunds(json, ticker) {
+export function publish_ProcessJsonMutualFunds(json, jsonSum, ticker) {
   let queueUrl = process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES;
 
   let data = {
     json,
+    jsonSum,
     ticker,
   };
 
@@ -235,6 +236,10 @@ export function publish_ProcessMutualFunds(json, ticker) {
       json: {
         DataType: "String",
         StringValue: data.json,
+      },
+      jsonSum: {
+        DataType: "String",
+        StringValue: data.jsonSum,
       },
       ticker: {
         DataType: "String",
@@ -394,7 +399,7 @@ consumer_6.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_BILLIONAIRE_NETWORTH
+// AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES
 export const consumer_7 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES,
   handleMessage: async (message) => {
@@ -402,7 +407,11 @@ export const consumer_7 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await mutualfunds.insertMutualFund(sqsMessage.json, sqsMessage.ticker);
+    await mutualfunds.insertJsonMutualFund(
+      sqsMessage.json,
+      sqsMessage.jsonSum,
+      sqsMessage.ticker
+    );
   },
 });
 
