@@ -61,6 +61,7 @@ export async function getJsonMutualFunds() {
 
 export async function getJsonSumMutualFund(fundId) {
   let fundSums = [];
+  let fundSum;
 
   try {
     let url = `https://fds1.cannonvalleyresearch.com/api/v1/portSummary/${fundId}/?apiKey=${process.env.CANNON_API_KEY}`;

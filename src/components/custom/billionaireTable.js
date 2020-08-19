@@ -9,7 +9,7 @@ import {
 
 const defaultSorted = [
   {
-    dataField: "id",
+    dataField: "ciks",
     order: "asc",
   },
 ];
