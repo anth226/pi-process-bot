@@ -46,7 +46,7 @@ const uploadToS3 = async (key, data) => {
 
 */
 
-export async function getMutualFunds() {
+export async function getJsonMutualFunds() {
   let funds = [];
 
   try {
@@ -59,8 +59,22 @@ export async function getMutualFunds() {
   return funds;
 }
 
-export async function updateDB_MutualFunds() {
-  let result = await getMutualFunds();
+export async function getJsonSumMutualFund(fundId) {
+  let fundSums = [];
+
+  try {
+    let url = `https://fds1.cannonvalleyresearch.com/api/v1/portSummary/${fundId}/?apiKey=${process.env.CANNON_API_KEY}`;
+    const result = await axios.get(url);
+    fundSums = result.data;
+    fundSum = fundSums[fundSums.length - 1];
+  } catch (e) {
+    console.error(e);
+  }
+  return fundSum;
+}
+
+export async function updateJson_MutualFunds() {
+  let result = await getJsonMutualFunds();
 
   let records = result;
 
@@ -68,16 +82,21 @@ export async function updateDB_MutualFunds() {
     for (let i = 0; i < records.length; i += 1) {
       let json = JSON.stringify(records[i]);
       let ticker = records[i].ticker;
-
-      if (json && ticker) {
-        await queue.publish_ProcessMutualFunds(json, ticker);
+      let fundId = records[i].fundId;
+      if (fundId) {
+        let fundSum = await getJsonSumMutualFund(fundId);
+        let jsonSum = JSON.stringify(fundSum);
+        if (jsonSum && json && ticker) {
+          // Fire off to queue if all data exists
+          await queue.publish_ProcessJsonMutualFunds(json, jsonSum, ticker);
+        }
       }
     }
   }
 }
 
-export async function insertMutualFund(json, ticker) {
-  if (!json || !ticker) {
+export async function insertJsonMutualFund(json, jsonSum, ticker) {
+  if (!json || !jsonSum || !ticker) {
     return;
   }
 
@@ -90,15 +109,15 @@ export async function insertMutualFund(json, ticker) {
   if (result.length > 0) {
     let query = {
       text:
-        "UPDATE mutual_funds SET json = $1, updated_at = now() WHERE ticker = $2",
-      values: [json, ticker],
+        "UPDATE mutual_funds SET json = $1, json_summary = $2, updated_at = now() WHERE ticker = $3",
+      values: [json, jsonSum, ticker],
     };
     await db(query);
   } else {
     let query = {
       text:
-        "INSERT INTO mutual_funds (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
-      values: [json, ticker],
+        "INSERT INTO mutual_funds (json, json_summary, updated_at, ticker ) VALUES ( $1, $2, now(), $3 ) RETURNING *",
+      values: [json, jsonSum, ticker],
     };
     await db(query);
   }

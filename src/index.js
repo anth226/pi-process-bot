@@ -130,13 +130,13 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
-// /update_db_mutualfunds?token=XXX
-app.get("/update_db_mutualfunds", async (req, res) => {
+// /update_json_mutualfunds?token=XXX
+app.get("/update_json_mutualfunds", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
   }
-  await mutualfunds.updateDB_MutualFunds();
+  await mutualfunds.updateJson_MutualFunds();
   res.send("ok");
 });
 
