@@ -54,6 +54,7 @@
     "babel-polyfill": "^6.26.0",
     "body-parser": "^1.19.0",
     "bootstrap": "^4.5.2",
+    "chalk": "^4.1.0",
     "cheerio": "^1.0.0-rc.3",
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
