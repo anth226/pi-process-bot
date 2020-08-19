@@ -9,7 +9,7 @@ import {
 
 const defaultSorted = [
   {
-    dataField: "maxbatch",
+    dataField: "batch_id",
     order: "asc",
   },
 ];
@@ -53,7 +53,7 @@ const linkFormatter = (cell, row) => {
 const numberFormatter = (cell, row) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "USD"
+    currency: "USD",
   }).format(parseInt(cell));
 };
 
@@ -63,38 +63,38 @@ const columns = [
   {
     dataField: "cik",
     text: "CIK",
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
+    sort: false,
+    // sortCaret: sortCaret,
+    // headerSortingClasses,
   },
   {
     dataField: "data_url",
     text: "Data URL",
     formatter: isFormatter,
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
+    sort: false,
+    // sortCaret: sortCaret,
+    // headerSortingClasses,
   },
   {
     dataField: "id",
     text: "ID",
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
+    sort: false,
+    // sortCaret: sortCaret,
+    // headerSortingClasses,
   },
   {
     dataField: "created_at",
     text: "Created At",
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
+    sort: false,
+    // sortCaret: sortCaret,
+    // headerSortingClasses,
   },
   {
-    dataField: "maxbatch",
+    dataField: "batch_id",
     text: "Latest Batch",
-    sort: true,
-    sortCaret: sortCaret,
-    headerSortingClasses,
+    sort: false,
+    // sortCaret: sortCaret,
+    // headerSortingClasses,
   },
 ];
 
