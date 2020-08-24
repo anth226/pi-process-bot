@@ -110,6 +110,7 @@ export async function updateMetrics_Companies() {
   for (let c in companies) {
     let ticker = companies[c].ticker;
     let metrics = await getCompanyMetrics(ticker);
+    metrics = JSON.stringify(metrics);
 
     if (metrics && ticker) {
       await queue.publish_ProcessMetricsCompanies(ticker, metrics);
