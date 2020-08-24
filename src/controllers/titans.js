@@ -5,7 +5,7 @@ import * as queue from "../queue";
 
 import * as holdings from "./holdings";
 
-import { orderBy, find } from "lodash";
+import { orderBy, find, sumBy } from "lodash";
 
 import redis, { KEY_FORBES_TITANS } from "../redis";
 import { nullFormatter } from "../components/common/Table/helpers";
@@ -195,9 +195,16 @@ export async function generateSummary(cik) {
 }
 
 const evaluateTopStocks = async (data) => {
-  let sorted = orderBy(data, ["shares_held_percent"], ["desc"]);
+  let total = sumBy(data, function (entry) {
+    return entry["market_value"];
+  });
 
-  console.log(sorted);
+  let sorted = orderBy(data, ["market_value"], ["desc"]);
+
+  sorted.map((entry) => {
+    entry.portfolio_share = (entry["market_value"] / total) * 100;
+    return entry;
+  });
 
   return sorted.slice(0, 10);
 };
