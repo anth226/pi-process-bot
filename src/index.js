@@ -88,7 +88,9 @@ app.get("/", async (req, res) => {
   res.render("/public/index");
 });
 
-// SQS routes
+/*      SQS routes      */
+
+/* Billionaires */
 
 // /cache_holdings_titans?token=XXX
 app.get("/cache_holdings_titans", async (req, res) => {
@@ -130,7 +132,8 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
-// useless comment
+/* Mutual Funds */
+
 // /update_json_mutualfunds?token=XXX
 app.get("/update_json_mutualfunds", async (req, res) => {
   let { query } = req;
@@ -141,7 +144,20 @@ app.get("/update_json_mutualfunds", async (req, res) => {
   res.send("ok");
 });
 
-//DB Routes
+/* Companies */
+
+// /update_metrics_companies?token=XXX
+app.get("/update_metrics_companies", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await companies.updateMetrics_Companies();
+  res.send("ok");
+});
+
+/*      DB routes      */
+
 app.get("/bot/institutions/", async (req, res) => {
   let data = await institutions.getInstitutionsUpdated({ size: 5000 });
   if (data.length > 0) {
@@ -176,4 +192,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_5.start();
   queue.consumer_6.start();
   queue.consumer_7.start();
+  queue.consumer_8.start();
 });
