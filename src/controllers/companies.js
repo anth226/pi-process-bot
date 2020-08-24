@@ -119,7 +119,7 @@ export async function updateMetrics_Companies() {
 }
 
 export async function insertMetricsCompany(ticker, metrics) {
-  if (!ticker || metrics) {
+  if (!ticker || !metrics) {
     return;
   }
 
