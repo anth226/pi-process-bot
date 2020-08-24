@@ -466,10 +466,7 @@ export const consumer_8 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await mutualfunds.insertMetricsCompany(
-      sqsMessage.ticker,
-      sqsMessage.metrics
-    );
+    await companies.insertMetricsCompany(sqsMessage.ticker, sqsMessage.metrics);
   },
 });
 
