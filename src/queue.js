@@ -262,6 +262,41 @@ export function publish_ProcessJsonMutualFunds(json, jsonSum, ticker) {
   });
 }
 
+export function publish_ProcessMetricsCompanies(ticker, metrics) {
+  let queueUrl = process.env.AWS_SQS_URL_COMPANIES_METRICS;
+
+  let data = {
+    ticker,
+    metrics,
+  };
+
+  let params = {
+    MessageAttributes: {
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+      metrics: {
+        DataType: "String",
+        StringValue: data.metrics,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -420,5 +455,28 @@ consumer_7.on("error", (err) => {
 });
 
 consumer_7.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_COMPANIES_METRICS
+export const consumer_8 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_COMPANIES_METRICS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await mutualfunds.insertMetricsCompany(
+      sqsMessage.ticker,
+      sqsMessage.metrics
+    );
+  },
+});
+
+consumer_8.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_8.on("processing_error", (err) => {
   console.error(err.message);
 });
