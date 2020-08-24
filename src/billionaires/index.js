@@ -9,6 +9,8 @@ var request = require("request");
 
 import db from "../db";
 
+import { orderBy, find, sumBy } from "lodash";
+
 import * as zip from "./zip";
 import * as holdings from "../controllers/holdings";
 import * as performances from "../controllers/performances";
@@ -29,7 +31,42 @@ const s3 = new AWS.S3({
 // ALTER SEQUENCE billionaires_id_seq RESTART WITH 1;
 // DELETE FROM billionaires;
 
+const evaluateTopStocks = async (data) => {
+  let total = sumBy(data, function (entry) {
+    return entry["market_value"];
+  });
+
+  let sorted = orderBy(data, ["market_value"], ["desc"]);
+
+  sorted.map((entry) => {
+    entry.portfolio_share = (entry["market_value"] / total) * 100;
+    return entry;
+  });
+
+  console.log(sorted);
+  console.log(total);
+
+  return sorted.slice(0, 10);
+};
+
 (async () => {
+  let cik = "0001067983";
+
+  //
+  let data = await holdings.fetchAll(cik);
+  let filtered = data.filter((o) => {
+    return o.shares_held != 0;
+  });
+
+  let top = await evaluateTopStocks(filtered);
+
+  console.log(top);
+  //
+  // EVALUATE Allocations and top stocks
+  //
+
+  //
+
   //
   // await import_Billionaires();
   // await fetch_Billionaire_Photos();
