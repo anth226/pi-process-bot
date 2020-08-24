@@ -5,6 +5,9 @@ const chalk = require("chalk");
 
 import db from "../db";
 
+import * as queue from "../queue";
+// import * as queue from "../queue2";
+
 async function lookup(identifier) {
   let url = `${process.env.INTRINIO_BASE_PATH}/companies/${identifier}?api_key=${process.env.INTRINIO_API_KEY}`;
 
