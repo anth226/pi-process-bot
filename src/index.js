@@ -10,6 +10,7 @@ import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
 import * as institutions from "./controllers/institutions";
 import * as networth from "./controllers/networth";
+import * as widgets from "./controllers/widgets";
 import * as mutualfunds from "./controllers/mutualfunds";
 
 import * as queue from "./queue";
@@ -153,6 +154,18 @@ app.get("/update_metrics_companies", async (req, res) => {
     res.send("fail");
   }
   await companies.updateMetrics_Companies();
+  res.send("ok");
+});
+
+/* Widgets */
+
+// /update_widgets?token=XXX
+app.get("/update_widgets", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await widgets.update();
   res.send("ok");
 });
 

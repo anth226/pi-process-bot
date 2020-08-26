@@ -297,6 +297,41 @@ export function publish_ProcessMetricsCompanies(ticker, metrics) {
   });
 }
 
+export function publish_UpdateGlobalDashboard(widget) {
+  let queueUrl = process.env.AWS_SQS_URL_GLOBAL_DASHBOARD;
+
+  // let data = {
+  //   ticker,
+  //   metrics,
+  // };
+
+  // let params = {
+  //   MessageAttributes: {
+  //     ticker: {
+  //       DataType: "String",
+  //       StringValue: data.ticker,
+  //     },
+  //     metrics: {
+  //       DataType: "String",
+  //       StringValue: data.metrics,
+  //     },
+  //   },
+  //   MessageBody: JSON.stringify(data),
+  //   MessageDeduplicationId: `${ticker}-${queueUrl}`,
+  //   MessageGroupId: this.constructor.name,
+  //   QueueUrl: queueUrl,
+  // };
+
+  // // Send the order data to the SQS queue
+  // sqs.sendMessage(params, (err, data) => {
+  //   if (err) {
+  //     console.log("error", err);
+  //   } else {
+  //     console.log("queue success =>", data.MessageId);
+  //   }
+  // });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
