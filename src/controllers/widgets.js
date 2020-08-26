@@ -26,3 +26,9 @@ export async function update() {
     }
   }
 }
+
+export async function processWidget(widgetInstanceId) {
+  // use type to decern what function to run ex. MutualFundsTopNDiscount
+  // use input relevant input to customize ex. count = 10
+  // load result into output for widget_data
+}
