@@ -15,6 +15,7 @@ import * as mutualfunds from "./controllers/mutualfunds";
 
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
+import redis from "./redis";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -87,6 +88,17 @@ function checkAuth(req, res, next) {
 // index
 app.get("/", async (req, res) => {
   res.render("/public/index");
+});
+
+// redis flush
+app.get("/redis/flush", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+
+  await redis.flushall("ASYNC");
+  res.send("ok");
 });
 
 /*      SQS routes      */
