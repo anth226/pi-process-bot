@@ -218,4 +218,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_6.start();
   queue.consumer_7.start();
   queue.consumer_8.start();
+  queue.consumer_9.start();
 });

@@ -5,6 +5,7 @@ import * as institutions from "./controllers/institutions";
 import * as performances from "./controllers/performances";
 import * as prices from "./controllers/prices";
 import * as mutualfunds from "./controllers/mutualfunds";
+import * as widgets from "./controllers/widgets";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -297,39 +298,34 @@ export function publish_ProcessMetricsCompanies(ticker, metrics) {
   });
 }
 
-export function publish_UpdateGlobalDashboard(widget) {
+export function publish_UpdateGlobalDashboard(widgetInstanceId) {
   let queueUrl = process.env.AWS_SQS_URL_GLOBAL_DASHBOARD;
 
-  // let data = {
-  //   ticker,
-  //   metrics,
-  // };
+  let data = {
+    widgetInstanceId,
+  };
 
-  // let params = {
-  //   MessageAttributes: {
-  //     ticker: {
-  //       DataType: "String",
-  //       StringValue: data.ticker,
-  //     },
-  //     metrics: {
-  //       DataType: "String",
-  //       StringValue: data.metrics,
-  //     },
-  //   },
-  //   MessageBody: JSON.stringify(data),
-  //   MessageDeduplicationId: `${ticker}-${queueUrl}`,
-  //   MessageGroupId: this.constructor.name,
-  //   QueueUrl: queueUrl,
-  // };
+  let params = {
+    MessageAttributes: {
+      widgetInstanceId: {
+        DataType: "String",
+        StringValue: data.widgetInstanceId,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${widgetInstanceId}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
 
-  // // Send the order data to the SQS queue
-  // sqs.sendMessage(params, (err, data) => {
-  //   if (err) {
-  //     console.log("error", err);
-  //   } else {
-  //     console.log("queue success =>", data.MessageId);
-  //   }
-  // });
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
 }
 
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
@@ -510,5 +506,25 @@ consumer_8.on("error", (err) => {
 });
 
 consumer_8.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_COMPANIES_METRICS
+export const consumer_9 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_GLOBAL_DASHBOARD,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await widgets.processWidget(sqsMessage.widgetInstanceId);
+  },
+});
+
+consumer_9.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_9.on("processing_error", (err) => {
   console.error(err.message);
 });
