@@ -44,6 +44,17 @@ export async function lookupCompany(identifier) {
   }
 }
 
+export async function updateJson_InsiderCompanies() {
+  const response = await axios.get(`${PROD_API_URL}/all-insider`);
+  if (response.status === 200 && response.data.length > 0) {
+    let data = response.data;
+    for (let item of data) {
+      let ticker = item[0];
+      queue.publish_ProcessCompanyLookup(ticker);
+    }
+  }
+}
+
 export async function getCompanies() {
   let result = await db(`
         SELECT *

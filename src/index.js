@@ -165,6 +165,7 @@ app.get("/update_metrics_companies", async (req, res) => {
   if (query.token != "XXX") {
     res.send("fail");
   }
+  await companies.updateJson_InsiderCompanies();
   await companies.updateMetrics_Companies();
   res.send("ok");
 });
