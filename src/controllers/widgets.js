@@ -29,6 +29,18 @@ export async function getWidgets() {
   return result;
 }
 
+export async function getGlobalWidgets() {
+  let result = await db(`
+    SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
+    FROM widget_instances
+    JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
+    JOIN widgets ON widgets.id = widget_instances.widget_id
+    WHERE widget_instances.dashboard_id = 0
+  `);
+
+  return result;
+}
+
 export async function getWidget(widgetInstanceId) {
   let result = await db(`
     SELECT widget_instances.*, widget_data.*, widgets.*
@@ -42,16 +54,13 @@ export async function getWidget(widgetInstanceId) {
 }
 
 export async function update() {
-  let widgets = await getWidgets();
+  let widgets = await getGlobalWidgets();
 
   for (let i = 0; i < widgets.length; i += 1) {
     let widget = widgets[i];
-    let dashboard_id = widget.dashboard_id;
-    let widgetInstanceId = widget.id;
+    let widgetInstanceId = widget.widget_instance_id;
 
-    if (dashboard_id == 0) {
-      await queue.publish_UpdateGlobalDashboard(widgetInstanceId);
-    }
+    await queue.publish_UpdateGlobalDashboard(widgetInstanceId);
   }
 }
 
@@ -100,7 +109,7 @@ export async function processWidget(widgetInstanceId) {
     if (type == "InsidersNMovers") {
       if (params.count && params.count > 0) {
         let topNum = params.count;
-        let topComps = await getInsidersNMovers(topNum);
+        let topComps = { topComps: await getInsidersNMovers(topNum) };
 
         if (topComps) {
           let query = {

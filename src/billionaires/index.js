@@ -19,6 +19,7 @@ import * as titans from "../controllers/titans";
 import * as institutions from "../controllers/institutions";
 import * as queue from "../queue";
 import * as edgar from "../controllers/edgar";
+import axios from "axios";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -31,36 +32,123 @@ const s3 = new AWS.S3({
 // ALTER SEQUENCE billionaires_id_seq RESTART WITH 1;
 // DELETE FROM billionaires;
 
-const evaluateTopStocks = async (data) => {
-  let total = sumBy(data, function (entry) {
-    return entry["market_value"];
-  });
+// const evaluateTopStocks = async (data) => {
+//   let total = sumBy(data, function (entry) {
+//     return entry["market_value"];
+//   });
 
-  let sorted = orderBy(data, ["market_value"], ["desc"]);
+//   let sorted = orderBy(data, ["market_value"], ["desc"]);
 
-  sorted.map((entry) => {
-    entry.portfolio_share = (entry["market_value"] / total) * 100;
-    return entry;
-  });
+//   sorted.map((entry) => {
+//     entry.portfolio_share = (entry["market_value"] / total) * 100;
+//     return entry;
+//   });
 
-  console.log(sorted);
-  console.log(total);
+//   console.log(sorted);
+//   console.log(total);
 
-  return sorted.slice(0, 10);
-};
+//   return sorted.slice(0, 10);
+//};
 
 (async () => {
-  let cik = "0001067983";
+  const s3AllInsider =
+    "https://terminal-scrape-data.s3.amazonaws.com/all-insider-trading/allInsider.json";
 
-  //
-  let data = await holdings.fetchAll(cik);
-  let filtered = data.filter((o) => {
-    return o.shares_held != 0;
-  });
+  async function getAllInsider() {
+    try {
+      const response = await axios.get(s3AllInsider);
+      return response.data;
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
-  let top = await evaluateTopStocks(filtered);
+  async function getInsidersNMovers(topNum) {
+    let comps = [];
+    let compsMap = new Map();
 
-  console.log(top);
+    let result = await getAllInsider();
+    for (let i in result) {
+      let tran = result[i];
+      let ticker = tran[0];
+      if (compsMap.has(ticker)) {
+        let trans = compsMap.get(ticker).trans;
+        trans.push({
+          //name: tran[1],
+          //title: tran[2],
+          type: tran[4],
+          //cost: tran[5],
+          numShares: tran[6],
+          value: tran[7],
+        });
+      } else {
+        compsMap.set(ticker, {
+          trans: [
+            {
+              //name: tran[1],
+              //title: tran[2],
+              type: tran[4],
+              //cost: tran[5],
+              numShares: tran[6],
+              value: tran[7],
+            },
+          ],
+        });
+      }
+    }
+    compsMap.forEach((value, key) => {
+      let trans = value.trans;
+      let sold = 0;
+      let bought = 0;
+      let option = 0;
+      let valueChange = 0;
+      for (let t in trans) {
+        let type = trans[t].type;
+        let numShares = parseInt(trans[t].numShares.replace(/,/g, ""));
+        let value = parseInt(trans[t].value.replace(/,/g, ""));
+        if (type[0] == "S") {
+          sold += numShares;
+          valueChange -= value;
+        } else if (type[0] == "B") {
+          bought += numShares;
+          valueChange += value;
+        } else if (type[0] == "O") {
+          option += numShares;
+          valueChange += value;
+        }
+      }
+      comps.push({
+        ticker: key,
+        sold: sold,
+        bought: bought,
+        option: option,
+        valueChange: valueChange,
+      });
+    });
+
+    let compsSorted = comps
+      .sort((a, b) => Math.abs(a.valueChange) - Math.abs(b.valueChange))
+      .slice(Math.max(comps.length - topNum, 0));
+
+    //console.log(compsSorted);
+    return compsSorted;
+  }
+
+  let topComps = { topComps: await getInsidersNMovers(10) };
+
+  console.log(topComps);
+
+  // let cik = "0001067983";
+
+  // //
+  // let data = await holdings.fetchAll(cik);
+  // let filtered = data.filter((o) => {
+  //   return o.shares_held != 0;
+  // });
+
+  // let top = await evaluateTopStocks(filtered);
+
+  // console.log(top);
   //
   // EVALUATE Allocations and top stocks
   //
