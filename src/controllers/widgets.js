@@ -1,5 +1,22 @@
 import db from "../db";
+import axios from "axios";
 import * as queue from "../queue";
+
+/* START Insider Scraper */
+
+const s3AllInsider =
+  "https://terminal-scrape-data.s3.amazonaws.com/all-insider-trading/allInsider.json";
+
+async function getAllInsider() {
+  try {
+    const response = await axios.get(s3AllInsider);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+/* END Insider Scraper */
 
 export async function getWidgets() {
   let result = await db(`
@@ -72,6 +89,23 @@ export async function processWidget(widgetInstanceId) {
           let query = {
             text: "UPDATE widget_data SET output = $2 WHERE id = $1",
             values: [dataId, topFunds],
+          };
+          await db(query);
+          console.log("output updated");
+        }
+      }
+    }
+    /* INSIDERS */
+    //Movers
+    if (type == "InsidersNMovers") {
+      if (params.count && params.count > 0) {
+        let topNum = params.count;
+        let topComps = await getInsidersNMovers(topNum);
+
+        if (topComps) {
+          let query = {
+            text: "UPDATE widget_data SET output = $2 WHERE id = $1",
+            values: [dataId, topComps],
           };
           await db(query);
           console.log("output updated");
@@ -157,4 +191,75 @@ export async function getMutualFundsTopNDiscountOrPremium(topNum, isDiscount) {
 
   return funds;
   //console.log(funds);
+}
+
+export async function getInsidersNMovers(topNum) {
+  let comps = [];
+  let compsMap = new Map();
+
+  let result = await getAllInsider();
+  for (let i in result) {
+    let tran = result[i];
+    let ticker = tran[0];
+    if (compsMap.has(ticker)) {
+      let trans = compsMap.get(ticker).trans;
+      trans.push({
+        //name: tran[1],
+        //title: tran[2],
+        type: tran[4],
+        //cost: tran[5],
+        numShares: tran[6],
+        value: tran[7],
+      });
+    } else {
+      compsMap.set(ticker, {
+        trans: [
+          {
+            //name: tran[1],
+            //title: tran[2],
+            type: tran[4],
+            //cost: tran[5],
+            numShares: tran[6],
+            value: tran[7],
+          },
+        ],
+      });
+    }
+  }
+  compsMap.forEach((value, key) => {
+    let trans = value.trans;
+    let sold = 0;
+    let bought = 0;
+    let option = 0;
+    let valueChange = 0;
+    for (let t in trans) {
+      let type = trans[t].type;
+      let numShares = parseInt(trans[t].numShares.replace(/,/g, ""));
+      let value = parseInt(trans[t].value.replace(/,/g, ""));
+      if (type[0] == "S") {
+        sold += numShares;
+        valueChange -= value;
+      } else if (type[0] == "B") {
+        bought += numShares;
+        valueChange += value;
+      } else if (type[0] == "O") {
+        option += numShares;
+        valueChange += value;
+      }
+    }
+    comps.push({
+      ticker: key,
+      sold: sold,
+      bought: bought,
+      option: option,
+      valueChange: valueChange,
+    });
+  });
+
+  let compsSorted = comps
+    .sort((a, b) => Math.abs(a.valueChange) - Math.abs(b.valueChange))
+    .slice(Math.max(comps.length - topNum, 0));
+
+  //console.log(compsSorted);
+  return compsSorted;
 }
