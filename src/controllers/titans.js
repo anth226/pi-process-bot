@@ -483,11 +483,13 @@ export async function processHoldingsPerformanceAndSummary(id) {
           let cache = true;
 
           await queue.publish_ProcessHoldings(cik.cik, id, batchId, cache);
+          await sleep(10000);
           //institutions.backfillInstitution_Billionaire
           //  cik, id
           //holdings.fetchHoldings_Billionaire
           //  cik, id, batchId, cache
           await queue.publish_ProcessPerformances(cik.cik, id, batchId, cache);
+          await sleep(10000);
           //performances.calculatePerformance_Billionaire
           //  cik, id, batchId, cache
           //titans.cacheCompanies_Portfolio
