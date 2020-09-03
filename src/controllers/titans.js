@@ -9,6 +9,7 @@ import { orderBy, find, sumBy } from "lodash";
 
 import redis, { KEY_FORBES_TITANS } from "../redis";
 import { nullFormatter } from "../components/common/Table/helpers";
+import * as performances from "./controllers/performances";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
@@ -462,10 +463,58 @@ export async function updateNetWorth(id) {
   await db(query);
 }
 
+export async function calculateFallbackPerformance_Billionaire(
+  cik,
+  billionaireId,
+  batchId = null,
+  cache = true
+) {
+  let frequencies = [
+    // "daily",
+    // "weekly",
+    // "monthly",
+    "quarterly",
+    "yearly",
+  ];
+
+  let marketcaps = {};
+
+  for (let i = 0; i < frequencies.length; i += 1) {
+    let frequency = frequencies[i];
+
+    let next_page = null;
+    let historical_data = [];
+    let buffer = {};
+
+    do {
+      let response = await performances.getHistoricalData(
+        cik,
+        frequency,
+        next_page
+      );
+      next_page = response["next_page"];
+
+      buffer = response["historical_data"];
+      historical_data = historical_data.concat(buffer);
+
+      console.log(chalk.bgGreen("next_page =>"), next_page);
+    } while (next_page);
+
+    marketcaps[frequency] = historical_data;
+  }
+
+  console.log("marketcaps", marketcaps);
+
+  //let key = `marketcaps/${cik}.json`;
+
+  //let response = await uploadToS3(key, marketcaps);
+
+  console.log(response["Location"]);
+}
+
 export async function processHoldingsPerformanceAndSummary(id) {
   //get primary id
   let titan;
-  let hadPrimary = false;
   let result = await getBillionaireCiks(id);
   if (result) {
     titan = result[0];
@@ -477,31 +526,47 @@ export async function processHoldingsPerformanceAndSummary(id) {
       for (let j = 0; j < ciks.length; j += 1) {
         let cik = ciks[j];
         if (cik.cik != "0000000000" && cik.is_primary == true) {
-          //console.log(cik.cik);
-          hadPrimary = true;
-          let batchId = 0;
-          let cache = true;
+          let { use_company_performance_fallback } = titan;
+          if (use_company_performance_fallback) {
+            await calculateFallbackPerformance_Billionaire(cik.cik);
+          } else {
+            // find batch_id
+            result = await db(`
+              SELECT *
+              FROM holdings
+              ORDER BY batch_id DESC
+              LIMIT 1
+            `);
 
-          await queue.publish_ProcessHoldings(cik.cik, id, batchId, cache);
-          await sleep(10000);
-          //institutions.backfillInstitution_Billionaire
-          //  cik, id
-          //holdings.fetchHoldings_Billionaire
-          //  cik, id, batchId, cache
-          await queue.publish_ProcessPerformances(cik.cik, id, batchId, cache);
-          await sleep(10000);
-          //performances.calculatePerformance_Billionaire
-          //  cik, id, batchId, cache
-          //titans.cacheCompanies_Portfolio
-          //  cik
-          await queue.publish_ProcessSummaries(cik.cik);
-          //titans.generateSummary
-          //  cik
+            let batchId = 0;
+            if (result.length > 0) {
+              batchId = Number(result[0]["batch_id"]) + 1;
+            }
+
+            let cache = true;
+            await queue.publish_ProcessHoldings(cik.cik, id, batchId, cache);
+            await sleep(10000);
+            //institutions.backfillInstitution_Billionaire
+            //  cik, id
+            //holdings.fetchHoldings_Billionaire
+            //  cik, id, batchId, cache
+            await queue.publish_ProcessPerformances(
+              cik.cik,
+              id,
+              batchId,
+              cache
+            );
+            await sleep(10000);
+            //performances.calculatePerformance_Billionaire
+            //  cik, id, batchId, cache
+            //titans.cacheCompanies_Portfolio
+            //  cik
+            await queue.publish_ProcessSummaries(cik.cik);
+            //titans.generateSummary
+            //  cik
+          }
         }
       }
-    }
-    if (hadPrimary != true) {
-      //check that other thing
     }
   }
 }
