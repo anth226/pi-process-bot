@@ -73,6 +73,19 @@ export async function getBillionairesCiks({
   `);
 }
 
+export async function getBillionaireCiks(id) {
+  return await db(`
+    SELECT b.*, b_c.ciks
+    FROM billionaires AS b
+    LEFT JOIN (
+      SELECT titan_id, json_agg(json_build_object('cik', cik, 'name', name, 'is_primary', is_primary) ORDER BY rank ASC) AS ciks
+      FROM billionaire_ciks
+      GROUP BY titan_id
+    ) AS b_c ON b.id = b_c.titan_id
+    WHERE b.id = ${id}
+  `);
+}
+
 export async function getBillionairesCiksAndNotes({
   sort = [],
   page = 0,
@@ -447,4 +460,46 @@ export async function updateNetWorth(id) {
   };
 
   await db(query);
+}
+
+export async function processHoldingsPerformanceAndSummary(id) {
+  //get primary id
+  let titan;
+  let hadPrimary = false;
+  let result = await getBillionaireCiks(id);
+  if (result) {
+    titan = result[0];
+  }
+
+  if (titan) {
+    let ciks = titan.ciks;
+    if (ciks && ciks.length > 0) {
+      for (let j = 0; j < ciks.length; j += 1) {
+        let cik = ciks[j];
+        if (cik.cik != "0000000000" && cik.is_primary == true) {
+          //console.log(cik.cik);
+          hadPrimary = true;
+          batchId = 0;
+          cache = true;
+
+          await queue.publish_ProcessHoldings(cik.cik, id, batchId, cache);
+          //institutions.backfillInstitution_Billionaire
+          //  cik, id
+          //holdings.fetchHoldings_Billionaire
+          //  cik, id, batchId, cache
+          await queue.publish_ProcessPerformances(cik.cik, id, batchId, cache);
+          //performances.calculatePerformance_Billionaire
+          //  cik, id, batchId, cache
+          //titans.cacheCompanies_Portfolio
+          //  cik
+          await queue.publish_ProcessSummaries(cik.cik);
+          //titans.generateSummary
+          //  cik
+        }
+      }
+    }
+    if (hadPrimary != true) {
+      //check that other thing
+    }
+  }
 }

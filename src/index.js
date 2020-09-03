@@ -145,6 +145,16 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
+// /billionaires/:id/generate_summary?token=XXX
+app.get("/billionaires/:id/generate_summary", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await titans.processHoldingsPerformanceAndSummary(req.params.id);
+  res.send("ok");
+});
+
 /* Mutual Funds */
 
 // /update_json_mutualfunds?token=XXX
