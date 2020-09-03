@@ -9,7 +9,7 @@ import { orderBy, find, sumBy } from "lodash";
 
 import redis, { KEY_FORBES_TITANS } from "../redis";
 import { nullFormatter } from "../components/common/Table/helpers";
-import * as performances from "./controllers/performances";
+import * as performances from "./performances";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
