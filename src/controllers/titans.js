@@ -479,8 +479,8 @@ export async function processHoldingsPerformanceAndSummary(id) {
         if (cik.cik != "0000000000" && cik.is_primary == true) {
           //console.log(cik.cik);
           hadPrimary = true;
-          batchId = 0;
-          cache = true;
+          let batchId = 0;
+          let cache = true;
 
           await queue.publish_ProcessHoldings(cik.cik, id, batchId, cache);
           //institutions.backfillInstitution_Billionaire
