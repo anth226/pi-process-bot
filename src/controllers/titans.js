@@ -496,20 +496,35 @@ export async function calculateFallbackPerformance_Billionaire(
 
       buffer = response["historical_data"];
       historical_data = historical_data.concat(buffer);
-
-      console.log(chalk.bgGreen("next_page =>"), next_page);
     } while (next_page);
 
     marketcaps[frequency] = historical_data;
   }
 
-  console.log("marketcaps", marketcaps);
+  let quarPerc = (
+    (marketcaps.quarterly[0].value / marketcaps.quarterly[1].value - 1) *
+    100
+  ).toFixed(2);
+  let yearPerc = (
+    (marketcaps.yearly[0].value / marketcaps.yearly[1].value - 1) *
+    100
+  ).toFixed(2);
+  let year5Perc = (
+    (marketcaps.yearly[0].value / marketcaps.yearly[5].value - 1) *
+    100
+  ).toFixed(2);
 
-  //let key = `marketcaps/${cik}.json`;
+  let perf = {
+    performance_quarter: quarPerc,
+    performance_one_year: yearPerc,
+    performance_five_year: year5Perc,
+  };
 
-  //let response = await uploadToS3(key, marketcaps);
+  //console.log(perf);
 
-  console.log(response["Location"]);
+  return perf;
+
+  //console.log("marketcaps", marketcaps);
 }
 
 export async function processHoldingsPerformanceAndSummary(id) {
@@ -528,7 +543,8 @@ export async function processHoldingsPerformanceAndSummary(id) {
         if (cik.cik != "0000000000" && cik.is_primary == true) {
           let { use_company_performance_fallback } = titan;
           if (use_company_performance_fallback) {
-            await calculateFallbackPerformance_Billionaire(cik.cik);
+            let perf = await calculateFallbackPerformance_Billionaire(cik.cik);
+            //upload to db
           } else {
             // find batch_id
             result = await db(`
@@ -545,23 +561,23 @@ export async function processHoldingsPerformanceAndSummary(id) {
 
             let cache = true;
             await queue.publish_ProcessHoldings(cik.cik, id, batchId, cache);
-            await sleep(10000);
             //institutions.backfillInstitution_Billionaire
             //  cik, id
             //holdings.fetchHoldings_Billionaire
             //  cik, id, batchId, cache
-            await queue.publish_ProcessPerformances(
-              cik.cik,
-              id,
-              batchId,
-              cache
-            );
-            await sleep(10000);
+            setTimeout(function () {
+              queue.publish_ProcessPerformances(cik.cik, id, batchId, cache);
+            }, 10000);
+
             //performances.calculatePerformance_Billionaire
             //  cik, id, batchId, cache
             //titans.cacheCompanies_Portfolio
             //  cik
-            await queue.publish_ProcessSummaries(cik.cik);
+
+            setTimeout(function () {
+              queue.publish_ProcessSummaries(cik.cik);
+            }, 10000);
+
             //titans.generateSummary
             //  cik
           }
