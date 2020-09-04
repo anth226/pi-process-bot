@@ -536,13 +536,16 @@ export async function processHoldingsPerformanceAndSummary(id) {
   }
 
   if (titan) {
+    console.log("titan found");
     let ciks = titan.ciks;
     if (ciks && ciks.length > 0) {
       for (let j = 0; j < ciks.length; j += 1) {
         let cik = ciks[j];
         if (cik.cik != "0000000000" && cik.is_primary == true) {
+          console.log("primary cik found");
           let { use_company_performance_fallback } = titan;
           if (use_company_performance_fallback) {
+            console.log("fallback set");
             let perf = await calculateFallbackPerformance_Billionaire(cik.cik);
             let query = {
               text:
@@ -550,6 +553,7 @@ export async function processHoldingsPerformanceAndSummary(id) {
               values: [perf, cik.cik],
             };
             await db(query);
+            console.log("json_calcs updated");
           } else {
             // find batch_id
             result = await db(`
