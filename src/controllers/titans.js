@@ -544,7 +544,12 @@ export async function processHoldingsPerformanceAndSummary(id) {
           let { use_company_performance_fallback } = titan;
           if (use_company_performance_fallback) {
             let perf = await calculateFallbackPerformance_Billionaire(cik.cik);
-            //upload to db
+            let query = {
+              text:
+                "UPDATE companies SET json_calculations=($1) WHERE cik=($2) RETURNING *",
+              values: [perf, cik.cik],
+            };
+            await db(query);
           } else {
             // find batch_id
             result = await db(`
