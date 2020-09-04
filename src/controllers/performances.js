@@ -35,7 +35,7 @@ export async function getPortfolios() {
   };
 }
 
-function getHistoricalData(cik, frequency, next_page = null) {
+export function getHistoricalData(cik, frequency, next_page = null) {
   let url = `${process.env.INTRINIO_BASE_PATH}/historical_data/${cik}/marketcap?frequency=${frequency}&api_key=${process.env.INTRINIO_API_KEY}`;
 
   if (next_page) {
