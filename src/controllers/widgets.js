@@ -1,8 +1,9 @@
 import db from "../db";
 import axios from "axios";
 import * as queue from "../queue";
+import * as companies from "./companies";
 
-/* START Insider Scraper */
+/* START Scraper */
 
 const s3AllInsider =
   "https://terminal-scrape-data.s3.amazonaws.com/all-insider-trading/allInsider.json";
@@ -16,7 +17,22 @@ async function getAllInsider() {
   }
 }
 
-/* END Insider Scraper */
+export function getSecurityLastPrice(symbol) {
+  let lastPrice = axios
+    .get(
+      `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=iex&api_key=${process.env.INTRINIO_API_KEY}`
+    )
+    .then(function (res) {
+      return res;
+    })
+    .catch(function (err) {
+      return err;
+    });
+  //
+  return lastPrice.then((data) => data.data);
+}
+
+/* END Scraper */
 
 export async function getWidgets() {
   let result = await db(`
@@ -41,6 +57,18 @@ export async function getGlobalWidgets() {
   return result;
 }
 
+export async function getLocalWidgets() {
+  let result = await db(`
+    SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
+    FROM widget_instances
+    JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
+    JOIN widgets ON widgets.id = widget_instances.widget_id
+    WHERE widget_instances.dashboard_id != 0
+  `);
+
+  return result;
+}
+
 export async function getWidget(widgetInstanceId) {
   let result = await db(`
     SELECT widget_instances.*, widget_data.*, widgets.*
@@ -58,6 +86,14 @@ export async function update() {
 
   for (let i = 0; i < widgets.length; i += 1) {
     let widget = widgets[i];
+    let widgetInstanceId = widget.widget_instance_id;
+
+    await queue.publish_UpdateGlobalDashboard(widgetInstanceId);
+  }
+
+  let localWidgets = await getLocalWidgets();
+  for (let i = 0; i < localWidgets.length; i += 1) {
+    let widget = localWidgets[i];
     let widgetInstanceId = widget.widget_instance_id;
 
     await queue.publish_UpdateGlobalDashboard(widgetInstanceId);
@@ -115,6 +151,26 @@ export async function processWidget(widgetInstanceId) {
           let query = {
             text: "UPDATE widget_data SET output = $2 WHERE id = $1",
             values: [dataId, topComps],
+          };
+          await db(query);
+          console.log("output updated");
+        }
+      }
+    }
+    /* COMPANIES */
+    //Prices
+    if (type == "CompanyPrice") {
+      if (params.ticker) {
+        let ticker = params.ticker;
+        let price = await getCompanyPrice(ticker);
+        let comp = await companies.getCompanyByTicker(ticker);
+
+        if (price && comp && comp.json.name) {
+          let tick = { name: comp.json.name, price: price };
+          //console.log(tick);
+          let query = {
+            text: "UPDATE widget_data SET output = $2 WHERE id = $1",
+            values: [dataId, tick],
           };
           await db(query);
           console.log("output updated");
@@ -271,4 +327,11 @@ export async function getInsidersNMovers(topNum) {
 
   //console.log(compsSorted);
   return compsSorted;
+}
+
+export async function getCompanyPrice(ticker) {
+  let data = await getSecurityLastPrice(ticker);
+  if (data.last_price) {
+    return data.last_price;
+  }
 }
