@@ -81,7 +81,7 @@ export async function getWidget(widgetInstanceId) {
   return result;
 }
 
-export async function update() {
+export async function updateGlobal() {
   let widgets = await getGlobalWidgets();
 
   for (let i = 0; i < widgets.length; i += 1) {
@@ -90,19 +90,23 @@ export async function update() {
 
     await queue.publish_UpdateGlobalDashboard(widgetInstanceId);
   }
+}
 
-  let localWidgets = await getLocalWidgets();
-  for (let i = 0; i < localWidgets.length; i += 1) {
-    let widget = localWidgets[i];
+export async function updateLocal() {
+  let widgets = await getLocalWidgets();
+  for (let i = 0; i < widgets.length; i += 1) {
+    let widget = widgets[i];
     let widgetInstanceId = widget.widget_instance_id;
 
-    await queue.publish_UpdateGlobalDashboard(widgetInstanceId);
+    await queue.publish_UpdateLocalDashboards(widgetInstanceId);
   }
 }
 
 export async function processWidget(widgetInstanceId) {
-  let result = await getWidget(widgetInstanceId);
   let widget;
+  let output;
+
+  let result = await getWidget(widgetInstanceId);
 
   if (result) {
     widget = result[0];
@@ -119,7 +123,7 @@ export async function processWidget(widgetInstanceId) {
       });
     }
 
-    /* MUTUAL FUNDS */
+    /*          MUTUAL FUNDS */
     //Discount/Premium
     if (type == "MutualFundsTopNDiscount" || type == "MutualFundsTopNPremium") {
       let topFunds;
@@ -130,52 +134,70 @@ export async function processWidget(widgetInstanceId) {
         } else if (type == "MutualFundsTopNPremium") {
           topFunds = await getMutualFundsTopNDiscountOrPremium(topNum, false);
         }
+
         if (topFunds) {
-          let query = {
-            text: "UPDATE widget_data SET output = $2 WHERE id = $1",
-            values: [dataId, topFunds],
-          };
-          await db(query);
-          console.log("output updated");
+          output = topFunds;
         }
       }
     }
-    /* INSIDERS */
+    //Net Assets
+    else if (type == "MutualFundsTopNNetAssets") {
+      let topFunds;
+      if (params.count && params.count > 0) {
+        let topNum = params.count;
+        topFunds = await getMutualFundsTopNNetAssets(topNum);
+
+        if (topFunds) {
+          output = topFunds;
+        }
+      }
+    }
+    //Yield
+    else if (type == "MutualFundsTopNYield") {
+      let topFunds;
+      if (params.count && params.count > 0) {
+        let topNum = params.count;
+        topFunds = await getMutualFundsTopNYield(topNum);
+
+        if (topFunds) {
+          output = topFunds;
+        }
+      }
+    }
+    /*          INSIDERS */
     //Movers
-    if (type == "InsidersNMovers") {
+    else if (type == "InsidersNMovers") {
       if (params.count && params.count > 0) {
         let topNum = params.count;
         let topComps = { topComps: await getInsidersNMovers(topNum) };
 
         if (topComps) {
-          let query = {
-            text: "UPDATE widget_data SET output = $2 WHERE id = $1",
-            values: [dataId, topComps],
-          };
-          await db(query);
-          console.log("output updated");
+          output = topComps;
         }
       }
     }
-    /* COMPANIES */
+    /*          COMPANIES */
     //Prices
-    if (type == "CompanyPrice") {
+    else if (type == "CompanyPrice") {
       if (params.ticker) {
         let ticker = params.ticker;
         let price = await getCompanyPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
 
         if (price && comp && comp.json.name) {
-          let tick = { name: comp.json.name, price: price };
-          //console.log(tick);
-          let query = {
-            text: "UPDATE widget_data SET output = $2 WHERE id = $1",
-            values: [dataId, tick],
-          };
-          await db(query);
-          console.log("output updated");
+          let tick = { ticker: ticker, name: comp.json.name, price: price };
+          output = tick;
         }
       }
+    }
+
+    if (output) {
+      let query = {
+        text: "UPDATE widget_data SET output = $2 WHERE id = $1",
+        values: [dataId, output],
+      };
+      await db(query);
+      console.log("output updated");
     }
   }
 }
@@ -247,6 +269,106 @@ export async function getMutualFundsTopNDiscountOrPremium(topNum, isDiscount) {
         .sort((a, b) => a.diff - b.diff)
         .slice(Math.max(oFunds.length - topNum, 0));
   }
+
+  let funds = {
+    equityFunds,
+    fixedFunds,
+    otherFunds,
+  };
+
+  return funds;
+  //console.log(funds);
+}
+
+export async function getMutualFundsTopNYield(topNum) {
+  let eFunds = [];
+  let fFunds = [];
+  let oFunds = [];
+
+  let result = await db(`
+    SELECT *
+    FROM mutual_funds
+  `);
+
+  if (result.length > 0) {
+    for (let i in result) {
+      let fund = result[i];
+      let fundCategory = fund.json.fundCategory;
+
+      if (fund.json.yield > 0) {
+        if (fundCategory[0] == "E") {
+          eFunds.push(fund);
+        } else if (fundCategory[0] == "F") {
+          fFunds.push(fund);
+        } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+          oFunds.push(fund);
+        }
+      }
+    }
+  }
+  let equityFunds;
+  let fixedFunds;
+  let otherFunds;
+
+  equityFunds = eFunds
+    .sort((a, b) => a.json.yield - b.json.yield)
+    .slice(Math.max(eFunds.length - topNum, 0));
+  fixedFunds = fFunds
+    .sort((a, b) => a.json.yield - b.json.yield)
+    .slice(Math.max(fFunds.length - topNum, 0));
+  otherFunds = oFunds
+    .sort((a, b) => a.json.yield - b.json.yield)
+    .slice(Math.max(oFunds.length - topNum, 0));
+
+  let funds = {
+    equityFunds,
+    fixedFunds,
+    otherFunds,
+  };
+
+  return funds;
+  //console.log(funds);
+}
+
+export async function getMutualFundsTopNNetAssets(topNum) {
+  let eFunds = [];
+  let fFunds = [];
+  let oFunds = [];
+
+  let result = await db(`
+    SELECT *
+    FROM mutual_funds
+  `);
+
+  if (result.length > 0) {
+    for (let i in result) {
+      let fund = result[i];
+      let fundCategory = fund.json.fundCategory;
+
+      if (fund.json_summary && fund.json_summary.netAssets > 0) {
+        if (fundCategory[0] == "E") {
+          eFunds.push(fund);
+        } else if (fundCategory[0] == "F") {
+          fFunds.push(fund);
+        } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+          oFunds.push(fund);
+        }
+      }
+    }
+  }
+  let equityFunds;
+  let fixedFunds;
+  let otherFunds;
+
+  equityFunds = eFunds
+    .sort((a, b) => a.json_summary.netAssets - b.json_summary.netAssets)
+    .slice(Math.max(eFunds.length - topNum, 0));
+  fixedFunds = fFunds
+    .sort((a, b) => a.json_summary.netAssets - b.json_summary.netAssets)
+    .slice(Math.max(fFunds.length - topNum, 0));
+  otherFunds = oFunds
+    .sort((a, b) => a.json_summary.netAssets - b.json_summary.netAssets)
+    .slice(Math.max(oFunds.length - topNum, 0));
 
   let funds = {
     equityFunds,

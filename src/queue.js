@@ -328,6 +328,36 @@ export function publish_UpdateGlobalDashboard(widgetInstanceId) {
   });
 }
 
+export function publish_UpdateLocalDashboards(widgetInstanceId) {
+  let queueUrl = process.env.AWS_SQS_URL_LOCAL_DASHBOARDS;
+
+  let data = {
+    widgetInstanceId,
+  };
+
+  let params = {
+    MessageAttributes: {
+      widgetInstanceId: {
+        DataType: "String",
+        StringValue: data.widgetInstanceId,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${widgetInstanceId}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -509,7 +539,7 @@ consumer_8.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_COMPANIES_METRICS
+// AWS_SQS_URL_GLOBAL_DASHBOARD
 export const consumer_9 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_GLOBAL_DASHBOARD,
   handleMessage: async (message) => {
@@ -526,5 +556,25 @@ consumer_9.on("error", (err) => {
 });
 
 consumer_9.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_LOCAL_DASHBOARDS
+export const consumer_10 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_LOCAL_DASHBOARDS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await widgets.processWidget(sqsMessage.widgetInstanceId);
+  },
+});
+
+consumer_10.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_10.on("processing_error", (err) => {
   console.error(err.message);
 });
