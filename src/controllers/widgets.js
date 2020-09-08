@@ -189,10 +189,10 @@ export async function processWidget(widgetInstanceId) {
           comp &&
           comp.json &&
           comp.json.name &&
-          comp.json_summary &&
-          comp.json_summary["Change"]
+          comp.json_metrics &&
+          comp.json_metrics["Change"]
         ) {
-          let delta = comp.json_summary["Change"];
+          let delta = comp.json_metrics["Change"];
           let tick = {
             ticker: ticker,
             name: comp.json.name,
