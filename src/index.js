@@ -182,13 +182,23 @@ app.get("/update_metrics_companies", async (req, res) => {
 
 /* Widgets */
 
-// /update_widgets?token=XXX
-app.get("/update_widgets", async (req, res) => {
+// /update_global_widgets?token=XXX
+app.get("/update_global_widgets", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
   }
-  await widgets.update();
+  await widgets.updateGlobal();
+  res.send("ok");
+});
+
+// /update_local_widgets?token=XXX
+app.get("/update_local_widgets", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await widgets.updateLocal();
   res.send("ok");
 });
 
