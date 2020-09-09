@@ -45,7 +45,7 @@ export async function lookupCompany(identifier) {
 }
 
 export async function updateJson_InsiderCompanies() {
-  const response = await axios.get(`${PROD_API_URL}/all-insider`);
+  const response = await axios.get(`${process.env.PROD_API_URL}/all-insider`);
   if (response.status === 200 && response.data.length > 0) {
     let data = response.data;
     for (let item of data) {
