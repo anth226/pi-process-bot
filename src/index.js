@@ -202,6 +202,15 @@ app.get("/update_local_widgets", async (req, res) => {
   res.send("ok");
 });
 
+app.get("/widgets/:id/process_input", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await widgets.processInput(req.params.id);
+  res.send("ok");
+});
+
 /*      DB routes      */
 
 app.get("/bot/institutions/", async (req, res) => {
