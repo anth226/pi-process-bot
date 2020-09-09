@@ -102,7 +102,7 @@ export async function updateLocal() {
   }
 }
 
-export async function processWidget(widgetInstanceId) {
+export async function processInput(widgetInstanceId) {
   let widget;
   let output;
 

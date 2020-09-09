@@ -547,7 +547,7 @@ export const consumer_9 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await widgets.processWidget(sqsMessage.widgetInstanceId);
+    await widgets.processInput(sqsMessage.widgetInstanceId);
   },
 });
 
@@ -567,7 +567,7 @@ export const consumer_10 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await widgets.processWidget(sqsMessage.widgetInstanceId);
+    await widgets.processInput(sqsMessage.widgetInstanceId);
   },
 });
 
