@@ -183,16 +183,17 @@ export async function processWidget(widgetInstanceId) {
         let ticker = params.ticker;
         let price = await getCompanyPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
+        let metrics = await companies.getCompanyMetrics(ticker);
 
         if (
           price &&
           comp &&
           comp.json &&
           comp.json.name &&
-          comp.json_metrics &&
-          comp.json_metrics["Change"]
+          metrics &&
+          metrics.Change
         ) {
-          let delta = comp.json_metrics["Change"];
+          let delta = metrics.Change;
           let tick = {
             ticker: ticker,
             name: comp.json.name,
