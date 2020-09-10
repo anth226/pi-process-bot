@@ -93,13 +93,15 @@ export async function updateGlobal() {
 }
 
 export async function updateLocal() {
+  let widgetData = new Map();
   let widgets = await getLocalWidgets();
   for (let i = 0; i < widgets.length; i += 1) {
     let widget = widgets[i];
     let widgetInstanceId = widget.widget_instance_id;
-
-    await queue.publish_UpdateLocalDashboards(widgetInstanceId);
+    let widgetDataId = widget.widget_data_id;
+    widgetData.set(widgetDataId, widgetInstanceId);
   }
+  widgetData.forEach((id) => queue.publish_UpdateLocalDashboards(id));
 }
 
 export async function processInput(widgetInstanceId) {
