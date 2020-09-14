@@ -12,6 +12,7 @@ import * as institutions from "./controllers/institutions";
 import * as networth from "./controllers/networth";
 import * as widgets from "./controllers/widgets";
 import * as mutualfunds from "./controllers/mutualfunds";
+import * as etfs from "./controllers/etfs";
 
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
@@ -211,6 +212,18 @@ app.get("/widgets/:id/process_input", async (req, res) => {
   res.send("ok");
 });
 
+/* ETFs */
+
+// /update_etfs?token=XXX
+app.get("/update_etfs", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await etfs.updateJson_ETFs();
+  res.send("ok");
+});
+
 /*      DB routes      */
 
 app.get("/bot/institutions/", async (req, res) => {
@@ -250,4 +263,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_8.start();
   queue.consumer_9.start();
   queue.consumer_10.start();
+  queue.consumer_11.start();
 });

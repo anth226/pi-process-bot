@@ -6,6 +6,7 @@ import * as performances from "./controllers/performances";
 import * as prices from "./controllers/prices";
 import * as mutualfunds from "./controllers/mutualfunds";
 import * as widgets from "./controllers/widgets";
+import * as etfs from "./controllers/etfs";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -358,6 +359,41 @@ export function publish_UpdateLocalDashboards(widgetInstanceId) {
   });
 }
 
+export function publish_ProcessJsonETFs(json, ticker) {
+  let queueUrl = process.env.AWS_SQS_URL_ETFS_UPDATE;
+
+  let data = {
+    json,
+    ticker,
+  };
+
+  let params = {
+    MessageAttributes: {
+      json: {
+        DataType: "String",
+        StringValue: data.json,
+      },
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -576,5 +612,25 @@ consumer_10.on("error", (err) => {
 });
 
 consumer_10.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_ETFS_UPDATE
+export const consumer_11 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_ETFS_UPDATE,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await etfs.insertJsonETF(sqsMessage.json, sqsMessage.ticker);
+  },
+});
+
+consumer_11.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_11.on("processing_error", (err) => {
   console.error(err.message);
 });
