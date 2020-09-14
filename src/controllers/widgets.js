@@ -2,6 +2,7 @@ import db from "../db";
 import axios from "axios";
 import * as queue from "../queue";
 import * as companies from "./companies";
+import * as mutualfunds from "./mutualfunds";
 
 /* START Scraper */
 
@@ -166,6 +167,34 @@ export async function processInput(widgetInstanceId) {
         }
       }
     }
+    //MutualFundPrice
+    //Price
+    else if (type == "MutualFundPrice") {
+      if (params.ticker) {
+        let ticker = params.ticker;
+        let price = await getCompanyPrice(ticker);
+        let fund = await mutualfunds.getMutualFundByTicker(ticker);
+        let metrics = await companies.getCompanyMetrics(ticker);
+
+        if (
+          price &&
+          fund &&
+          fund.json &&
+          fund.json.name &&
+          metrics &&
+          metrics.Change
+        ) {
+          let delta = metrics.Change;
+          let tick = {
+            ticker: ticker,
+            name: fund.json.name,
+            price: price,
+            delta: delta,
+          };
+          output = tick;
+        }
+      }
+    }
     /*          INSIDERS */
     //Movers
     else if (type == "InsidersNMovers") {
@@ -206,6 +235,34 @@ export async function processInput(widgetInstanceId) {
         }
       }
     }
+    /*          ETFS */
+    //Price
+    // else if (type == "ETFPrice") {
+    //   if (params.ticker) {
+    //     let ticker = params.ticker;
+    //     let price = await getCompanyPrice(ticker);
+    //     let comp = await companies.getCompanyByTicker(ticker);
+    //     let metrics = await companies.getCompanyMetrics(ticker);
+
+    //     if (
+    //       price &&
+    //       comp &&
+    //       comp.json &&
+    //       comp.json.name &&
+    //       metrics &&
+    //       metrics.Change
+    //     ) {
+    //       let delta = metrics.Change;
+    //       let tick = {
+    //         ticker: ticker,
+    //         name: comp.json.name,
+    //         price: price,
+    //         delta: delta,
+    //       };
+    //       output = tick;
+    //     }
+    //   }
+    // }
 
     if (output) {
       let query = {
