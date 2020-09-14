@@ -359,20 +359,15 @@ export function publish_UpdateLocalDashboards(widgetInstanceId) {
   });
 }
 
-export function publish_ProcessJsonETFs(json, ticker) {
+export function publish_ProcessJsonETFs(ticker) {
   let queueUrl = process.env.AWS_SQS_URL_ETF_DATA_COMPLIER;
 
   let data = {
-    json,
     ticker,
   };
 
   let params = {
     MessageAttributes: {
-      json: {
-        DataType: "String",
-        StringValue: data.json,
-      },
       ticker: {
         DataType: "String",
         StringValue: data.ticker,
@@ -623,7 +618,13 @@ export const consumer_11 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await etfs.insertJsonETF(sqsMessage.json, sqsMessage.ticker);
+    let etfJson = await etfs.getJsonETF(sqsMessage.ticker);
+    if (etfJson) {
+      let json = JSON.stringify(etfJson);
+      if (json) {
+        await etfs.insertJsonETF(json, sqsMessage.ticker);
+      }
+    }
   },
 });
 

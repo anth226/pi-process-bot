@@ -71,12 +71,8 @@ export async function updateJson_ETFs() {
   if (records.length > 0) {
     for (let i = 0; i < records.length; i += 1) {
       let ticker = records[i].ticker;
-      let etfJson = await getJsonETF(ticker);
-      if (etfJson) {
-        let json = JSON.stringify(etfJson);
-        if (json && ticker) {
-          await queue.publish_ProcessJsonETFs(json, ticker);
-        }
+      if (ticker) {
+        await queue.publish_ProcessJsonETFs(ticker);
       }
     }
   }
