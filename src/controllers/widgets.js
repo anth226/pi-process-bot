@@ -540,7 +540,7 @@ export async function getInsidersNMovers(topNum) {
 
 export async function getCompanyPrice(ticker) {
   let data = await getSecurityLastPrice(ticker);
-  if (data.last_price) {
+  if (data && data.last_price) {
     return data.last_price;
   }
 }
