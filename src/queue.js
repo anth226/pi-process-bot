@@ -360,7 +360,7 @@ export function publish_UpdateLocalDashboards(widgetInstanceId) {
 }
 
 export function publish_ProcessJsonETFs(json, ticker) {
-  let queueUrl = process.env.AWS_SQS_URL_ETFS_UPDATE;
+  let queueUrl = process.env.AWS_SQS_URL_ETF_DATA_COMPLIER;
 
   let data = {
     json,
@@ -617,7 +617,7 @@ consumer_10.on("processing_error", (err) => {
 
 // AWS_SQS_URL_ETFS_UPDATE
 export const consumer_11 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_ETFS_UPDATE,
+  queueUrl: process.env.AWS_SQS_URL_ETF_DATA_COMPLIER,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
