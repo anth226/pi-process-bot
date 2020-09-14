@@ -272,7 +272,7 @@ export async function processInput(widgetInstanceId) {
       await db(query);
       console.log("output updated");
     } else {
-      query = {
+      let query = {
         text: "DELETE FROM widget_instances WHERE id=($1)",
         values: [widgetInstanceId],
       };
