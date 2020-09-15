@@ -91,7 +91,7 @@ export async function insertJsonETF(json, ticker) {
 
   if (result.length > 0) {
     let query = {
-      text: "UPDATE etfs SET json = $1, updated_at = now() WHERE ticker = $3",
+      text: "UPDATE etfs SET json = $1, updated_at = now() WHERE ticker = $2",
       values: [json, ticker],
     };
     await db(query);
