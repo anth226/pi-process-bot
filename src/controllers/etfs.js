@@ -63,6 +63,30 @@ export async function getJsonETF(ticker) {
   return data;
 }
 
+export async function getStatsETF(ticker) {
+  let data;
+  try {
+    let url = `${process.env.INTRINIO_BASE_PATH}/etfs/${ticker}/stats?api_key=${process.env.INTRINIO_API_KEY}`;
+    const result = await axios.get(url);
+    data = result.data;
+  } catch (e) {
+    console.error(e);
+  }
+  return data;
+}
+
+export async function getAnalyticsETF(ticker) {
+  let data;
+  try {
+    let url = `${process.env.INTRINIO_BASE_PATH}/etfs/${ticker}/analytics?api_key=${process.env.INTRINIO_API_KEY}`;
+    const result = await axios.get(url);
+    data = result.data;
+  } catch (e) {
+    console.error(e);
+  }
+  return data;
+}
+
 export async function updateJson_ETFs() {
   let result = await getAllETFs();
 
@@ -78,7 +102,7 @@ export async function updateJson_ETFs() {
   }
 }
 
-export async function insertJsonETF(json, ticker) {
+export async function insertJsonETF(json, stats, analytics, ticker) {
   if (!json || !ticker) {
     return;
   }
@@ -91,15 +115,16 @@ export async function insertJsonETF(json, ticker) {
 
   if (result.length > 0) {
     let query = {
-      text: "UPDATE etfs SET json = $1, updated_at = now() WHERE ticker = $2",
-      values: [json, ticker],
+      text:
+        "UPDATE etfs SET json = $1, updated_at = now(), stats = $2, analytics = $3 WHERE ticker = $4",
+      values: [json, stats, analytics, ticker],
     };
     await db(query);
   } else {
     let query = {
       text:
-        "INSERT INTO etfs (json, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *",
-      values: [json, ticker],
+        "INSERT INTO etfs (json, updated_at, stats, analytics, ticker ) VALUES ( $1, now(), $2, $3, $4 ) RETURNING *",
+      values: [json, stats, analytics, ticker],
     };
     await db(query);
   }

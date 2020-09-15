@@ -619,10 +619,14 @@ export const consumer_11 = Consumer.create({
     console.log(sqsMessage);
 
     let etfJson = await etfs.getJsonETF(sqsMessage.ticker);
-    if (etfJson) {
+    let etfStats = await etfs.getStatsETF(sqsMessage.ticker);
+    let etfAnalytics = await etfs.getAnalyticsETF(sqsMessage.ticker);
+    if (etfJson && etfStats && etfAnalytics) {
       let json = JSON.stringify(etfJson);
-      if (json) {
-        await etfs.insertJsonETF(json, sqsMessage.ticker);
+      let stats = JSON.stringify(etfStats);
+      let analytics = JSON.stringify(etfAnalytics);
+      if (json && stats && analytics) {
+        await etfs.insertJsonETF(json, stats, analytics, sqsMessage.ticker);
       }
     }
   },
