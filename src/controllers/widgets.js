@@ -238,9 +238,9 @@ export async function processInput(widgetInstanceId) {
     /*          ETFS */
     //Top any stats/analytics data
     else if (type == "ETFTopNDataByType") {
-      if (params.type && params.data && params.count) {
-        let { type, data, count } = params;
-        let topETFs = { topETFs: await getETFsTopNData(count, type, data) };
+      if (params.type && params.data_key && params.count) {
+        let { type, data_key, count } = params;
+        let topETFs = { topETFs: await getETFsTopNData(count, type, data_key) };
 
         if (topETFs) {
           output = topETFs;
@@ -529,7 +529,7 @@ export async function getCompanyPrice(ticker) {
   }
 }
 
-export async function getETFsTopNData(count, type, data) {
+export async function getETFsTopNData(count, type, data_key) {
   let etfList = [];
   let dataObj;
 
@@ -543,7 +543,7 @@ export async function getETFsTopNData(count, type, data) {
     }
   }
 
-  switch (data) {
+  switch (data_key) {
     case "net_asset_value":
     case "beta_vs_spy":
     case "trailing_one_month_return_split_and_dividend":
@@ -588,7 +588,7 @@ export async function getETFsTopNData(count, type, data) {
   }
 
   let topETFs = etfList
-    .sort((a, b) => a[dataObj][data] - b[dataObj][data])
+    .sort((a, b) => a[dataObj][data_key] - b[dataObj][data_key])
     .slice(Math.max(etfList.length - count, 0));
 
   //console.log(topETFs);
