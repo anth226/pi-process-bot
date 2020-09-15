@@ -119,6 +119,7 @@ export async function processInput(widgetInstanceId) {
     let type = widget.type;
     let input = widget.input;
     let dataId = widget.widget_data_id;
+    let dashboardId = widget.dashboard_id;
     let params = {};
     if (input) {
       Object.entries(input).map((item) => {
@@ -255,7 +256,7 @@ export async function processInput(widgetInstanceId) {
       };
       await db(query);
       console.log("output updated");
-    } else {
+    } else if (!output && dashboardId != 0) {
       let query = {
         text: "DELETE FROM widget_instances WHERE id=($1)",
         values: [widgetInstanceId],
