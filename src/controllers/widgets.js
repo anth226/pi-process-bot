@@ -589,7 +589,7 @@ export async function getETFsTopNData(count, type, data_key) {
   }
 
   let topETFs = etfList
-    .sort((a, b) => a[dataObj][data_key] - b[dataObj][data_key])
+    .sort((a, b) => b[dataObj][data_key] - a[dataObj][data_key])
     .slice(Math.max(etfList.length - count, 0));
 
   //console.log(topETFs);
