@@ -237,6 +237,33 @@ export async function processInput(widgetInstanceId) {
       }
     }
     /*          ETFS */
+    //Price
+    else if (type == "ETFPrice") {
+      if (params.ticker) {
+        let ticker = params.ticker;
+        let price = await getCompanyPrice(ticker);
+        let etf = await etfs.getETFByTicker(ticker);
+        let metrics = await companies.getCompanyMetrics(ticker);
+
+        if (
+          price &&
+          comp &&
+          etf.json &&
+          etf.json.name &&
+          metrics &&
+          metrics.Change
+        ) {
+          let delta = metrics.Change;
+          let tick = {
+            ticker: ticker,
+            name: etf.json.name,
+            price: price,
+            delta: delta,
+          };
+          output = tick;
+        }
+      }
+    }
     //Top any stats/analytics data
     else if (type == "ETFTopNDataByType") {
       if (params.type && params.data_key && params.count) {
