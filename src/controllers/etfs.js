@@ -5,7 +5,7 @@ import db from "../db";
 import * as queue from "../queue";
 // import * as queue from "../queue2";
 
-export async function getEtfByTicker(ticker) {
+export async function getETFByTicker(ticker) {
   let result = await db(`
         SELECT *
         FROM etfs
