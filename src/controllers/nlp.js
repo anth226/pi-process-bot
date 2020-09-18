@@ -4,6 +4,8 @@ const natural = require("natural");
 
 const classifier = new natural.BayesClassifier();
 
+natural.PorterStemmer.attach();
+
 export async function getKeywords() {
   let words = new Map();
 
@@ -58,7 +60,27 @@ export async function trainClassifier() {
 }
 
 export async function classify(str) {
-  console.log(classifier.getClassifications(str));
+  let sectors = classifier.getClassifications(str);
+
+  /*  recursive classifier training  */
+  //   for (let i in sectors) {
+  //     if (sectors[i].value > 0.05) {
+  //       let stem = str.tokenizeAndStem();
+  //       for (let i in stem) {
+  //         if (!isNaN(stem[i])) {
+  //           stem.splice(i, 1);
+  //         }
+  //       }
+  //       let doc = "";
+  //       for (let i in stem) {
+  //         doc += " " + stem[i];
+  //       }
+  //       classifier.addDocument(doc, sectors[i].label);
+  //       classifier.train();
+  //     }
+  //   }
+
+  return sectors;
 }
 
 export async function getDescription(ticker, table) {
