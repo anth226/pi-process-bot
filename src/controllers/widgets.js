@@ -3,6 +3,7 @@ import axios from "axios";
 import * as queue from "../queue";
 import * as companies from "./companies";
 import * as mutualfunds from "./mutualfunds";
+import * as etfs from "./etfs";
 
 /* START Scraper */
 
