@@ -7,6 +7,7 @@ import * as prices from "./controllers/prices";
 import * as mutualfunds from "./controllers/mutualfunds";
 import * as widgets from "./controllers/widgets";
 import * as etfs from "./controllers/etfs";
+import * as nlp from "./controllers/nlp";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -389,6 +390,41 @@ export function publish_ProcessJsonETFs(ticker) {
   });
 }
 
+export function publish_ProcessCategorization(ticker, table) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITY_CATEGORIZATION;
+
+  let data = {
+    ticker,
+    table,
+  };
+
+  let params = {
+    MessageAttributes: {
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+      table: {
+        DataType: "String",
+        StringValue: data.table,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -637,5 +673,25 @@ consumer_11.on("error", (err) => {
 });
 
 consumer_11.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_SECURITY_CATEGORIZATION
+export const consumer_12 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_SECURITY_CATEGORIZATION,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await nlp.categorizeTicker(sqsMessage.ticker, sqsMessage.table);
+  },
+});
+
+consumer_12.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_12.on("processing_error", (err) => {
   console.error(err.message);
 });

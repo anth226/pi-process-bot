@@ -1,10 +1,24 @@
 import db from "../db";
+import * as etfs from "./etfs";
 
 const natural = require("natural");
 
+const language = "EN";
+const defaultCategory = "N";
+const defaultCategoryCapitalized = "NNP";
+
+let tokenizer = new natural.WordTokenizer();
+let lexicon = new natural.Lexicon(
+  language,
+  defaultCategory,
+  defaultCategoryCapitalized
+);
+let ruleSet = new natural.RuleSet("EN");
+let tagger = new natural.BrillPOSTagger(lexicon, ruleSet);
+
 const classifier = new natural.BayesClassifier();
 
-natural.PorterStemmer.attach();
+//natural.PorterStemmer.attach();
 
 export async function getKeywords() {
   let words = new Map();
@@ -65,22 +79,31 @@ export async function classify(str) {
   /*  recursive classifier training  */
   //   for (let i in sectors) {
   //     if (sectors[i].value > 0.05) {
-  //       let stem = str.tokenizeAndStem();
-  //       for (let i in stem) {
-  //         if (!isNaN(stem[i])) {
-  //           stem.splice(i, 1);
+  //       let tokens = tokenizer.tokenize(str);
+  //       let tags = tagger.tag(tokens);
+  //       let tagged = tags.taggedWords;
+
+  //       for (let i in tagged) {
+  //         if (
+  //           tagged[i].tag &&
+  //           (tagged[i].tag == "NN" || tagged[i].tag == "NNS")
+  //         ) {
+  //           //console.log(tagged[i]);
   //         }
   //       }
-  //       let doc = "";
-  //       for (let i in stem) {
-  //         doc += " " + stem[i];
-  //       }
-  //       classifier.addDocument(doc, sectors[i].label);
-  //       classifier.train();
+  //       //   let doc = "";
+  //       //   for (let i in stem) {
+  //       //     doc += " " + stem[i];
+  //       //   }
+  //       //   console.log(doc);
+  //       //   classifier.addDocument(doc, sectors[i].label);
+  //       //   classifier.train();
   //     }
   //   }
 
-  return sectors;
+  if (sectors && sectors.length > 0) {
+    return sectors;
+  }
 }
 
 export async function getDescription(ticker, table) {
@@ -102,6 +125,50 @@ export async function getDescription(ticker, table) {
         if (etf.json && etf.json.description) {
           return etf.json.description;
         }
+    }
+  }
+}
+
+export async function categorizeTicker(ticker, table) {
+  let desc = await getDescription(ticker, table);
+  let sectors = await classify(desc);
+  let json = JSON.stringify(sectors);
+
+  if (sectors) {
+    let query = {
+      text: "SELECT * FROM categorizations WHERE ticker = $1",
+      values: [ticker],
+    };
+    let result = await db(query);
+
+    if (result.length > 0) {
+      let query = {
+        text:
+          "UPDATE categorizations SET json_categories = $1 WHERE ticker = $2",
+        values: [json, ticker],
+      };
+      await db(query);
+    } else {
+      let query = {
+        text:
+          "INSERT INTO categorizations (json_categories, ticker ) VALUES ( $1, $2 ) RETURNING *",
+        values: [json, ticker],
+      };
+      await db(query);
+    }
+  }
+}
+
+export async function categorizeTickers() {
+  let result = await etfs.getDBETFs();
+  let table = "etfs";
+
+  if (result.length > 0) {
+    for (let i = 0; i < result.length; i += 1) {
+      let ticker = result[i].ticker;
+      if (ticker) {
+        await queue.publish_ProcessCategorization(ticker, table);
+      }
     }
   }
 }
