@@ -248,7 +248,7 @@ export async function processInput(widgetInstanceId) {
 
         if (
           price &&
-          comp &&
+          etf &&
           etf.json &&
           etf.json.name &&
           metrics &&
