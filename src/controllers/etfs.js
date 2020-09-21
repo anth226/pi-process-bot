@@ -17,6 +17,17 @@ export async function getETFByTicker(ticker) {
   }
 }
 
+export async function getDBETFs() {
+  let result = await db(`
+          SELECT *
+          FROM etfs
+      `);
+
+  if (result && result.length > 0) {
+    return result;
+  }
+}
+
 export async function getAllETFs() {
   let next_page = null;
   let etfs = [];
