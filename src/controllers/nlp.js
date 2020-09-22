@@ -1,5 +1,6 @@
 import db from "../db";
 import * as etfs from "./etfs";
+import * as queue from "../queue";
 
 const natural = require("natural");
 
