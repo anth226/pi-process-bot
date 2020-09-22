@@ -13,7 +13,7 @@ import * as networth from "./controllers/networth";
 import * as widgets from "./controllers/widgets";
 import * as mutualfunds from "./controllers/mutualfunds";
 import * as etfs from "./controllers/etfs";
-import * as nlp from "../controllers/nlp";
+import * as nlp from "./controllers/nlp";
 
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
