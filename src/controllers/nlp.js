@@ -137,7 +137,7 @@ export async function categorizeTicker(ticker, table) {
 
   if (sectors) {
     let query = {
-      text: "SELECT * FROM categorizations WHERE ticker = $1",
+      text: "SELECT * FROM ticker_classifications WHERE ticker = $1",
       values: [ticker],
     };
     let result = await db(query);
@@ -145,14 +145,14 @@ export async function categorizeTicker(ticker, table) {
     if (result.length > 0) {
       let query = {
         text:
-          "UPDATE categorizations SET json_categories = $1 WHERE ticker = $2",
+          "UPDATE ticker_classifications SET json_tags = $1 WHERE ticker = $2",
         values: [json, ticker],
       };
       await db(query);
     } else {
       let query = {
         text:
-          "INSERT INTO categorizations (json_categories, ticker ) VALUES ( $1, $2 ) RETURNING *",
+          "INSERT INTO ticker_classifications (json_tags, ticker ) VALUES ( $1, $2 ) RETURNING *",
         values: [json, ticker],
       };
       await db(query);
