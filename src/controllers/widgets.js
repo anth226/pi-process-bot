@@ -265,11 +265,26 @@ export async function processInput(widgetInstanceId) {
         }
       }
     }
-    //Top any stats/analytics data
+    //Top any stats/analytics data by type
     else if (type == "ETFTopNDataByType") {
       if (params.type && params.data_key && params.count) {
         let { type, data_key, count } = params;
-        let topETFs = { topETFs: await getETFsTopNData(count, type, data_key) };
+        let topETFs = {
+          topETFs: await getETFsTopNDataByType(count, type, data_key),
+        };
+
+        if (topETFs) {
+          output = topETFs;
+        }
+      }
+    }
+    //Top any stats/analytics data by sector
+    else if (type == "ETFTopNDataBySector") {
+      if (params.sector && params.data_key && params.count) {
+        let { sector, data_key, count } = params;
+        let topETFs = {
+          topETFs: await getETFsTopNDataBySector(count, sector, data_key),
+        };
 
         if (topETFs) {
           output = topETFs;
@@ -558,7 +573,7 @@ export async function getCompanyPrice(ticker) {
   }
 }
 
-export async function getETFsTopNData(count, type, data_key) {
+export async function getETFsTopNDataByType(count, type, data_key) {
   let etfList = [];
   let dataObj;
 
@@ -621,5 +636,87 @@ export async function getETFsTopNData(count, type, data_key) {
     .slice(Math.max(etfList.length - count, 0));
 
   //console.log(topETFs);
+  return topETFs;
+}
+
+export async function getETFsTopNDataBySector(count, sector, data_key) {
+  let topETFs = [];
+  let num = 0;
+  let dataObj;
+
+  let etfs = await db(`
+      SELECT *
+      FROM etfs
+    `);
+
+  switch (data_key) {
+    case "net_asset_value":
+    case "beta_vs_spy":
+    case "trailing_one_month_return_split_and_dividend":
+    case "trailing_one_month_return_split_only":
+    case "trailing_one_year_return_split_and_dividend":
+    case "trailing_one_year_return_split_only":
+    case "trailing_one_year_volatility_annualized":
+    case "trailing_three_year_annualized_return_split_and_dividend":
+    case "trailing_three_year_annualized_return_split_only":
+    case "trailing_three_year_volatility_annualized":
+    case "trailing_five_year_annualized_return_split_and_dividend":
+    case "trailing_five_year_annualized_return_split_only":
+    case "trailing_five_year_volatility_annualized":
+    case "trailing_ten_year_annualized_return_split_and_dividend":
+    case "trailing_ten_year_annualized_return_split_only":
+    case "inception_annualized_return_split_and_dividend":
+    case "inception_annualized_return_split_only":
+    case "calendar_year_5_return_split_and_dividend":
+    case "calendar_year_5_return_split_only":
+    case "calendar_year_4_return_split_and_dividend":
+    case "calendar_year_4_return_split_only":
+    case "calendar_year_3_return_split_and_dividend":
+    case "calendar_year_3_return_split_only":
+    case "calendar_year_2_return_split_and_dividend":
+    case "calendar_year_2_return_split_only":
+    case "calendar_year_1_return_split_and_dividend":
+    case "calendar_year_1_return_split_only":
+    case "calendar_year_to_date_return_split_and_dividend":
+    case "calendar_year_to_date_return_split_only":
+      dataObj = "json_stats";
+      break;
+    case "fifty_two_week_high":
+    case "fifty_two_week_low":
+    case "volume_traded":
+    case "average_daily_volume_one_month":
+    case "average_daily_volume_three_month":
+    case "average_daily_volume_six_month":
+    case "market_cap":
+    case "shares_outstanding":
+      dataObj = "json_analytics";
+      break;
+  }
+
+  let etfList = etfs.sort(
+    (a, b) => b[dataObj][data_key] - a[dataObj][data_key]
+  );
+
+  for (let i in etfList) {
+    let ticker = etfList[i].ticker;
+    let query = {
+      text: "SELECT * FROM ticker_classifications WHERE ticker = $1",
+      values: [ticker],
+    };
+    let result = await db(query);
+
+    if (result && result.length > 0) {
+      let topSector = result[0].json_tags[0].label;
+      //console.log(topSector);
+      if (topSector == sector) {
+        topETFs.push(etfList[i]);
+        num += 1;
+        if (num == count) {
+          break;
+        }
+      }
+    }
+  }
+
   return topETFs;
 }
