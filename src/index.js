@@ -264,6 +264,7 @@ app.get("/bot/holdings/", async (req, res) => {
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);
 
+  //training
   nlp.trainClassifier();
 
   queue.consumer_1.start();
