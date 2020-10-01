@@ -260,6 +260,13 @@ app.get("/bot/holdings/", async (req, res) => {
   }
 });
 
+app.get("/bot/widgets/", async (req, res) => {
+  let data = await widgets.getLocalWidgets();
+  if (data.length > 0) {
+    res.send({ data });
+  }
+});
+
 // Start Server
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);

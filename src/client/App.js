@@ -6,11 +6,13 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Portfolios from "../components/custom/portfolioTable";
 import Billionaires from "../components/custom/billionaireTable";
 import Holdings from "../components/custom/holdingTable";
+import Widgets from "../components/custom/widgetsTable";
 
 export default () => {
   const [portData, setPortData] = useState(null);
   const [billData, setBillData] = useState(null);
   const [holdData, setHoldData] = useState(null);
+  const [widgData, setWidgData] = useState(null);
   useEffect(() => {
     const getBillData = async () => {
       const response = await fetch("/bot/billionaires");
@@ -38,10 +40,19 @@ export default () => {
     };
     getPortData();
   }, []);
+  useEffect(() => {
+    const getWidgData = async () => {
+      const response = await fetch("/bot/widgets");
+      const json = await response.json();
+      const rawData = json.data;
+      setWidgData(rawData);
+    };
+    getWidgData();
+  }, []);
 
   return (
     <>
-      {portData && billData && holdData && (
+      {portData && billData && holdData && widgData && (
         <div className="container">
           <div className="row">
             <div className="col-12">
@@ -71,6 +82,14 @@ export default () => {
                       Portfolios
                     </Nav.Link>
                   </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link
+                      eventKey="widgets"
+                      onMouseDown={(e) => e.preventDefault()}
+                    >
+                      Pinned Widgets
+                    </Nav.Link>
+                  </Nav.Item>
                 </Nav>
                 <Tab.Content className="custom-tab-content bg-white py-4">
                   <Tab.Pane eventKey="billionaires">
@@ -83,6 +102,10 @@ export default () => {
 
                   <Tab.Pane eventKey="portfolios">
                     <Portfolios data={portData} />
+                  </Tab.Pane>
+
+                  <Tab.Pane eventKey="widgets">
+                    <Widgets data={widgData} />
                   </Tab.Pane>
                 </Tab.Content>
               </Tab.Container>
