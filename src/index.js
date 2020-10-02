@@ -287,5 +287,3 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_11.start();
   queue.consumer_12.start();
 });
-
-//trying to rebuild again
