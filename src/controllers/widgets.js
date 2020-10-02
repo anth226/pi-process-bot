@@ -582,7 +582,12 @@ export async function getETFsTopNDataByType(count, type, data_key) {
       FROM etfs
     `);
   for (let i in etfs) {
-    if (etfs[i].json_stats && etfs[i].json_analytics && etfs[i].type == type) {
+    if (
+      etfs[i].json_stats &&
+      etfs[i].json_stats.net_asset_value &&
+      etfs[i].json_analytics &&
+      etfs[i].type == type
+    ) {
       etfList.push(etfs[i]);
     }
   }
@@ -699,6 +704,10 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 
   for (let i in etfList) {
     let ticker = etfList[i].ticker;
+    let nav;
+    if (etfList[i].json_stats) {
+      nav = etfList[i].json_stats.net_asset_value;
+    }
     let query = {
       text: "SELECT * FROM ticker_classifications WHERE ticker = $1",
       values: [ticker],
@@ -708,7 +717,7 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
     if (result && result.length > 0) {
       let topSector = result[0].json_tags[0].label;
       //console.log(topSector);
-      if (topSector == sector) {
+      if (topSector == sector && nav) {
         topETFs.push(etfList[i]);
         num += 1;
         if (num == count) {
