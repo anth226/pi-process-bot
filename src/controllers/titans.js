@@ -317,7 +317,7 @@ const evaluateSectorCompositions = async (data) => {
 };
 
 const evaluateFundPerformace = async (cik) => {
-  let data_url = `https://intrinio-zaks.s3.amazonaws.com/marketcaps/${cik}.json`;
+  let data_url = `https://${process.env.AWS_BUCKET_INTRINIO_ZAKS}.s3.amazonaws.com/marketcaps/${cik}.json`;
 
   try {
     let result = await axios.get(data_url, {
