@@ -52,7 +52,7 @@ const s3 = new AWS.S3({
 
 (async () => {
   const s3AllInsider =
-    "https://terminal-scrape-data.s3.amazonaws.com/all-insider-trading/allInsider.json";
+    `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
   async function getAllInsider() {
     try {
@@ -362,7 +362,7 @@ async function fetch_Billionaire_Photos() {
         let query = {
           text:
             "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
-          values: [`https://ri-terminal.s3.amazonaws.com/photos/${id}.jpg`, id],
+          values: [`https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`, id],
         };
 
         await db(query);
@@ -404,7 +404,7 @@ async function fetch_Billionaire_Photos_Pending() {
         let query = {
           text:
             "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
-          values: [`https://ri-terminal.s3.amazonaws.com/photos/${id}.jpg`, id],
+          values: [`https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`, id],
         };
 
         await db(query);
@@ -503,7 +503,7 @@ async function fetch_Photos() {
                 text:
                   "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
                 values: [
-                  `https://ri-terminal.s3.amazonaws.com/photos/${cik}.jpg`,
+                  `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${cik}.jpg`,
                   billionaire["id"],
                 ],
               };
