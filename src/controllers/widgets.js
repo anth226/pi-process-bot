@@ -8,7 +8,7 @@ import * as etfs from "./etfs";
 /* START Scraper */
 
 const s3AllInsider =
-  "https://terminal-scrape-data.s3.amazonaws.com/all-insider-trading/allInsider.json";
+  `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
 async function getAllInsider() {
   try {

@@ -31,7 +31,7 @@ const uploadToS3 = async (key, data) => {
 
 export async function getPortfolios() {
   return {
-    url: "https://ri-terminal.s3.amazonaws.com/portfolios.json",
+    url: `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/portfolios.json`,
   };
 }
 
