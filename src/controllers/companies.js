@@ -6,6 +6,7 @@ const chalk = require("chalk");
 import db from "../db";
 
 import * as queue from "../queue";
+import * as titans from "./titans";
 // import * as queue from "../queue2";
 
 async function lookup(identifier) {
@@ -132,11 +133,26 @@ export async function updateMetrics_Companies() {
   let companies = await getCompanies();
   for (let c in companies) {
     let ticker = companies[c].ticker;
+    let cik = companies[c].cik;
     let metrics = await getCompanyMetrics(ticker);
     metrics = JSON.stringify(metrics);
 
+    //update json_metrics
     if (metrics && ticker) {
       await queue.publish_ProcessMetricsCompanies(ticker, metrics);
+    }
+
+    //update json_calculations
+    if (ticker && cik) {
+      let perf = await titans.calculateFallbackPerformance_Billionaire(cik);
+      if (perf.performance_quarter) {
+        let query = {
+          text:
+            "UPDATE companies SET json_calculations=($1) WHERE cik=($2) RETURNING *",
+          values: [perf, cik.cik],
+        };
+        await db(query);
+      }
     }
   }
 }
