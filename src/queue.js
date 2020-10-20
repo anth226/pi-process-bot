@@ -571,7 +571,7 @@ export const consumer_7 = Consumer.create({
     console.log(sqsMessage);
 
     //grab json sum
-    let fundSum = await getJsonSumMutualFund(sqsMessage.fundId);
+    let fundSum = await mutualfunds.getJsonSumMutualFund(sqsMessage.fundId);
     let jsonSum = JSON.stringify(fundSum);
 
     await mutualfunds.insertJsonMutualFund(
