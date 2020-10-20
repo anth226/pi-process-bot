@@ -57,13 +57,8 @@ export async function updateJson_MutualFunds() {
       let json = JSON.stringify(records[i]);
       let ticker = records[i].ticker;
       let fundId = records[i].fundId;
-      if (fundId) {
-        let fundSum = await getJsonSumMutualFund(fundId);
-        let jsonSum = JSON.stringify(fundSum);
-        if (jsonSum && json && ticker) {
-          // Fire off to queue if all data exists
-          await queue.publish_ProcessJsonMutualFunds(json, jsonSum, ticker);
-        }
+      if (fundId && json && ticker) {
+        await queue.publish_ProcessJsonMutualFunds(json, fundId, ticker);
       }
     }
   }

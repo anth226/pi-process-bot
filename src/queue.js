@@ -225,12 +225,12 @@ export function publish_ProcessNetWorth(id) {
   });
 }
 
-export function publish_ProcessJsonMutualFunds(json, jsonSum, ticker) {
+export function publish_ProcessJsonMutualFunds(json, fundId, ticker) {
   let queueUrl = process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES;
 
   let data = {
     json,
-    jsonSum,
+    fundId,
     ticker,
   };
 
@@ -240,9 +240,9 @@ export function publish_ProcessJsonMutualFunds(json, jsonSum, ticker) {
         DataType: "String",
         StringValue: data.json,
       },
-      jsonSum: {
+      fundId: {
         DataType: "String",
-        StringValue: data.jsonSum,
+        StringValue: data.fundId,
       },
       ticker: {
         DataType: "String",
@@ -570,9 +570,13 @@ export const consumer_7 = Consumer.create({
 
     console.log(sqsMessage);
 
+    //grab json sum
+    let fundSum = await getJsonSumMutualFund(sqsMessage.fundId);
+    let jsonSum = JSON.stringify(fundSum);
+
     await mutualfunds.insertJsonMutualFund(
       sqsMessage.json,
-      sqsMessage.jsonSum,
+      jsonSum,
       sqsMessage.ticker
     );
   },
