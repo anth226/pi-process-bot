@@ -1,4 +1,5 @@
 import axios from "axios";
+import redis, { KEY_CHART_DATA } from "../../redis";
 
 export function getIntradayPrices(intrinioApi, identifier) {
   const opts = {
@@ -23,33 +24,35 @@ export function getIntradayPrices(intrinioApi, identifier) {
   return res;
 }
 
-function historicalPages(intrinioApi, identifier, opts, hist) {
-  return intrinioApi
-    .getSecurityHistoricalData(identifier, "adj_close_price", opts)
-    .then(
-      function (data) {
-        data.historical_data.forEach((item, i) => {
-          hist.push(item);
-        });
-        if (data.next_page == null) {
-          return hist;
-        } else {
-          let newOpts = opts;
-          newOpts.nextPage = data.next_page;
-          return historicalPages(intrinioApi, identifier, newOpts, hist);
-        }
-      },
-      function (error) {
-        return error;
-      }
+async function historicalPages(intrinioApi, identifier, opts, hist) {
+  try {
+    let data = await intrinioApi.getSecurityHistoricalData(
+      identifier,
+      "adj_close_price",
+      opts
     );
+
+    data.historical_data.forEach((item, i) => {
+      hist.push(item);
+    });
+
+    if (data.next_page == null) {
+      return hist;
+    } else {
+      let newOpts = opts;
+      newOpts.nextPage = data.next_page;
+      return historicalPages(intrinioApi, identifier, newOpts, hist);
+    }
+  } catch (error) {
+    return [];
+  }
 }
 
-export function getHistoricalData(intrinioApi, identifier, days) {
+export function getHistoricalData(intrinioApi, identifier, days, freq) {
   let startDate = new Date(Date.now());
   startDate.setDate(startDate.getDate() - days);
   var opts = {
-    frequency: "daily", // String | Return historical data in the given frequency
+    frequency: freq, // String | Return historical data in the given frequency
     type: null, // String | Filter by type, when applicable
     startDate: startDate, // Date | Get historical data on or after this date
     endDate: null, // Date | Get historical date on or before this date
@@ -59,6 +62,28 @@ export function getHistoricalData(intrinioApi, identifier, days) {
   };
 
   return historicalPages(intrinioApi, identifier, opts, []);
+}
+
+export async function getChartData(intrinioApi, identifier) {
+  let cache = await redis.get(`${KEY_CHART_DATA}-${identifier}`);
+
+  if (!cache) {
+    const [daily, weekly] = await Promise.all([
+      getHistoricalData(intrinioApi, identifier, 365, "daily"),
+      getHistoricalData(intrinioApi, identifier, 1825, "weekly"),
+    ]);
+    let data = { daily: daily, weekly: weekly };
+
+    redis.set(
+      `${KEY_CHART_DATA}-${identifier}`,
+      JSON.stringify(data),
+      "EX",
+      60 * 10
+    );
+    return data;
+  } else {
+    return JSON.parse(cache);
+  }
 }
 
 export function getSecurityLastPrice(symbol) {
