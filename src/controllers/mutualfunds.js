@@ -91,7 +91,7 @@ export async function updateJson_MutualFunds() {
 }
 
 export async function insertJsonMutualFund(key, json, ticker) {
-  if (!json || !jsonSum || !ticker) {
+  if (!key || !json || !ticker) {
     return;
   }
 
