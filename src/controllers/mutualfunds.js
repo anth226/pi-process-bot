@@ -72,9 +72,9 @@ export async function getJsonPerformanceMutualFund(ticker) {
   ) {
     let perf = {
       price_percent_change_30_days:
-        1 - data.daily[0].value / data.daily[29].value,
+        (data.daily[0].value / data.daily[29].value - 1) * 100,
       price_percent_change_1_year:
-        1 - data.daily[0].value / data.weekly[52].value,
+        (data.daily[0].value / data.weekly[52].value - 1) * 100,
     };
     return perf;
   }
