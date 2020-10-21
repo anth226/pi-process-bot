@@ -570,13 +570,28 @@ export const consumer_7 = Consumer.create({
 
     console.log(sqsMessage);
 
-    //grab json sum
+    await mutualfunds.insertJsonMutualFund(
+      "json",
+      sqsMessage.json,
+      sqsMessage.ticker
+    );
+
     let fundSum = await mutualfunds.getJsonSumMutualFund(sqsMessage.fundId);
     let jsonSum = JSON.stringify(fundSum);
 
     await mutualfunds.insertJsonMutualFund(
-      sqsMessage.json,
+      "json_summary",
       jsonSum,
+      sqsMessage.ticker
+    );
+
+    let performance = await mutualfunds.getJsonPerformanceMutualFund(
+      sqsMessage.ticker
+    );
+
+    await mutualfunds.insertJsonMutualFund(
+      "json_performance",
+      performance,
       sqsMessage.ticker
     );
   },

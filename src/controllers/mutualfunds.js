@@ -2,10 +2,23 @@ import "dotenv/config";
 import axios from "axios";
 import db from "../db";
 
+import intrinioSDK from "intrinio-sdk";
+
 import * as titans from "./titans";
+import * as getSecurityData from "./intrinio/get_security_data";
 
 import * as queue from "../queue";
 // import * as queue from "../queue2";
+
+// init intrinio
+intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
+  process.env.INTRINIO_API_KEY;
+
+intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+
+const companyAPI = new intrinioSDK.CompanyApi();
+const securityAPI = new intrinioSDK.SecurityApi();
+const indexAPI = new intrinioSDK.IndexApi();
 
 export async function getMutualFundByTicker(ticker) {
   let result = await db(`
@@ -47,6 +60,19 @@ export async function getJsonSumMutualFund(fundId) {
   return fundSum;
 }
 
+export async function getJsonPerformanceMutualFund(ticker) {
+  let data = await getSecurityData.getChartData(securityAPI, ticker);
+  if (data.daily[0].date && data.weekly[0].date) {
+    let perf = {
+      price_percent_change_30_days:
+        1 - data.daily[0].value / data.daily[29].value,
+      price_percent_change_1_year:
+        1 - data.daily[0].value / data.weekly[52].value,
+    };
+    return perf;
+  }
+}
+
 export async function updateJson_MutualFunds() {
   let result = await getJsonMutualFunds();
 
@@ -64,7 +90,7 @@ export async function updateJson_MutualFunds() {
   }
 }
 
-export async function insertJsonMutualFund(json, jsonSum, ticker) {
+export async function insertJsonMutualFund(key, json, ticker) {
   if (!json || !jsonSum || !ticker) {
     return;
   }
@@ -77,16 +103,14 @@ export async function insertJsonMutualFund(json, jsonSum, ticker) {
 
   if (result.length > 0) {
     let query = {
-      text:
-        "UPDATE mutual_funds SET json = $1, json_summary = $2, updated_at = now() WHERE ticker = $3",
-      values: [json, jsonSum, ticker],
+      text: `UPDATE mutual_funds SET ${key} = $1, updated_at = now() WHERE ticker = $2`,
+      values: [json, ticker],
     };
     await db(query);
   } else {
     let query = {
-      text:
-        "INSERT INTO mutual_funds (json, json_summary, updated_at, ticker ) VALUES ( $1, $2, now(), $3 ) RETURNING *",
-      values: [json, jsonSum, ticker],
+      text: `INSERT INTO mutual_funds (${key}, updated_at, ticker ) VALUES ( $1, now(), $2 ) RETURNING *`,
+      values: [json, ticker],
     };
     await db(query);
   }
