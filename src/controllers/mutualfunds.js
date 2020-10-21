@@ -62,7 +62,7 @@ export async function getJsonSumMutualFund(fundId) {
 
 export async function getJsonPerformanceMutualFund(ticker) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
-  if (data.daily[0].date && data.weekly[0].date) {
+  if (data.daily[0].value && data.daily[29].value && data.weekly[52].value) {
     let perf = {
       price_percent_change_30_days:
         1 - data.daily[0].value / data.daily[29].value,
