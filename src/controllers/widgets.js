@@ -7,8 +7,7 @@ import * as etfs from "./etfs";
 
 /* START Scraper */
 
-const s3AllInsider =
-  `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
+const s3AllInsider = `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
 async function getAllInsider() {
   try {
@@ -169,7 +168,19 @@ export async function processInput(widgetInstanceId) {
         }
       }
     }
-    //MutualFundPrice
+    //Performance
+    else if (type == "MutualFundsTopNPerformance") {
+      let topFunds;
+      if (params.count && params.count > 0 && params.freq) {
+        let count = params.count;
+        let freq = params.freq;
+        topFunds = await getMutualFundsTopNPerformance(count, freq);
+
+        if (topFunds) {
+          output = topFunds;
+        }
+      }
+    }
     //Price
     else if (type == "MutualFundPrice") {
       if (params.ticker) {
@@ -483,6 +494,56 @@ export async function getMutualFundsTopNNetAssets(topNum) {
     .slice(Math.max(fFunds.length - topNum, 0));
   otherFunds = oFunds
     .sort((a, b) => a.json_summary.netAssets - b.json_summary.netAssets)
+    .slice(Math.max(oFunds.length - topNum, 0));
+
+  let funds = {
+    equityFunds,
+    fixedFunds,
+    otherFunds,
+  };
+
+  return funds;
+  //console.log(funds);
+}
+
+export async function getMutualFundsTopNPerformance(topNum, freq) {
+  let eFunds = [];
+  let fFunds = [];
+  let oFunds = [];
+
+  let result = await db(`
+    SELECT *
+    FROM mutual_funds
+  `);
+
+  if (result.length > 0) {
+    for (let i in result) {
+      let fund = result[i];
+      let fundCategory = fund.json.fundCategory;
+
+      if (fund.json_performance && fund.json_performance[freq]) {
+        if (fundCategory[0] == "E") {
+          eFunds.push(fund);
+        } else if (fundCategory[0] == "F") {
+          fFunds.push(fund);
+        } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+          oFunds.push(fund);
+        }
+      }
+    }
+  }
+  let equityFunds;
+  let fixedFunds;
+  let otherFunds;
+
+  equityFunds = eFunds
+    .sort((a, b) => a.json_performance[freq] - b.json_performance[freq])
+    .slice(Math.max(eFunds.length - topNum, 0));
+  fixedFunds = fFunds
+    .sort((a, b) => a.json_performance[freq] - b.json_performance[freq])
+    .slice(Math.max(fFunds.length - topNum, 0));
+  otherFunds = oFunds
+    .sort((a, b) => a.json_performance[freq] - b.json_performance[freq])
     .slice(Math.max(oFunds.length - topNum, 0));
 
   let funds = {
