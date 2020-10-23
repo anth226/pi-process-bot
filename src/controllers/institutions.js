@@ -1,6 +1,8 @@
 import db from "../db";
 import * as titans from "./titans";
 
+import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
+
 export async function getInstitutions({
   sort = [],
   page = 0,
@@ -58,3 +60,203 @@ export async function backfillInstitution_Billionaire(cik, id) {
   };
   await db(query);
 }
+
+export async function processHoldings() {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    `);
+
+  for (let i in result) {
+    let cik = result[i].cik;
+    await queue.publish_ProcessInstitutionalHoldings(cik);
+  }
+}
+
+export async function processHoldingsForInstitution(cik) {
+  let next_page = null;
+  let holdings = [];
+  let buffer = [];
+
+  do {
+    let response = await getInstitutionalHoldings(cik, next_page);
+    next_page = response["next_page"];
+
+    holdings = response["holdings"];
+    buffer = buffer.concat(holdings);
+    //console.log(holdings.length);
+  } while (next_page);
+
+  let json = JSON.stringify(buffer);
+
+  let query = {
+    text:
+      "UPDATE institutions SET json_holdings=($1) WHERE cik=($2) RETURNING *",
+    values: [json, cik],
+  };
+
+  await db(query);
+  console.log(cik + ": institution holdings updated");
+
+  await processTop10andSectors(cik);
+}
+
+export async function getInstitutionsHoldings(cik) {
+  let result = await db(`
+    SELECT json_holdings
+    FROM institutions
+    WHERE cik = '${cik}'
+  `);
+  return result;
+}
+
+export async function processTop10andSectors(cik) {
+  let data = await getInstitutionsHoldings(cik);
+
+  let filtered = data.filter((o) => {
+    return o.shares_held != 0;
+  });
+
+  //
+  // EVALUATE Allocations and top stocks
+  //
+
+  // Evaluate Top Stock
+  let top = await evaluateTopStocks(filtered);
+
+  let query = {
+    text:
+      "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+    values: [top.length > 0 ? { top } : null, cik],
+  };
+
+  await db(query);
+
+  // Calculate sectors
+  let allocations = await evaluateSectorCompositions(filtered);
+
+  query = {
+    text:
+      "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+    values: [allocations.length > 0 ? { allocations } : null, cik],
+  };
+
+  await db(query);
+
+  //
+  // EVALUATE Performances
+  //
+
+  // Calculate fund performances
+
+  // // Calculate portfolio performance
+  // await evaluateFundPerformace(cik);
+}
+
+const evaluateTopStocks = async (data) => {
+  let total = sumBy(data, function (entry) {
+    return entry["market_value"];
+  });
+
+  let sorted = orderBy(data, ["market_value"], ["desc"]);
+
+  sorted.map((entry) => {
+    entry.portfolio_share = (entry["market_value"] / total) * 100;
+    return entry;
+  });
+
+  return sorted.slice(0, 10);
+};
+
+const evaluateSectorCompositions = async (data) => {
+  // console.log(data);
+
+  let tickers = data.map(({ company }) => company["ticker"]);
+
+  // console.log(tickers);
+
+  let query = {
+    text: "SELECT * FROM companies WHERE ticker = ANY($1::text[])",
+    values: [tickers],
+  };
+
+  let result = await db(query);
+
+  // console.log(result);
+
+  const mergeById = (a1, a2) =>
+    a1.map((i1) => ({
+      ...a2.find((i2) => i2.company.ticker === i1.ticker && i2),
+      ...i1,
+    }));
+
+  let merged = mergeById(result, data);
+
+  // console.log(merged);
+
+  // //
+
+  let sectors = merged.map(({ json }) => json["sector"]);
+  // console.log(sectors);
+
+  let buffer = {};
+  let total = 0;
+
+  for (let i = 0; i < merged.length; i += 1) {
+    // if (counts.hasOwnProperty(key)) {
+    //   counts[key] = (counts[key] / total) * 100;
+    // }
+    let sector = merged[i]["json"]["sector"];
+    let market_value = merged[i]["market_value"];
+
+    buffer[`${sector}`] = buffer[`${sector}`]
+      ? buffer[`${sector}`] + market_value
+      : market_value;
+
+    total += market_value;
+  }
+
+  // console.log(buffer);
+  // console.log(total);
+
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      buffer[key] = (buffer[key] / total) * 100;
+      // buffer[key] = buffer[key].toFixed(2);
+    }
+  }
+
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      if (key == "null" || key == null) {
+        buffer["Other"] = buffer[key];
+        delete buffer[key];
+      }
+
+      if (buffer[key] == NaN) {
+        delete buffer[key];
+      }
+
+      if (buffer[key] == 0) {
+        delete buffer[key];
+      }
+    }
+  }
+
+  let response = [];
+
+  for (let key in buffer) {
+    if (buffer.hasOwnProperty(key)) {
+      response.push({
+        sector: key,
+        concentration: buffer[key],
+      });
+    }
+  }
+
+  let sorted = orderBy(response, ["concentration"], ["desc"]);
+
+  console.log(sorted);
+
+  return sorted;
+};

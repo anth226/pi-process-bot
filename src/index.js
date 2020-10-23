@@ -225,7 +225,19 @@ app.get("/update_etfs", async (req, res) => {
   res.send("ok");
 });
 
-/* ETFs */
+/* Institutions */
+
+// /process_institutional_holdings?token=XXX
+app.get("/process_institutional_holdings", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+  }
+  await institutions.processHoldings();
+  res.send("ok");
+});
+
+/* NLP */
 
 // /categorize_securities?token=XXX
 app.get("/categorize_securities", async (req, res) => {
@@ -286,4 +298,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_10.start();
   queue.consumer_11.start();
   queue.consumer_12.start();
+  queue.consumer_13.start();
 });

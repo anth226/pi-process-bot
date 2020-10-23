@@ -425,6 +425,36 @@ export function publish_ProcessCategorization(ticker, table) {
   });
 }
 
+export function publish_ProcessInstitutionalHoldings(cik) {
+  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONAL_HOLDINGS;
+
+  let data = {
+    cik,
+  };
+
+  let params = {
+    MessageAttributes: {
+      cik: {
+        DataType: "String",
+        StringValue: data.cik,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${cik}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -712,5 +742,25 @@ consumer_12.on("error", (err) => {
 });
 
 consumer_12.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_INSTITUTIONAL_HOLDINGS
+export const consumer_13 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONAL_HOLDINGS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await institutions.processHoldingsForInstitution(sqsMessage.cik);
+  },
+});
+
+consumer_13.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_13.on("processing_error", (err) => {
   console.error(err.message);
 });
