@@ -239,13 +239,14 @@ const evaluateSectorCompositions = async (data) => {
 
   // console.log(result);
 
-  if (!company) {
-    return;
-  }
-
   const mergeById = (a1, a2) =>
     a1.map((i1) => ({
-      ...a2.find((i2) => i2.company.ticker === i1.ticker && i2),
+      ...a2.find((i2) => {
+        if (!i2.company) {
+          return;
+        }
+        i2.company.ticker === i1.ticker && i2;
+      }),
       ...i1,
     }));
 
