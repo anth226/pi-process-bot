@@ -1,6 +1,8 @@
 import db from "../db";
 import * as titans from "./titans";
 
+import * as queue from "../queue";
+
 import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
 
 export async function getInstitutions({
