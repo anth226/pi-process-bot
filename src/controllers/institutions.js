@@ -175,7 +175,12 @@ const evaluateTopStocks = async (data) => {
 const evaluateSectorCompositions = async (data) => {
   // console.log(data);
 
-  let tickers = data.map(({ company }) => company["ticker"]);
+  let tickers = data.map(({ company }) => {
+    if (!company) {
+      return;
+    }
+    return company["ticker"];
+  });
 
   // console.log(tickers);
 
@@ -190,7 +195,12 @@ const evaluateSectorCompositions = async (data) => {
 
   const mergeById = (a1, a2) =>
     a1.map((i1) => ({
-      ...a2.find((i2) => i2.company.ticker === i1.ticker && i2),
+      ...a2.find((i2) => {
+        if (!i2.company) {
+          return;
+        }
+        i2.company.ticker === i1.ticker && i2;
+      }),
       ...i1,
     }));
 
