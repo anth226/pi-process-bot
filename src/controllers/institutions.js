@@ -5,6 +5,8 @@ import * as queue from "../queue";
 
 import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
 
+import { orderBy, find, sumBy } from "lodash";
+
 export async function getInstitutions({
   sort = [],
   page = 0,
