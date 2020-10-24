@@ -91,11 +91,7 @@ export async function processHoldingsForInstitution(cik) {
     //console.log(holdings.length);
   } while (next_page);
 
-  if (buffer.length < 1) {
-    buffer = null;
-  }
-
-  let json = JSON.stringify(buffer);
+  let json = buffer.length > 0 ? JSON.stringify(buffer) : null;
 
   let query = {
     text:
@@ -130,23 +126,23 @@ export async function processTop10andSectors(cik) {
   //
 
   // Evaluate Top Stock
-  let top = await evaluateTopStocks(filtered);
+  let top = data ? await evaluateTopStocks(filtered) : null;
 
   let query = {
     text:
       "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [top.length > 0 ? { top } : null, cik],
+    values: [top, cik],
   };
 
   await db(query);
 
   // Calculate sectors
-  let allocations = await evaluateSectorCompositions(filtered);
+  let allocations = data ? await evaluateSectorCompositions(filtered) : null;
 
   query = {
     text:
       "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [allocations.length > 0 ? { allocations } : null, cik],
+    values: [allocations, cik],
   };
 
   await db(query);
