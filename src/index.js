@@ -109,7 +109,7 @@ app.get("/redis/flush", async (req, res) => {
 
 // /cache_holdings_titans?token=XXX
 app.get("/cache_holdings_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -120,7 +120,7 @@ app.get("/cache_holdings_titans", async (req, res) => {
 
 // /cache_performances_titans?token=XXX
 app.get("/cache_performances_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -131,7 +131,7 @@ app.get("/cache_performances_titans", async (req, res) => {
 
 // /generate_summaries_titans?token=XXX
 app.get("/generate_summaries_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -142,7 +142,7 @@ app.get("/generate_summaries_titans", async (req, res) => {
 
 // /update_networth_titans?token=XXX
 app.get("/update_networth_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -153,7 +153,7 @@ app.get("/update_networth_titans", async (req, res) => {
 
 // /billionaires/:id/generate_summary?token=XXX
 app.get("/billionaires/:id/generate_summary", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -166,7 +166,7 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 
 // /update_json_mutualfunds?token=XXX
 app.get("/update_json_mutualfunds", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -179,7 +179,7 @@ app.get("/update_json_mutualfunds", async (req, res) => {
 
 // /update_metrics_companies?token=XXX
 app.get("/update_metrics_companies", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -193,7 +193,7 @@ app.get("/update_metrics_companies", async (req, res) => {
 
 // /update_global_widgets?token=XXX
 app.get("/update_global_widgets", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -204,7 +204,7 @@ app.get("/update_global_widgets", async (req, res) => {
 
 // /update_local_widgets?token=XXX
 app.get("/update_local_widgets", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -214,7 +214,7 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -227,7 +227,7 @@ app.get("/widgets/:id/process_input", async (req, res) => {
 
 // /update_etfs?token=XXX
 app.get("/update_etfs", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -240,7 +240,7 @@ app.get("/update_etfs", async (req, res) => {
 
 // /process_institutional_holdings?token=XXX
 app.get("/process_institutional_holdings", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
@@ -253,7 +253,7 @@ app.get("/process_institutional_holdings", async (req, res) => {
 
 // /categorize_securities?token=XXX
 app.get("/categorize_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == true) return;
+  if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
