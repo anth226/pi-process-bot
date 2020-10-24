@@ -91,6 +91,10 @@ export async function processHoldingsForInstitution(cik) {
     //console.log(holdings.length);
   } while (next_page);
 
+  if (buffer.length < 1) {
+    buffer = null;
+  }
+
   let json = JSON.stringify(buffer);
 
   let query = {
