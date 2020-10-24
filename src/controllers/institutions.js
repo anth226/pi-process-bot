@@ -107,26 +107,37 @@ export async function processHoldingsForInstitution(cik) {
 
 export async function getInstitutionsHoldings(cik) {
   let result = await db(`
-    SELECT json_holdings
+    SELECT *
     FROM institutions
     WHERE cik = '${cik}'
   `);
-  return result;
+  //return result;
+  if (result.length > 0) {
+    let { json_holdings } = result[0];
+    if (!json_holdings) {
+      return null;
+    }
+    let filtered = json_holdings.filter((o) => {
+      return o.shares_held != 0;
+    });
+    return filtered;
+  }
+  return null;
 }
 
 export async function processTop10andSectors(cik) {
   let data = await getInstitutionsHoldings(cik);
 
-  let filtered = data.filter((o) => {
-    return o.shares_held != 0;
-  });
+  console.log(data);
 
   //
   // EVALUATE Allocations and top stocks
   //
 
   // Evaluate Top Stock
-  let top = data ? await evaluateTopStocks(filtered) : null;
+  let top = data ? await evaluateTopStocks(data) : null;
+
+  console.log("A", top);
 
   let query = {
     text:
@@ -137,7 +148,9 @@ export async function processTop10andSectors(cik) {
   await db(query);
 
   // Calculate sectors
-  let allocations = data ? await evaluateSectorCompositions(filtered) : null;
+  let allocations = data ? await evaluateSectorCompositions(data) : null;
+
+  console.log("B", allocations);
 
   query = {
     text:
