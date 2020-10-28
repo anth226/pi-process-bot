@@ -121,13 +121,13 @@ export async function processHoldingsForInstitution(id) {
   } else {
     query = {
       text:
-        "INSERT INTO institution_holdings (json_holdings, updated_at, institution_id, ) VALUES ( $1, now(), $2) RETURNING *",
+        "INSERT INTO institution_holdings (json_holdings, updated_at, institution_id) VALUES ( $1, now(), $2) RETURNING *",
       values: [json, id],
     };
     await db(query);
   }
 
-  console.log(cik + ": institution holdings updated");
+  console.log(id + ": institution holdings updated");
   //await processTop10andSectors(cik);
 }
 
