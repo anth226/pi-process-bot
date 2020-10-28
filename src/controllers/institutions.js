@@ -65,22 +65,34 @@ export async function backfillInstitution_Billionaire(cik, id) {
   await db(query);
 }
 
-export async function processHoldings() {
+export async function fetchHoldings() {
   let result = await db(`
     SELECT *
     FROM institutions
     `);
 
   for (let i in result) {
-    let cik = result[i].cik;
-    await queue.publish_ProcessInstitutionalHoldings(cik);
+    let { id } = result[i];
+    await queue.publish_ProcessInstitutionalHoldings(id);
   }
 }
 
-export async function processHoldingsForInstitution(cik) {
+export async function processHoldingsForInstitution(id) {
   let next_page = null;
   let holdings = [];
   let buffer = [];
+
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+    `);
+
+  if (result.length == 0) {
+    return;
+  }
+
+  let { cik } = result[0];
 
   do {
     let response = await getInstitutionalHoldings(cik, next_page);
@@ -94,15 +106,29 @@ export async function processHoldingsForInstitution(cik) {
   let json = buffer.length > 0 ? JSON.stringify(buffer) : null;
 
   let query = {
-    text:
-      "UPDATE institutions SET json_holdings=($1) WHERE cik=($2) RETURNING *",
-    values: [json, cik],
+    text: "SELECT * FROM institution_holdings WHERE institution_id = $1",
+    values: [id],
   };
+  result = await db(query);
 
-  await db(query);
+  if (result.length > 0) {
+    query = {
+      text:
+        "UPDATE institution_holdings SET json_holdings = $1, updated_at = now() WHERE institution_id = $2",
+      values: [json, id],
+    };
+    await db(query);
+  } else {
+    query = {
+      text:
+        "INSERT INTO institution_holdings (json_holdings, updated_at, institution_id, ) VALUES ( $1, now(), $2) RETURNING *",
+      values: [json, id],
+    };
+    await db(query);
+  }
+
   console.log(cik + ": institution holdings updated");
-
-  await processTop10andSectors(cik);
+  //await processTop10andSectors(cik);
 }
 
 export async function getInstitutionsHoldings(cik) {

@@ -425,22 +425,22 @@ export function publish_ProcessCategorization(ticker, table) {
   });
 }
 
-export function publish_ProcessInstitutionalHoldings(cik) {
+export function publish_ProcessInstitutionalHoldings(id) {
   let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONAL_HOLDINGS;
 
   let data = {
-    cik,
+    id,
   };
 
   let params = {
     MessageAttributes: {
-      cik: {
+      id: {
         DataType: "String",
-        StringValue: data.cik,
+        StringValue: data.id,
       },
     },
     MessageBody: JSON.stringify(data),
-    MessageDeduplicationId: `${cik}-${queueUrl}`,
+    MessageDeduplicationId: `${id}-${queueUrl}`,
     MessageGroupId: this.constructor.name,
     QueueUrl: queueUrl,
   };
@@ -753,7 +753,7 @@ export const consumer_13 = Consumer.create({
 
     console.log(sqsMessage);
 
-    await institutions.processHoldingsForInstitution(sqsMessage.cik);
+    await institutions.processHoldingsForInstitution(sqsMessage.id);
   },
 });
 
