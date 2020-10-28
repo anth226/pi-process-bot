@@ -238,14 +238,14 @@ app.get("/update_etfs", async (req, res) => {
 
 /* Institutions */
 
-// /process_institutional_holdings?token=XXX
-app.get("/process_institutional_holdings", async (req, res) => {
+// /fetch_institutional_holdings?token=XXX
+app.get("/fetch_institutional_holdings", async (req, res) => {
   if (process.env.DISABLE_CRON == "true") return;
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
   }
-  await institutions.processHoldings();
+  await institutions.fetchHoldings();
   res.send("ok");
 });
 
