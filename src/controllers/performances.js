@@ -15,7 +15,7 @@ const s3 = new AWS.S3({
 
 const uploadToS3 = async (key, data) => {
   let params = {
-    Bucket: process.env.BUCKET_INTRINIO_ZAKS,
+    Bucket: process.env.AWS_BUCKET_INTRINIO_ZAKS,
     Key: key,
     Body: JSON.stringify(data),
     ContentType: "application/json",
