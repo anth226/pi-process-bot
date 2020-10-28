@@ -435,7 +435,7 @@ export function publish_ProcessInstitutionalHoldings(id) {
   let params = {
     MessageAttributes: {
       id: {
-        DataType: "String",
+        DataType: "Number",
         StringValue: data.id,
       },
     },
