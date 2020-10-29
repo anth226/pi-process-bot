@@ -99,7 +99,10 @@ export async function processHoldingsForInstitution(id) {
     next_page = response["next_page"];
 
     holdings = response["holdings"];
-    buffer = buffer.concat(holdings);
+    if (holdings) {
+      buffer = buffer.concat(holdings);
+    }
+
     //console.log(holdings.length);
   } while (next_page);
 

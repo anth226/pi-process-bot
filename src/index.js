@@ -13,6 +13,7 @@ import * as networth from "./controllers/networth";
 import * as widgets from "./controllers/widgets";
 import * as mutualfunds from "./controllers/mutualfunds";
 import * as etfs from "./controllers/etfs";
+import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
 
 import * as queue from "./queue";
@@ -97,6 +98,7 @@ app.get("/redis/flush", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
 
   await redis.flushall("ASYNC");
@@ -116,6 +118,7 @@ app.get("/cache_holdings_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await holdings.cacheHoldings_Billionaires();
   res.send("ok");
@@ -130,6 +133,7 @@ app.get("/cache_performances_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await performances.cachePerformances_Billionaires();
   res.send("ok");
@@ -144,6 +148,7 @@ app.get("/generate_summaries_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await performances.generateSummaries_Billionaires();
   res.send("ok");
@@ -158,6 +163,7 @@ app.get("/update_networth_titans", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await networth.updateNetWorth_Billionaires();
   res.send("ok");
@@ -172,6 +178,7 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await titans.processHoldingsPerformanceAndSummary(req.params.id);
   res.send("ok");
@@ -188,6 +195,7 @@ app.get("/update_json_mutualfunds", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await mutualfunds.updateJson_MutualFunds();
   res.send("ok");
@@ -204,6 +212,7 @@ app.get("/update_metrics_companies", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await companies.updateJson_InsiderCompanies();
   await companies.updateMetrics_Companies();
@@ -221,6 +230,7 @@ app.get("/update_global_widgets", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await widgets.updateGlobal();
   res.send("ok");
@@ -235,6 +245,7 @@ app.get("/update_local_widgets", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await widgets.updateLocal();
   res.send("ok");
@@ -248,6 +259,7 @@ app.get("/widgets/:id/process_input", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await widgets.processInput(req.params.id);
   res.send("ok");
@@ -264,6 +276,7 @@ app.get("/update_etfs", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await etfs.updateJson_ETFs();
   res.send("ok");
@@ -280,8 +293,41 @@ app.get("/fetch_institutional_holdings", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await institutions.fetchHoldings();
+  res.send("ok");
+});
+
+/* PAGES */
+
+// /generate_pages_portfolios?token=XXX
+app.get("/generate_pages_portfolios", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await pages.generate_Portfolios();
+  res.send("ok");
+});
+
+// /generate_pages_titans?token=XXX
+app.get("/generate_pages_titans", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
   res.send("ok");
 });
 
@@ -296,6 +342,7 @@ app.get("/categorize_securities", async (req, res) => {
   let { query } = req;
   if (query.token != "XXX") {
     res.send("fail");
+    return;
   }
   await nlp.categorizeTickers();
   res.send("ok");
