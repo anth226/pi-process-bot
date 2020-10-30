@@ -64,7 +64,7 @@ export async function parseHoldings_Portfolios() {
   }
 
   query = {
-    text: `UPDATE pages_institutions SET updated_at=now(), pages_count=($1) WHERE id`,
+    text: `UPDATE pages_institutions SET updated_at=now(), pages_count=($1) WHERE id = 1`,
     values: [pages.length],
   };
 

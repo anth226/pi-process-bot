@@ -312,7 +312,7 @@ app.get("/generate_pages_portfolios", async (req, res) => {
     res.send("fail");
     return;
   }
-  await pages.generate_Portfolios();
+  await pages.parseHoldings_Portfolios();
   res.send("ok");
 });
 
