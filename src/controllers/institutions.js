@@ -117,15 +117,15 @@ export async function processHoldingsForInstitution(id) {
   if (result.length > 0) {
     query = {
       text:
-        "UPDATE institution_holdings SET json_holdings = $1, updated_at = now() WHERE institution_id = $2",
-      values: [json, id],
+        "UPDATE institution_holdings SET json_holdings = $1, updated_at = now(), count = $2 WHERE institution_id = $3",
+      values: [json, json ? json.length : 0, id],
     };
     await db(query);
   } else {
     query = {
       text:
-        "INSERT INTO institution_holdings (json_holdings, updated_at, institution_id) VALUES ( $1, now(), $2) RETURNING *",
-      values: [json, id],
+        "INSERT INTO institution_holdings (json_holdings, updated_at, count, institution_id) VALUES ( $1, now(), $2, $3) RETURNING *",
+      values: [json, json ? json.length : 0, id],
     };
     await db(query);
   }
