@@ -118,14 +118,14 @@ export async function processHoldingsForInstitution(id) {
     query = {
       text:
         "UPDATE institution_holdings SET json_holdings = $1, updated_at = now(), count = $2 WHERE institution_id = $3",
-      values: [json, json ? json.length : 0, id],
+      values: [json, buffer ? buffer.length : 0, id],
     };
     await db(query);
   } else {
     query = {
       text:
         "INSERT INTO institution_holdings (json_holdings, updated_at, count, institution_id) VALUES ( $1, now(), $2, $3) RETURNING *",
-      values: [json, json ? json.length : 0, id],
+      values: [json, buffer ? buffer.length : 0, id],
     };
     await db(query);
   }
