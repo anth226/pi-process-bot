@@ -51,192 +51,7 @@ const s3 = new AWS.S3({
 //};
 
 (async () => {
-  const s3AllInsider =
-    `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
-
-  async function getAllInsider() {
-    try {
-      const response = await axios.get(s3AllInsider);
-      return response.data;
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function getInsidersNMovers(topNum) {
-    let comps = [];
-    let compsMap = new Map();
-
-    let result = await getAllInsider();
-    for (let i in result) {
-      let tran = result[i];
-      let ticker = tran[0];
-      if (compsMap.has(ticker)) {
-        let trans = compsMap.get(ticker).trans;
-        trans.push({
-          //name: tran[1],
-          //title: tran[2],
-          type: tran[4],
-          //cost: tran[5],
-          numShares: tran[6],
-          value: tran[7],
-        });
-      } else {
-        compsMap.set(ticker, {
-          trans: [
-            {
-              //name: tran[1],
-              //title: tran[2],
-              type: tran[4],
-              //cost: tran[5],
-              numShares: tran[6],
-              value: tran[7],
-            },
-          ],
-        });
-      }
-    }
-    compsMap.forEach((value, key) => {
-      let trans = value.trans;
-      let sold = 0;
-      let bought = 0;
-      let option = 0;
-      let valueChange = 0;
-      for (let t in trans) {
-        let type = trans[t].type;
-        let numShares = parseInt(trans[t].numShares.replace(/,/g, ""));
-        let value = parseInt(trans[t].value.replace(/,/g, ""));
-        if (type[0] == "S") {
-          sold += numShares;
-          valueChange -= value;
-        } else if (type[0] == "B") {
-          bought += numShares;
-          valueChange += value;
-        } else if (type[0] == "O") {
-          option += numShares;
-          valueChange += value;
-        }
-      }
-      comps.push({
-        ticker: key,
-        sold: sold,
-        bought: bought,
-        option: option,
-        valueChange: valueChange,
-      });
-    });
-
-    let compsSorted = comps
-      .sort((a, b) => Math.abs(a.valueChange) - Math.abs(b.valueChange))
-      .slice(Math.max(comps.length - topNum, 0));
-
-    //console.log(compsSorted);
-    return compsSorted;
-  }
-
-  let topComps = { topComps: await getInsidersNMovers(10) };
-
-  console.log(topComps);
-
-  // let cik = "0001067983";
-
-  // //
-  // let data = await holdings.fetchAll(cik);
-  // let filtered = data.filter((o) => {
-  //   return o.shares_held != 0;
-  // });
-
-  // let top = await evaluateTopStocks(filtered);
-
-  // console.log(top);
-  //
-  // EVALUATE Allocations and top stocks
-  //
-
-  //
-
-  //
-  // await import_Billionaires();
-  // await fetch_Billionaire_Photos();
-  //
-  // await zip.zipPerformances_Billionaires();
-  //
-  // await holdings.cacheHoldings_Titans();
-  //
-  //let cik = "0000921669";
-  //let cik = "0000000000";
-  // // await performances.calculatePerformance_Billionaire(cik);
-  // // await companies.cacheCompanies_Portfolio(cik);
-  // await titans.generateSummary(cik);
-  /*
-  let data = await titans.fetchBillionaireList();
-  //console.log("UPDATE NET WORTH");
-  //console.log(data);
-
-  for (let i = 1; i < 5; i++) {
-    // Get URI from billionaires table based on primary cik
-    let uri = await titans.getBillionaireURI(i);
-    console.log("uri");
-    console.log(uri);
-
-    // Get Net Worth, convert from millions to dollars
-    let netWorth = await titans.getNetworth(data, uri);
-    console.log("netWorth");
-    console.log(netWorth);
-  }
-  */
-  //
-  // let result = await titans.getBillionaires_Complete({});
-  /*
-  let result = await titans.getBillionairesCiks({ size: 5000 });
-
-  let records = result;
-  let c = 0;
-  let d = "(";
-  for (let i = 0; i < records.length; i += 1) {
-    let ciks = records[i].ciks;
-    let id = records[i].id;
-
-    //filter for primary and 00's
-    if (ciks && ciks.length > 0) {
-      for (let j = 0; j < ciks.length; j += 1) {
-        if (ciks[j].cik != "0000000000" && ciks[j].is_primary == true) {
-          d += "\'" + ciks[j].cik + "\' ,"
-        /*
-        } else if (ciks[j].cik == "0000000000" && ciks[j].is_primary == true) {
-          console.log("\nNo Valid CIK \nUpdate required");
-          console.log("Titan ID:");
-          console.log(id);
-          c++; 
-        } else {
-          //console.log("invalid");
-        }
-      }
-    }
-
-    // let name = records[i]["name"];
-    // console.log(name);
-    //console.log(records[i]);
-    //await edgar.cache(records[i]);
-  }
-  console.log(d);
-  console.log(c);
-  */
-  //
-  // // GENERATE SUMMARY
-  // //
-  // let result = await titans.getBillionaires_Complete({});
-  // for (let i = 0; i < result.length; i += 1) {
-  //   let cik = result[i]["cik"];
-  //   if (cik) {
-  //     await titans.generateSummary(cik);
-  //     console.log();
-  //   }
-  // }
-  // //
-  // let ticker = "AAPL";
-  // await queue.publish_ProcessSecurityPrices(ticker);
-  // await fetch_Billionaire_Photos_Pending();
+  queue.publish_ProcessInstitutionalHoldings("1");
 })();
 
 async function import_Billionaires() {
@@ -362,7 +177,10 @@ async function fetch_Billionaire_Photos() {
         let query = {
           text:
             "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
-          values: [`https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`, id],
+          values: [
+            `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`,
+            id,
+          ],
         };
 
         await db(query);
@@ -404,7 +222,10 @@ async function fetch_Billionaire_Photos_Pending() {
         let query = {
           text:
             "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
-          values: [`https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`, id],
+          values: [
+            `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`,
+            id,
+          ],
         };
 
         await db(query);
