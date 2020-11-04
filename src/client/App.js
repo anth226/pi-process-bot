@@ -56,7 +56,7 @@ export default () => {
         <div className="container">
           <div className="row">
             <div className="col-12">
-              <Tab.Container defaultActiveKey="portfolios">
+              <Tab.Container defaultActiveKey="billionaires">
                 <Nav variant="tabs" justify className="custom-nav-tabs">
                   <Nav.Item>
                     <Nav.Link
