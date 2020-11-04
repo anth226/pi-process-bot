@@ -305,7 +305,8 @@ export async function processInput(widgetInstanceId) {
 
     if (output) {
       let query = {
-        text: "UPDATE widget_data SET output = $2 WHERE id = $1",
+        text:
+          "UPDATE widget_data SET output = $2, updated_at = now() WHERE id = $1",
         values: [dataId, output],
       };
       await db(query);
