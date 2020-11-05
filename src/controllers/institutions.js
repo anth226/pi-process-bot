@@ -179,7 +179,7 @@ export async function processTop10andSectors(cik) {
   //
 
   // Evaluate Top Stock
-  let top = data.length > 0 ? await evaluateTopStocks(data) : null;
+  let top = data ? await evaluateTopStocks(data) : null;
 
   if (top) {
     jsonTop10 = JSON.stringify(top);
@@ -194,8 +194,7 @@ export async function processTop10andSectors(cik) {
   await db(query);
 
   // Calculate sectors
-  let allocations =
-    data.length > 0 ? await evaluateSectorCompositions(data) : null;
+  let allocations = data ? await evaluateSectorCompositions(data) : null;
 
   if (allocations) {
     jsonAllocations = JSON.stringify(allocations);
