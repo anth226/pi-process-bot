@@ -77,6 +77,20 @@ export async function fetchHoldings() {
   }
 }
 
+export async function calculatePerformances() {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    `);
+
+  for (let i in result) {
+    let { cik } = result[i];
+    if (cik) {
+      await queue.publish_ProcessInstitutionalPerformance(cik);
+    }
+  }
+}
+
 export async function processHoldingsForInstitution(id) {
   let next_page = null;
   let holdings = [];
@@ -131,16 +145,17 @@ export async function processHoldingsForInstitution(id) {
   }
 
   console.log(id + ": institution holdings updated");
-  //await processTop10andSectors(cik);
 }
 
 export async function getInstitutionsHoldings(cik) {
   let result = await db(`
-    SELECT *
-    FROM institutions
-    WHERE cik = '${cik}'
+    SELECT i.*, i_h.*
+    FROM institutions AS i
+    LEFT JOIN institution_holdings AS i_h
+    ON i.id = i_h.institution_id
+    WHERE i.cik = '${cik}'
   `);
-  //return result;
+
   if (result.length > 0) {
     let { json_holdings } = result[0];
     if (!json_holdings) {
@@ -155,36 +170,41 @@ export async function getInstitutionsHoldings(cik) {
 }
 
 export async function processTop10andSectors(cik) {
+  let jsonTop10;
+  let jsonAllocations;
   let data = await getInstitutionsHoldings(cik);
-
-  console.log(data);
 
   //
   // EVALUATE Allocations and top stocks
   //
 
   // Evaluate Top Stock
-  let top = data ? await evaluateTopStocks(data) : null;
+  let top = data.length > 0 ? await evaluateTopStocks(data) : null;
 
-  console.log("A", top);
+  if (top) {
+    jsonTop10 = JSON.stringify(top);
+  }
 
   let query = {
     text:
       "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [top, cik],
+    values: [jsonTop10, cik],
   };
 
   await db(query);
 
   // Calculate sectors
-  let allocations = data ? await evaluateSectorCompositions(data) : null;
+  let allocations =
+    data.length > 0 ? await evaluateSectorCompositions(data) : null;
 
-  console.log("B", allocations);
+  if (allocations) {
+    jsonAllocations = JSON.stringify(allocations);
+  }
 
   query = {
     text:
       "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [allocations, cik],
+    values: [jsonAllocations, cik],
   };
 
   await db(query);

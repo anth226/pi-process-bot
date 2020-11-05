@@ -299,6 +299,21 @@ app.get("/fetch_institutional_holdings", async (req, res) => {
   res.send("ok");
 });
 
+// /calculate_performances_institutions?token=XXX
+app.get("/calculate_performances_institutions", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.calculatePerformances();
+  res.send("ok");
+});
+
 /* PAGES */
 
 // /generate_pages_portfolios?token=XXX
@@ -398,4 +413,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_11.start();
   queue.consumer_12.start();
   queue.consumer_13.start();
+  queue.consumer_14.start();
 });
