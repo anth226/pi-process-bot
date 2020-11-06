@@ -165,6 +165,7 @@ export async function getInstitutionsHoldings(cik) {
     let filtered = json_holdings.filter((o) => {
       return o.shares_held != 0;
     });
+    console.log("filtered", filtered);
     return filtered;
   }
   return null;
@@ -287,7 +288,9 @@ const evaluateSectorCompositions = async (data) => {
     //   counts[key] = (counts[key] / total) * 100;
     // }
     let sector = merged[i]["json"]["sector"];
-    let market_value = merged[i]["json_holdings"]["market_value"];
+    let market_value = merged[i]["market_value"];
+
+    console.log("market_value", market_value);
 
     buffer[`${sector}`] = buffer[`${sector}`]
       ? buffer[`${sector}`] + market_value
