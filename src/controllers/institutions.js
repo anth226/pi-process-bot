@@ -236,7 +236,7 @@ const evaluateTopStocks = async (data) => {
 };
 
 const evaluateSectorCompositions = async (data) => {
-  console.log(data);
+  console.log("data", data);
 
   let tickers = data.map(({ company }) => {
     if (!company) {
@@ -254,7 +254,8 @@ const evaluateSectorCompositions = async (data) => {
 
   let result = await db(query);
 
-  //console.log(result);
+  console.log("result");
+  console.log(result);
 
   const mergeById = (a1, a2) =>
     a1.map((i1) => ({
@@ -262,8 +263,8 @@ const evaluateSectorCompositions = async (data) => {
         if (!i2.company) {
           return;
         }
-        //console.log("i1", i1);
-        //console.log("i2", i2);
+        console.log("i1", i1);
+        console.log("i2", i2);
         i2.company.ticker === i1.json.ticker && i2;
       }),
       ...i1,
