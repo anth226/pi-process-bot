@@ -271,10 +271,12 @@ const evaluateSectorCompositions = async (data) => {
         }
       }
     }
+    console.log("1st merged", merged);
     if (merged && merged.length > 0) {
       return merged;
+    } else {
+      return null;
     }
-    return null;
   };
 
   // const mergeById = (a1, a2) =>
