@@ -158,14 +158,12 @@ export async function getInstitutionsHoldings(cik) {
 
   if (result.length > 0) {
     let { json_holdings } = result[0];
-    console.log("json_holdings", json_holdings);
     if (!json_holdings) {
       return null;
     }
     let filtered = json_holdings.filter((o) => {
       return o.shares_held != 0;
     });
-    console.log("filtered", filtered);
     return filtered;
   }
   return null;
