@@ -290,6 +290,8 @@ const evaluateSectorCompositions = async (data) => {
     let sector = merged[i]["json"]["sector"];
     let market_value = merged[i]["market_value"];
 
+    console.log("merged[i]", merged[i]);
+
     console.log("market_value", market_value);
 
     buffer[`${sector}`] = buffer[`${sector}`]
