@@ -236,7 +236,7 @@ const evaluateTopStocks = async (data) => {
 };
 
 const evaluateSectorCompositions = async (data) => {
-  console.log("data", data);
+  //console.log("data", data);
 
   let tickers = data.map(({ company }) => {
     if (!company) {
@@ -254,28 +254,48 @@ const evaluateSectorCompositions = async (data) => {
 
   let result = await db(query);
 
-  console.log("result");
-  console.log(result);
+  //console.log("result");
+  //console.log(result);
 
-  const mergeById = (a1, a2) =>
-    a1.map((i1) => ({
-      ...a2.find((i2) => {
-        if (!i2.company) {
-          return;
+  const merge = (companies, holdings) => {
+    let merged = [];
+    for (let i in companies) {
+      let ticker = companies[i].ticker;
+      for (let j in holdings) {
+        let holdingTicker = holdings[j].ticker;
+        if (ticker === holdingTicker) {
+          merged[i] = {
+            company: comapnies[i],
+            holding: holdings[j],
+          };
         }
-        console.log("i1", i1);
-        console.log("i2", i2);
-        i2.company.ticker === i1.json.ticker;
-      }),
-      ...i1.json,
-      ...i2,
-    }));
+      }
+    }
+    if (merged.length > 0) {
+      return merged;
+    }
+    return null;
+  };
 
-  let merged = mergeById(result, data);
+  // const mergeById = (a1, a2) =>
+  //   a1.map((i1) => ({
+  //     ...a2.find((i2) => {
+  //       if (!i2.company) {
+  //         return;
+  //       }
+  //       console.log("i1", i1);
+  //       console.log("i2", i2);
+  //       i2.company.ticker === i1.json.ticker && i2;
+  //     }),
+  //     ...i1,
+  //   }));
+
+  //let merged = mergeById(result, data);
+  let merged = merge(result, data);
 
   //console.log("result", result);
   //console.log("data", data);
-  //console.log("merged", merged);
+  console.log("merged", merged);
 
   // //
 
@@ -289,8 +309,8 @@ const evaluateSectorCompositions = async (data) => {
     // if (counts.hasOwnProperty(key)) {
     //   counts[key] = (counts[key] / total) * 100;
     // }
-    let sector = merged[i]["sector"];
-    let market_value = merged[i]["market_value"];
+    let sector = merged[i]["company"]["json"]["sector"];
+    let market_value = merged[i]["holding"]["market_value"];
 
     console.log("merged[i]", merged[i]);
 
