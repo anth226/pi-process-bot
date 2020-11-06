@@ -265,7 +265,7 @@ const evaluateSectorCompositions = async (data) => {
         let holdingTicker = holdings[j].ticker;
         if (ticker === holdingTicker) {
           merged[i] = {
-            company: comapnies[i],
+            company: companies[i],
             holding: holdings[j],
           };
         }
