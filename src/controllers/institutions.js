@@ -236,16 +236,12 @@ const evaluateTopStocks = async (data) => {
 };
 
 const evaluateSectorCompositions = async (data) => {
-  //console.log("data", data);
-
   let tickers = data.map(({ company }) => {
     if (!company) {
       return;
     }
     return company["ticker"];
   });
-
-  // console.log(tickers);
 
   let query = {
     text: "SELECT * FROM companies WHERE ticker = ANY($1::text[])",
@@ -254,19 +250,13 @@ const evaluateSectorCompositions = async (data) => {
 
   let result = await db(query);
 
-  //console.log("result");
-  //console.log(result);
-
   const merge = (companies, holdings) => {
     let merged = [];
     for (let i in companies) {
       let ticker = companies[i].ticker;
-      console.log("companies[i]", companies[i]);
       for (let j in holdings) {
-        console.log("holdings[j]", holdings[j]);
         let holdingTicker = holdings[j].company.ticker;
         if (ticker === holdingTicker) {
-          console.log("MATCH");
           merged.push({
             company: companies[i],
             holding: holdings[j],
@@ -274,7 +264,6 @@ const evaluateSectorCompositions = async (data) => {
         }
       }
     }
-    console.log("1st merged", merged);
     if (merged && merged.length > 0) {
       return merged;
     } else {
@@ -282,25 +271,7 @@ const evaluateSectorCompositions = async (data) => {
     }
   };
 
-  // const mergeById = (a1, a2) =>
-  //   a1.map((i1) => ({
-  //     ...a2.find((i2) => {
-  //       if (!i2.company) {
-  //         return;
-  //       }
-  //       console.log("i1", i1);
-  //       console.log("i2", i2);
-  //       i2.company.ticker === i1.json.ticker && i2;
-  //     }),
-  //     ...i1,
-  //   }));
-
-  //let merged = mergeById(result, data);
   let merged = merge(result, data);
-
-  //console.log("result", result);
-  //console.log("data", data);
-  console.log("merged", merged);
 
   // //
 
@@ -317,20 +288,12 @@ const evaluateSectorCompositions = async (data) => {
     let sector = merged[i]["company"]["json"]["sector"];
     let market_value = merged[i]["holding"]["market_value"];
 
-    console.log("merged[i]", merged[i]);
-
-    console.log("market_value", market_value);
-
     buffer[`${sector}`] = buffer[`${sector}`]
       ? buffer[`${sector}`] + market_value
       : market_value;
 
     total += market_value;
   }
-  // console.log("buffer");
-  // console.log(buffer);
-  // console.log("total");
-  // console.log(total);
 
   for (let key in buffer) {
     if (buffer.hasOwnProperty(key)) {
