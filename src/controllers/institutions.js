@@ -278,7 +278,7 @@ const evaluateSectorCompositions = async (data) => {
 
   // //
 
-  let sectors = merged.map(({ json }) => json["sector"]);
+  //let sectors = merged.map(({ json }) => json["sector"]);
   //console.log(sectors);
 
   let buffer = {};
@@ -288,7 +288,7 @@ const evaluateSectorCompositions = async (data) => {
     // if (counts.hasOwnProperty(key)) {
     //   counts[key] = (counts[key] / total) * 100;
     // }
-    let sector = merged[i]["json"]["sector"];
+    let sector = merged[i]["sector"];
     let market_value = merged[i]["market_value"];
 
     console.log("merged[i]", merged[i]);
