@@ -271,7 +271,7 @@ const evaluateSectorCompositions = async (data) => {
 
   //console.log("result", result);
   //console.log("data", data);
-  console.log("merged", merged);
+  //console.log("merged", merged);
 
   // //
 
@@ -286,7 +286,7 @@ const evaluateSectorCompositions = async (data) => {
     //   counts[key] = (counts[key] / total) * 100;
     // }
     let sector = merged[i]["json"]["sector"];
-    let market_value = merged[i]["market_value"];
+    let market_value = merged[i]["json_holdings"]["market_value"];
 
     buffer[`${sector}`] = buffer[`${sector}`]
       ? buffer[`${sector}`] + market_value
