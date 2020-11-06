@@ -264,14 +264,14 @@ const evaluateSectorCompositions = async (data) => {
       for (let j in holdings) {
         let holdingTicker = holdings[j].ticker;
         if (ticker === holdingTicker) {
-          merged[i] = {
+          merged.push({
             company: companies[i],
             holding: holdings[j],
-          };
+          });
         }
       }
     }
-    if (merged.length > 0) {
+    if (merged && merged.length > 0) {
       return merged;
     }
     return null;
