@@ -236,7 +236,7 @@ const evaluateTopStocks = async (data) => {
 };
 
 const evaluateSectorCompositions = async (data) => {
-  //console.log(data);
+  console.log(data);
 
   let tickers = data.map(({ company }) => {
     if (!company) {
