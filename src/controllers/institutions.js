@@ -156,7 +156,7 @@ export async function getInstitutionsHoldings(cik) {
     WHERE i.cik = '${cik}'
   `);
 
-  if (result.length > 0) {
+  if (result && result.length > 0) {
     let { json_holdings } = result[0];
     if (!json_holdings) {
       return null;
@@ -270,6 +270,10 @@ const evaluateSectorCompositions = async (data) => {
   };
 
   let merged = merge(result, data);
+
+  if (!merged) {
+    return null;
+  }
 
   // //
 
