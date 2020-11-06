@@ -267,7 +267,7 @@ const evaluateSectorCompositions = async (data) => {
         console.log("i2", i2);
         i2.company.ticker === i1.json.ticker && i2;
       }),
-      ...i1,
+      ...i1.json,
     }));
 
   let merged = mergeById(result, data);
