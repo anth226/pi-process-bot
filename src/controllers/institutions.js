@@ -260,8 +260,8 @@ const evaluateSectorCompositions = async (data) => {
         if (!i2.company) {
           return;
         }
-        console.log("i1", i1);
-        console.log("i2", i2);
+        //console.log("i1", i1);
+        //console.log("i2", i2);
         i2.company.ticker === i1.json.ticker && i2;
       }),
       ...i1,
@@ -269,8 +269,8 @@ const evaluateSectorCompositions = async (data) => {
 
   let merged = mergeById(result, data);
 
-  console.log("result", result);
-  console.log("data", data);
+  //console.log("result", result);
+  //console.log("data", data);
   console.log("merged", merged);
 
   // //
@@ -294,8 +294,9 @@ const evaluateSectorCompositions = async (data) => {
 
     total += market_value;
   }
-
+  console.log("buffer");
   console.log(buffer);
+  console.log("total");
   console.log(total);
 
   for (let key in buffer) {
