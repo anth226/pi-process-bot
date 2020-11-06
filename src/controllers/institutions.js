@@ -264,7 +264,7 @@ const evaluateSectorCompositions = async (data) => {
       console.log("companies[i]", companies[i]);
       for (let j in holdings) {
         console.log("holdings[j]", holdings[j]);
-        let holdingTicker = holdings[j].ticker;
+        let holdingTicker = holdings[j].company.ticker;
         if (ticker === holdingTicker) {
           console.log("MATCH");
           merged.push({
