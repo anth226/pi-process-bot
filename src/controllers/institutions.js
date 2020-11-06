@@ -158,6 +158,7 @@ export async function getInstitutionsHoldings(cik) {
 
   if (result.length > 0) {
     let { json_holdings } = result[0];
+    console.log("json_holdings", json_holdings);
     if (!json_holdings) {
       return null;
     }
@@ -276,7 +277,7 @@ const evaluateSectorCompositions = async (data) => {
   // //
 
   let sectors = merged.map(({ json }) => json["sector"]);
-  console.log(sectors);
+  //console.log(sectors);
 
   let buffer = {};
   let total = 0;
@@ -294,10 +295,10 @@ const evaluateSectorCompositions = async (data) => {
 
     total += market_value;
   }
-  console.log("buffer");
-  console.log(buffer);
-  console.log("total");
-  console.log(total);
+  // console.log("buffer");
+  // console.log(buffer);
+  // console.log("total");
+  // console.log(total);
 
   for (let key in buffer) {
     if (buffer.hasOwnProperty(key)) {
