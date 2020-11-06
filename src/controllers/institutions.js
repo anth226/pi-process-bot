@@ -234,7 +234,7 @@ const evaluateTopStocks = async (data) => {
 };
 
 const evaluateSectorCompositions = async (data) => {
-  // console.log(data);
+  //console.log(data);
 
   let tickers = data.map(({ company }) => {
     if (!company) {
@@ -252,7 +252,7 @@ const evaluateSectorCompositions = async (data) => {
 
   let result = await db(query);
 
-  // console.log(result);
+  //console.log(result);
 
   const mergeById = (a1, a2) =>
     a1.map((i1) => ({
@@ -260,6 +260,8 @@ const evaluateSectorCompositions = async (data) => {
         if (!i2.company) {
           return;
         }
+        console.log("i1", i1);
+        console.log("i2", i2);
         i2.company.ticker === i1.ticker && i2;
       }),
       ...i1,
@@ -267,12 +269,14 @@ const evaluateSectorCompositions = async (data) => {
 
   let merged = mergeById(result, data);
 
-  // console.log(merged);
+  console.log("result", result);
+  console.log("data", data);
+  console.log("merged", merged);
 
   // //
 
   let sectors = merged.map(({ json }) => json["sector"]);
-  // console.log(sectors);
+  console.log(sectors);
 
   let buffer = {};
   let total = 0;
@@ -291,8 +295,8 @@ const evaluateSectorCompositions = async (data) => {
     total += market_value;
   }
 
-  // console.log(buffer);
-  // console.log(total);
+  console.log(buffer);
+  console.log(total);
 
   for (let key in buffer) {
     if (buffer.hasOwnProperty(key)) {
