@@ -45,6 +45,7 @@ export async function getInstitutionsUpdated({
   `);
 }
 
+//TODO add is_institution!!!
 export async function backfillInstitution_Billionaire(cik, id) {
   let institution = await getInstitutionByCIK(cik);
 
@@ -74,20 +75,6 @@ export async function fetchHoldings() {
   for (let i in result) {
     let { id } = result[i];
     await queue.publish_ProcessInstitutionalHoldings(id);
-  }
-}
-
-export async function calculatePerformances() {
-  let result = await db(`
-    SELECT *
-    FROM institutions
-    `);
-
-  for (let i in result) {
-    let { cik } = result[i];
-    if (cik) {
-      await queue.publish_ProcessInstitutionalPerformance(cik);
-    }
   }
 }
 
@@ -169,54 +156,94 @@ export async function getInstitutionsHoldings(cik) {
   return null;
 }
 
-export async function processTop10andSectors(cik) {
-  let jsonTop10;
-  let jsonAllocations;
-  let data = await getInstitutionsHoldings(cik);
+export async function evaluateTop10() {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE is_institution = true
+    `);
 
-  //
-  // EVALUATE Allocations and top stocks
-  //
-
-  // Evaluate Top Stock
-  let top = data ? await evaluateTopStocks(data) : null;
-
-  if (top && top.length > 0) {
-    jsonTop10 = JSON.stringify(top);
+  for (let i in result) {
+    let { id } = result[i];
+    await queue.publish_ProcessTop10_Institutions(id);
   }
-
-  let query = {
-    text:
-      "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [jsonTop10, cik],
-  };
-
-  await db(query);
-
-  // Calculate sectors
-  let allocations = data ? await evaluateSectorCompositions(data) : null;
-
-  if (allocations && allocations.length > 0) {
-    jsonAllocations = JSON.stringify(allocations);
-  }
-
-  query = {
-    text:
-      "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [jsonAllocations, cik],
-  };
-
-  await db(query);
-
-  //
-  // EVALUATE Performances
-  //
-
-  // Calculate fund performances
-
-  // // Calculate portfolio performance
-  // await evaluateFundPerformace(cik);
 }
+
+export async function evaluateAllocations() {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE is_institution = true
+    `);
+
+  for (let i in result) {
+    let { id } = result[i];
+    await queue.publish_ProcessAllocations_Institutions(id);
+  }
+}
+
+export async function processTop10(id) {
+  let jsonTop10;
+
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+  `);
+
+  if (result.length > 0) {
+    let { cik } = result[0];
+
+    let data = await getInstitutionsHoldings(cik);
+
+    let top = data ? await evaluateTopStocks(data) : null;
+
+    if (top && top.length > 0) {
+      jsonTop10 = JSON.stringify(top);
+    }
+
+    let query = {
+      text:
+        "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+      values: [jsonTop10, cik],
+    };
+
+    await db(query);
+  }
+}
+
+export async function processSectors(id) {
+  let jsonAllocations;
+
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+  `);
+
+  if (result.length > 0) {
+    let { cik } = result[0];
+
+    let data = await getInstitutionsHoldings(cik);
+
+    // Calculate sectors
+    let allocations = data ? await evaluateSectorCompositions(data) : null;
+
+    if (allocations && allocations.length > 0) {
+      jsonAllocations = JSON.stringify(allocations);
+    }
+
+    query = {
+      text:
+        "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+      values: [jsonAllocations, cik],
+    };
+
+    await db(query);
+  }
+}
+
+//  Helper Functions
 
 const evaluateTopStocks = async (data) => {
   let total = sumBy(data, function (entry) {
