@@ -455,6 +455,66 @@ export function publish_ProcessInstitutionalHoldings(id) {
   });
 }
 
+export function publish_ProcessTop10_Institutions(id) {
+  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_TOP_10;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "Number",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+export function publish_ProcessAllocations_Institutions(id) {
+  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_TOP_10;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "Number",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 export function publish_ProcessInstitutionalPerformance(cik) {
   let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES;
 
@@ -795,15 +855,15 @@ consumer_13.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES
+// AWS_SQS_URL_INSTITUTIONS_TOP_10
 export const consumer_14 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES,
+  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_TOP_10,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
     console.log(sqsMessage);
 
-    await institutions.processTop10andSectors(sqsMessage.cik);
+    await institutions.processTop10(sqsMessage.id);
   },
 });
 
@@ -812,5 +872,45 @@ consumer_14.on("error", (err) => {
 });
 
 consumer_14.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS
+export const consumer_15 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    await institutions.processSectors(sqsMessage.id);
+  },
+});
+
+consumer_15.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_15.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES
+export const consumer_16 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    //await institutions.processTop10andSectors(sqsMessage.cik);
+  },
+});
+
+consumer_16.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_16.on("processing_error", (err) => {
   console.error(err.message);
 });
