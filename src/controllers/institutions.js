@@ -115,12 +115,14 @@ export async function processHoldingsForInstitution(id) {
   result = await db(query);
 
   if (result.length > 0) {
-    query = {
-      text:
-        "UPDATE institution_holdings SET json_holdings = $1, updated_at = now(), count = $2 WHERE institution_id = $3",
-      values: [json, buffer ? buffer.length : 0, id],
-    };
-    await db(query);
+    if (json) {
+      query = {
+        text:
+          "UPDATE institution_holdings SET json_holdings = $1, updated_at = now(), count = $2 WHERE institution_id = $3",
+        values: [json, buffer ? buffer.length : 0, id],
+      };
+      await db(query);
+    }
   } else {
     query = {
       text:
@@ -199,15 +201,15 @@ export async function processTop10(id) {
 
     if (top && top.length > 0) {
       jsonTop10 = JSON.stringify(top);
+
+      let query = {
+        text:
+          "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+        values: [jsonTop10, cik],
+      };
+
+      await db(query);
     }
-
-    let query = {
-      text:
-        "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-      values: [jsonTop10, cik],
-    };
-
-    await db(query);
   }
 }
 
@@ -230,15 +232,15 @@ export async function processSectors(id) {
 
     if (allocations && allocations.length > 0) {
       jsonAllocations = JSON.stringify(allocations);
+
+      query = {
+        text:
+          "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+        values: [jsonAllocations, cik],
+      };
+
+      await db(query);
     }
-
-    query = {
-      text:
-        "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-      values: [jsonAllocations, cik],
-    };
-
-    await db(query);
   }
 }
 
