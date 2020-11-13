@@ -233,7 +233,7 @@ export async function processSectors(id) {
     if (allocations && allocations.length > 0) {
       jsonAllocations = JSON.stringify(allocations);
 
-      query = {
+      let query = {
         text:
           "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
         values: [jsonAllocations, cik],
