@@ -486,7 +486,7 @@ export function publish_ProcessTop10_Institutions(id) {
 }
 
 export function publish_ProcessAllocations_Institutions(id) {
-  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_TOP_10;
+  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS;
 
   let data = {
     id,
