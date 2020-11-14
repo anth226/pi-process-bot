@@ -299,6 +299,51 @@ app.get("/fetch_institutional_holdings", async (req, res) => {
   res.send("ok");
 });
 
+// /evaluate_top_10_institutions?token=XXX
+app.get("/evaluate_top_10_institutions", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.evaluateTop10();
+  res.send("ok");
+});
+
+// /evaluate_allocations_institutions?token=XXX
+app.get("/evaluate_allocations_institutions", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.evaluateAllocations();
+  res.send("ok");
+});
+
+// /calculate_performances_institutions?token=XXX
+app.get("/calculate_performances_institutions", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  //await institutions.calculatePerformances();
+  res.send("ok");
+});
+
 /* PAGES */
 
 // /generate_pages_portfolios?token=XXX
@@ -398,4 +443,7 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_11.start();
   queue.consumer_12.start();
   queue.consumer_13.start();
+  queue.consumer_14.start();
+  queue.consumer_15.start();
+  queue.consumer_16.start();
 });
