@@ -59,7 +59,7 @@ export async function backfillInstitution_Billionaire(cik, id) {
   let { name } = titan;
   let query = {
     text:
-      "INSERT INTO institutions (name, cik, updated_at) VALUES ( $1, $2, now() ) RETURNING *",
+      "INSERT INTO institutions (name, cik, updated_at, is_institution) VALUES ( $1, $2, now(), false ) RETURNING *",
     values: [name, cik],
   };
   await db(query);
@@ -115,12 +115,14 @@ export async function processHoldingsForInstitution(id) {
   result = await db(query);
 
   if (result.length > 0) {
-    query = {
-      text:
-        "UPDATE institution_holdings SET json_holdings = $1, updated_at = now(), count = $2 WHERE institution_id = $3",
-      values: [json, buffer ? buffer.length : 0, id],
-    };
-    await db(query);
+    if (json) {
+      query = {
+        text:
+          "UPDATE institution_holdings SET json_holdings = $1, updated_at = now(), count = $2 WHERE institution_id = $3",
+        values: [json, buffer ? buffer.length : 0, id],
+      };
+      await db(query);
+    }
   } else {
     query = {
       text:
@@ -131,17 +133,18 @@ export async function processHoldingsForInstitution(id) {
   }
 
   console.log(id + ": institution holdings updated");
-  //await processTop10andSectors(cik);
 }
 
 export async function getInstitutionsHoldings(cik) {
   let result = await db(`
-    SELECT *
-    FROM institutions
-    WHERE cik = '${cik}'
+    SELECT i.*, i_h.*
+    FROM institutions AS i
+    LEFT JOIN institution_holdings AS i_h
+    ON i.id = i_h.institution_id
+    WHERE i.cik = '${cik}'
   `);
-  //return result;
-  if (result.length > 0) {
+
+  if (result && result.length > 0) {
     let { json_holdings } = result[0];
     if (!json_holdings) {
       return null;
@@ -154,50 +157,94 @@ export async function getInstitutionsHoldings(cik) {
   return null;
 }
 
-export async function processTop10andSectors(cik) {
-  let data = await getInstitutionsHoldings(cik);
+export async function evaluateTop10() {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE is_institution = true
+    `);
 
-  console.log(data);
-
-  //
-  // EVALUATE Allocations and top stocks
-  //
-
-  // Evaluate Top Stock
-  let top = data ? await evaluateTopStocks(data) : null;
-
-  console.log("A", top);
-
-  let query = {
-    text:
-      "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [top, cik],
-  };
-
-  await db(query);
-
-  // Calculate sectors
-  let allocations = data ? await evaluateSectorCompositions(data) : null;
-
-  console.log("B", allocations);
-
-  query = {
-    text:
-      "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
-    values: [allocations, cik],
-  };
-
-  await db(query);
-
-  //
-  // EVALUATE Performances
-  //
-
-  // Calculate fund performances
-
-  // // Calculate portfolio performance
-  // await evaluateFundPerformace(cik);
+  for (let i in result) {
+    let { id } = result[i];
+    await queue.publish_ProcessTop10_Institutions(id);
+  }
 }
+
+export async function evaluateAllocations() {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE is_institution = true
+    `);
+
+  for (let i in result) {
+    let { id } = result[i];
+    await queue.publish_ProcessAllocations_Institutions(id);
+  }
+}
+
+export async function processTop10(id) {
+  let jsonTop10;
+
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+  `);
+
+  if (result.length > 0) {
+    let { cik } = result[0];
+
+    let data = await getInstitutionsHoldings(cik);
+
+    let top = data ? await evaluateTopStocks(data) : null;
+
+    if (top && top.length > 0) {
+      jsonTop10 = JSON.stringify(top);
+
+      let query = {
+        text:
+          "UPDATE institutions SET json_top_10_holdings=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+        values: [jsonTop10, cik],
+      };
+
+      await db(query);
+    }
+  }
+}
+
+export async function processSectors(id) {
+  let jsonAllocations;
+
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+  `);
+
+  if (result.length > 0) {
+    let { cik } = result[0];
+
+    let data = await getInstitutionsHoldings(cik);
+
+    // Calculate sectors
+    let allocations = data ? await evaluateSectorCompositions(data) : null;
+
+    if (allocations && allocations.length > 0) {
+      jsonAllocations = JSON.stringify(allocations);
+
+      let query = {
+        text:
+          "UPDATE institutions SET json_allocations=($1), updated_at=now() WHERE cik=($2) RETURNING *",
+        values: [jsonAllocations, cik],
+      };
+
+      await db(query);
+    }
+  }
+}
+
+//  Helper Functions
 
 const evaluateTopStocks = async (data) => {
   let total = sumBy(data, function (entry) {
@@ -215,16 +262,12 @@ const evaluateTopStocks = async (data) => {
 };
 
 const evaluateSectorCompositions = async (data) => {
-  // console.log(data);
-
   let tickers = data.map(({ company }) => {
     if (!company) {
       return;
     }
     return company["ticker"];
   });
-
-  // console.log(tickers);
 
   let query = {
     text: "SELECT * FROM companies WHERE ticker = ANY($1::text[])",
@@ -233,27 +276,37 @@ const evaluateSectorCompositions = async (data) => {
 
   let result = await db(query);
 
-  // console.log(result);
-
-  const mergeById = (a1, a2) =>
-    a1.map((i1) => ({
-      ...a2.find((i2) => {
-        if (!i2.company) {
-          return;
+  const merge = (companies, holdings) => {
+    let merged = [];
+    for (let i in companies) {
+      let ticker = companies[i].ticker;
+      for (let j in holdings) {
+        let holdingTicker = holdings[j].company.ticker;
+        if (ticker === holdingTicker) {
+          merged.push({
+            company: companies[i],
+            holding: holdings[j],
+          });
         }
-        i2.company.ticker === i1.ticker && i2;
-      }),
-      ...i1,
-    }));
+      }
+    }
+    if (merged && merged.length > 0) {
+      return merged;
+    } else {
+      return null;
+    }
+  };
 
-  let merged = mergeById(result, data);
+  let merged = merge(result, data);
 
-  // console.log(merged);
+  if (!merged) {
+    return null;
+  }
 
   // //
 
-  let sectors = merged.map(({ json }) => json["sector"]);
-  // console.log(sectors);
+  //let sectors = merged.map(({ json }) => json["sector"]);
+  //console.log(sectors);
 
   let buffer = {};
   let total = 0;
@@ -262,8 +315,8 @@ const evaluateSectorCompositions = async (data) => {
     // if (counts.hasOwnProperty(key)) {
     //   counts[key] = (counts[key] / total) * 100;
     // }
-    let sector = merged[i]["json"]["sector"];
-    let market_value = merged[i]["market_value"];
+    let sector = merged[i]["company"]["json"]["sector"];
+    let market_value = merged[i]["holding"]["market_value"];
 
     buffer[`${sector}`] = buffer[`${sector}`]
       ? buffer[`${sector}`] + market_value
@@ -271,9 +324,6 @@ const evaluateSectorCompositions = async (data) => {
 
     total += market_value;
   }
-
-  // console.log(buffer);
-  // console.log(total);
 
   for (let key in buffer) {
     if (buffer.hasOwnProperty(key)) {

@@ -39,7 +39,7 @@ export async function parseHoldings_Portfolios() {
   query = {
     text: `SELECT *
       FROM institutions
-      WHERE id = ANY($1::int[]) AND json is not null
+      WHERE id = ANY($1::int[]) AND json is not null AND is_institution = true
       ORDER BY array_position($1::bigint[], id)`,
     values: [ids],
   };
