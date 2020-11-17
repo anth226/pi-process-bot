@@ -45,7 +45,7 @@ export async function fillSecurities() {
   for (let i in result) {
     let type = "etf";
     let ticker = result[i].ticker;
-    await queue.publish_ProcessMetrics_Securities(ticker, type, null);
+    await queue.publish_ProcessMetrics_Securities(ticker, type, "");
     console.log(ticker);
   }
   console.log("DONE");
