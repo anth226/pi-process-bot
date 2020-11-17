@@ -15,7 +15,7 @@ export async function fillSecurities() {
   for (let i in result) {
     let type = "common_stock";
     let ticker = result[i].ticker;
-    let cik = result[i].cik;
+    let cik = result[i].cik ? result[i].cik : "?";
     await queue.publish_ProcessMetrics_Securities(ticker, type, cik);
     console.log(ticker);
   }
@@ -30,7 +30,7 @@ export async function fillSecurities() {
   for (let i in result) {
     let type = "mutual_fund";
     let ticker = result[i].ticker;
-    let cik = result[i].json.cik;
+    let cik = result[i].cik ? result[i].cik : "?";
     await queue.publish_ProcessMetrics_Securities(ticker, type, cik);
     console.log(ticker);
   }
