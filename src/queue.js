@@ -964,13 +964,20 @@ export const consumer_17 = Consumer.create({
 
     console.log(sqsMessage);
 
+    let cik;
     let metrics = await securities.getMetrics(sqsMessage.ticker);
+
+    if (sqsMessage.cik == "") {
+      cik = null;
+    } else {
+      cik = sqsMessage.cik;
+    }
 
     await securities.insertSecurity(
       metrics,
       sqsMessage.ticker,
       sqsMessage.type,
-      sqsMessage.cik
+      cik
     );
   },
 });
