@@ -1,4 +1,5 @@
 import db from "../db";
+import axios from "axios";
 import * as queue from "../queue";
 
 import * as companies from "./companies";
@@ -10,12 +11,12 @@ export async function fillSecurities() {
             FROM companies
         `);
 
+  console.log("COMPANIES");
   for (let i in result) {
     let type = "common_stock";
     let ticker = result[i].ticker;
     let cik = result[i].cik;
-    let metrics = await companies.getCompanyMetrics(ticker);
-    await insertSecurity(metrics, ticker, type, cik);
+    await queue.publish_ProcessMetrics_Securities(ticker, type, cik);
     console.log(ticker);
   }
 
@@ -25,12 +26,12 @@ export async function fillSecurities() {
           FROM mutual_funds
       `);
 
+  console.log("MUTUAL FUNDS");
   for (let i in result) {
     let type = "mutual_fund";
     let ticker = result[i].ticker;
     let cik = result[i].json.cik;
-    let metrics = await companies.getCompanyMetrics(ticker);
-    await insertSecurity(metrics, ticker, type, cik);
+    await queue.publish_ProcessMetrics_Securities(ticker, type, cik);
     console.log(ticker);
   }
 
@@ -40,11 +41,11 @@ export async function fillSecurities() {
         FROM etfs
     `);
 
+  console.log("ETFS");
   for (let i in result) {
     let type = "etf";
     let ticker = result[i].ticker;
-    let metrics = await companies.getCompanyMetrics(ticker);
-    await insertSecurity(metrics, ticker, type, null);
+    await queue.publish_ProcessMetrics_Securities(ticker, type, null);
     console.log(ticker);
   }
   console.log("DONE");
@@ -75,4 +76,31 @@ export async function insertSecurity(metrics, ticker, type, cik) {
     };
     await db(query);
   }
+}
+
+export async function getMetrics(ticker) {
+  let dataPoints = [
+    "52_week_high",
+    "52_week_low",
+    "marketcap",
+    "debttoequity",
+    "pricetobook",
+    "pricetoearnings",
+    "netincome",
+    "roic",
+    "average_daily_volume",
+  ];
+  let metrics = {};
+  for (let i in dataPoints) {
+    let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/data_point/${dataPoints[i]}/number?api_key=${process.env.INTRINIO_API_KEY}`;
+    let data = {};
+    try {
+      data = await axios.get(url);
+    } catch {}
+    if (data && data.data) {
+      metrics[dataPoints[i]] = data.data;
+    }
+  }
+
+  return metrics;
 }

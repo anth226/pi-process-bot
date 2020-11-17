@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
 import * as companies from "./controllers/companies";
+import * as securities from "./controllers/securities";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
@@ -181,6 +182,23 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
     return;
   }
   await titans.processHoldingsPerformanceAndSummary(req.params.id);
+  res.send("ok");
+});
+
+/* Securities */
+
+// /update_metrics_securities?token=XXX
+app.get("/update_metrics_securities", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await securities.fillSecurities();
   res.send("ok");
 });
 
@@ -446,4 +464,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_14.start();
   queue.consumer_15.start();
   queue.consumer_16.start();
+  queue.consumer_17.start();
 });
