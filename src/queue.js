@@ -967,7 +967,7 @@ export const consumer_17 = Consumer.create({
     let cik;
     let metrics = await securities.getMetrics(sqsMessage.ticker);
 
-    if (sqsMessage.cik == "") {
+    if (sqsMessage.cik == "?") {
       cik = null;
     } else {
       cik = sqsMessage.cik;
