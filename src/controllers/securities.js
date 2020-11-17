@@ -99,6 +99,8 @@ export async function getMetrics(ticker) {
     } catch {}
     if (data && data.data) {
       metrics[dataPoints[i]] = data.data;
+    } else {
+      metrics[dataPoints[i]] = null;
     }
   }
 
