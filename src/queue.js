@@ -1,4 +1,5 @@
 import * as companies from "./controllers/companies";
+import * as securities from "./controllers/securities";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as institutions from "./controllers/institutions";
@@ -545,6 +546,46 @@ export function publish_ProcessInstitutionalPerformance(cik) {
   });
 }
 
+export function publish_ProcessMetrics_Securities(ticker, type, cik) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_METRICS;
+
+  let data = {
+    ticker,
+    type,
+    cik,
+  };
+
+  let params = {
+    MessageAttributes: {
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+      type: {
+        DataType: "String",
+        StringValue: data.type,
+      },
+      cik: {
+        DataType: "String",
+        StringValue: data.cik,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -912,5 +953,32 @@ consumer_16.on("error", (err) => {
 });
 
 consumer_16.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_SECURITIES_METRICS
+export const consumer_17 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_SECURITIES_METRICS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let metrics = await securities.getMetrics(sqsMessage.ticker);
+
+    await securities.insertSecurity(
+      metrics,
+      sqsMessage.ticker,
+      sqsMessage.type,
+      sqsMessage.cik
+    );
+  },
+});
+
+consumer_17.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_17.on("processing_error", (err) => {
   console.error(err.message);
 });
