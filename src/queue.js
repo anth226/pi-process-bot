@@ -546,13 +546,14 @@ export function publish_ProcessInstitutionalPerformance(cik) {
   });
 }
 
-export function publish_ProcessMetrics_Securities(ticker, type, cik) {
+export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
   let queueUrl = process.env.AWS_SQS_URL_SECURITIES_METRICS;
 
   let data = {
     ticker,
     type,
     cik,
+    name,
   };
 
   let params = {
@@ -568,6 +569,10 @@ export function publish_ProcessMetrics_Securities(ticker, type, cik) {
       cik: {
         DataType: "String",
         StringValue: data.cik,
+      },
+      name: {
+        DataType: "String",
+        StringValue: data.name,
       },
     },
     MessageBody: JSON.stringify(data),
@@ -977,7 +982,8 @@ export const consumer_17 = Consumer.create({
       metrics,
       sqsMessage.ticker,
       sqsMessage.type,
-      cik
+      cik,
+      sqsMessage.name
     );
   },
 });
