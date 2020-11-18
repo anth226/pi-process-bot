@@ -198,7 +198,7 @@ app.get("/update_metrics_securities", async (req, res) => {
     res.send("fail");
     return;
   }
-  await securities.fillSecurities();
+  await securities.addNames();
   res.send("ok");
 });
 
