@@ -16,7 +16,8 @@ export async function fillSecurities() {
     let type = "common_stock";
     let ticker = result[i].ticker;
     let cik = result[i].cik ? result[i].cik : "?";
-    await queue.publish_ProcessMetrics_Securities(ticker, type, cik);
+    let name = result[i].json.name;
+    await queue.publish_ProcessMetrics_Securities(ticker, type, cik, name);
     console.log(ticker);
   }
 
@@ -31,7 +32,8 @@ export async function fillSecurities() {
     let type = "mutual_fund";
     let ticker = result[i].ticker;
     let cik = result[i].cik ? result[i].cik : "?";
-    await queue.publish_ProcessMetrics_Securities(ticker, type, cik);
+    let name = result[i].json.name;
+    await queue.publish_ProcessMetrics_Securities(ticker, type, cik, name);
     console.log(ticker);
   }
 
@@ -45,13 +47,14 @@ export async function fillSecurities() {
   for (let i in result) {
     let type = "etf";
     let ticker = result[i].ticker;
-    await queue.publish_ProcessMetrics_Securities(ticker, type, "?");
+    let name = result[i].json.name;
+    await queue.publish_ProcessMetrics_Securities(ticker, type, "?", name);
     console.log(ticker);
   }
   console.log("DONE");
 }
 
-export async function insertSecurity(metrics, ticker, type, cik) {
+export async function insertSecurity(metrics, ticker, type, cik, name) {
   if (!type || !ticker) {
     return;
   }
@@ -71,8 +74,8 @@ export async function insertSecurity(metrics, ticker, type, cik) {
   } else {
     let query = {
       text:
-        "INSERT INTO securities (json_metrics, ticker, type, cik ) VALUES ( $1, $2, $3, $4 ) RETURNING *",
-      values: [metrics, ticker, type, cik],
+        "INSERT INTO securities (json_metrics, ticker, type, cik, name ) VALUES ( $1, $2, $3, $4, $5 ) RETURNING *",
+      values: [metrics, ticker, type, cik, name],
     };
     await db(query);
   }
