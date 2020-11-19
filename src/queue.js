@@ -970,21 +970,21 @@ export const consumer_17 = Consumer.create({
     console.log(sqsMessage);
 
     let cik;
-    let name;
-    //let metrics = await securities.getMetrics(sqsMessage.ticker);
+    let metrics = await securities.getMetrics(sqsMessage.ticker);
 
     if (sqsMessage.cik == "?") {
       cik = null;
     } else {
       cik = sqsMessage.cik;
     }
-    if (sqsMessage.name == "?") {
-      name = null;
-    } else {
-      name = sqsMessage.name;
-    }
 
-    await securities.addName(sqsMessage.ticker, sqsMessage.type, cik, name);
+    await securities.insertSecurity(
+      metrics,
+      sqsMessage.ticker,
+      sqsMessage.type,
+      cik,
+      sqsMessage.name
+    );
   },
 });
 
