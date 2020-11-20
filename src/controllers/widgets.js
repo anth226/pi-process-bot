@@ -18,7 +18,7 @@ async function getAllInsider() {
   }
 }
 
-export function getSecurityLastPrice(symbol) {
+export async function getSecurityLastPrice(symbol) {
   let lastPrice = axios
     .get(
       `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=iex&api_key=${process.env.INTRINIO_API_KEY}`
