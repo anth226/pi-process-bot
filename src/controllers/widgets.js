@@ -29,8 +29,25 @@ export function getSecurityLastPrice(symbol) {
     .catch(function (err) {
       return err;
     });
-  //
-  return lastPrice.then((data) => data.data);
+
+  let price = await lastPrice.then((data) => data.data);
+
+  if (price) {
+    return price;
+  } else {
+    let backupLastPrice = axios
+      .get(
+        `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=bats_delayed&api_key=${process.env.INTRINIO_API_KEY}`
+      )
+      .then(function (res) {
+        return res;
+      })
+      .catch(function (err) {
+        return err;
+      });
+
+    return backupLastPrice.then((data) => data.data);
+  }
 }
 
 /* END Scraper */
@@ -328,6 +345,8 @@ export async function processInput(widgetInstanceId) {
     }
   }
 }
+
+// Helper functions
 
 export async function getMutualFundsTopNDiscountOrPremium(topNum, isDiscount) {
   let eFunds = [];
