@@ -935,8 +935,9 @@ export async function getAggRatings() {
 }
 
 export async function getTrendingTitans() {
+  let titans = [];
   const response = await axios.get(
-    `${process.env.PROD_API_URL}/billionaires/list`
+    `https://${process.env.PROD_API_URL}/billionaires/list`
   );
 
   const formatted = response.data.map((item) => {
@@ -963,33 +964,24 @@ export async function getTrendingTitans() {
     };
   });
 
-  const holdingsSorted = formatted
-    .sort((a, b) => b.net_worth * b.sortFactor - a.net_worth * a.sortFactor)
-    .slice(Math.max(formatted.length - 28, 0));
-  return holdingsSorted;
-
-  // let data = await res.then((data) => data.data);
-  // let rank = 0;
-  // for (let i in data) {
-  //   rank += 1;
-  //   let ticker = data[i].security.ticker;
-  //   let name = data[i].security.name;
-  //   let rating = data[i].data[0].number_value;
-
-  //   comps.push({
-  //     rank: rank,
-  //     ticker: ticker,
-  //     name: name,
-  //     rating: rating,
-  //   });
-  // }
-  // return comps;
+  const holdingsSorted = formatted.sort(
+    (a, b) =>
+      b.performance_one_year * b.sortFactor -
+      a.performance_one_year * a.sortFactor
+  );
+  for (let i = 0; i < 24; i++) {
+    let id = holdingsSorted[i].id;
+    let name = holdingsSorted[i].name;
+    let perf = holdingsSorted[i].performance_one_year;
+    let photo = holdingsSorted[i].photo_url;
+    let uri = holdingsSorted[i].uri;
+    titans.push({
+      id: id,
+      name: name,
+      performance_one_year: perf,
+      photo_url: photo,
+      uri: uri,
+    });
+  }
+  return titans;
 }
-
-/*
-
-const result = await axios.get(`${process.env.PROD_API_URL}/billionaires/list`);
-
-
-
-*/
