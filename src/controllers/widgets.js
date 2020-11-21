@@ -144,6 +144,65 @@ export async function processInput(widgetInstanceId) {
       });
     }
 
+    /*          INSIDERS */
+    //Movers
+    else if (type == "InsidersNMovers") {
+      if (params.count && params.count > 0) {
+        let count = params.count;
+        let topComps = { topComps: await getInsidersNMovers(count) };
+
+        if (topComps) {
+          output = topComps;
+        }
+      }
+    }
+    /*          TITANS */
+    //Trending Titans
+    else if (type == "TitansTrending") {
+      let data = await getTrendingTitans();
+      let json = JSON.stringify(data);
+
+      if (data) {
+        output = json;
+      }
+    }
+    /*          COMPANIES */
+    //Strong Buys
+    else if (type == "CompanyStrongBuys") {
+      let data = await getStrongBuys();
+      let json = JSON.stringify(data);
+
+      if (data) {
+        output = json;
+      }
+    }
+    //Prices
+    else if (type == "CompanyPrice") {
+      if (params.ticker) {
+        let ticker = params.ticker;
+        let price = await getCompanyPrice(ticker);
+        let comp = await companies.getCompanyByTicker(ticker);
+        let metrics = await companies.getCompanyMetrics(ticker);
+
+        if (
+          price &&
+          comp &&
+          comp.json &&
+          comp.json.name &&
+          metrics &&
+          metrics.Change
+        ) {
+          let delta = metrics.Change;
+          let tick = {
+            ticker: ticker,
+            name: comp.json.name,
+            price: price,
+            delta: delta,
+          };
+          output = tick;
+        }
+      }
+    }
     /*          MUTUAL FUNDS */
     //Discount/Premium
     if (type == "MutualFundsTopNDiscount" || type == "MutualFundsTopNPremium") {
@@ -225,46 +284,6 @@ export async function processInput(widgetInstanceId) {
         }
       }
     }
-    /*          INSIDERS */
-    //Movers
-    else if (type == "InsidersNMovers") {
-      if (params.count && params.count > 0) {
-        let count = params.count;
-        let topComps = { topComps: await getInsidersNMovers(count) };
-
-        if (topComps) {
-          output = topComps;
-        }
-      }
-    }
-    /*          COMPANIES */
-    //Prices
-    else if (type == "CompanyPrice") {
-      if (params.ticker) {
-        let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
-        let comp = await companies.getCompanyByTicker(ticker);
-        let metrics = await companies.getCompanyMetrics(ticker);
-
-        if (
-          price &&
-          comp &&
-          comp.json &&
-          comp.json.name &&
-          metrics &&
-          metrics.Change
-        ) {
-          let delta = metrics.Change;
-          let tick = {
-            ticker: ticker,
-            name: comp.json.name,
-            price: price,
-            delta: delta,
-          };
-          output = tick;
-        }
-      }
-    }
     /*          ETFS */
     //Price
     else if (type == "ETFPrice") {
@@ -317,6 +336,16 @@ export async function processInput(widgetInstanceId) {
         if (topETFs) {
           output = topETFs;
         }
+      }
+    }
+    /*          SECURITIES */
+    //Top Aggregate Analyst Ratings
+    else if (type == "SecuritiesTopAggAnalyst") {
+      let data = await getAggRatings();
+      let json = JSON.stringify(data);
+
+      if (data) {
+        output = json;
       }
     }
 
@@ -810,3 +839,157 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 
   return topETFs;
 }
+
+export async function getStrongBuys() {
+  let buys = [];
+  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
+  const body = {
+    operator: "AND",
+    clauses: [
+      {
+        field: "zacks_analyst_rating_strong_buys",
+        operator: "gt",
+        value: "0",
+      },
+    ],
+  };
+
+  let res = axios
+    .post(url, body)
+    .then(function (data) {
+      //console.log(data);
+      return data;
+    })
+    .catch(function (err) {
+      console.log(err);
+      return err;
+    });
+
+  let data = await res.then((data) => data.data);
+  for (let i in data) {
+    let delta;
+    let ticker = data[i].security.ticker;
+    let compTicker = data[i].security.composite_ticker;
+    let name = data[i].security.name;
+    let numberBuys = data[i].data[0].number_value;
+    let price = await getCompanyPrice(ticker);
+    let metrics = await companies.getCompanyMetrics(ticker);
+    if (metrics) {
+      delta = metrics.Change;
+    }
+    //let pic = await getCompanyPicture(ticker);
+    buys.push({
+      ticker: ticker,
+      composite_ticker: compTicker,
+      name: name,
+      strong_buys: numberBuys,
+      last_price: price,
+      delta: delta,
+      //pic_url: ,
+    });
+  }
+  return buys;
+}
+
+export async function getAggRatings() {
+  let comps = [];
+  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=desc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const body = {
+    operator: "AND",
+    clauses: [
+      {
+        field: "zacks_analyst_rating_mean",
+        operator: "gt",
+        value: "0",
+      },
+    ],
+  };
+
+  let res = axios
+    .post(url, body)
+    .then(function (data) {
+      //console.log(data);
+      return data;
+    })
+    .catch(function (err) {
+      console.log(err);
+      return err;
+    });
+
+  let data = await res.then((data) => data.data);
+  let rank = 0;
+  for (let i in data) {
+    rank += 1;
+    let ticker = data[i].security.ticker;
+    let name = data[i].security.name;
+    let rating = data[i].data[0].number_value;
+
+    comps.push({
+      rank: rank,
+      ticker: ticker,
+      name: name,
+      rating: rating,
+    });
+  }
+  return comps;
+}
+
+export async function getTrendingTitans() {
+  const response = await axios.get(
+    `${process.env.PROD_API_URL}/billionaires/list`
+  );
+
+  const formatted = response.data.map((item) => {
+    if (item.industry) {
+      item.industry = item.industry.toLowerCase();
+    }
+
+    if (item.json !== null) {
+      item.performance_one_year = item.json.performance_one_year;
+      item.performance_five_year = item.json.performance_five_year;
+      item.fund_size = item.json.fund_size.toLowerCase();
+    } else if (item.json_calculations !== null) {
+      item.performance_one_year = item.json_calculations.performance_one_year;
+      item.performance_five_year = item.json_calculations.performance_five_year;
+      item.fund_size = null;
+    } else {
+      item.performance_one_year = null;
+      item.performance_five_year = null;
+      item.fund_size = null;
+    }
+
+    return {
+      ...item,
+    };
+  });
+
+  const holdingsSorted = formatted
+    .sort((a, b) => b.net_worth * b.sortFactor - a.net_worth * a.sortFactor)
+    .slice(Math.max(formatted.length - 28, 0));
+  return holdingsSorted;
+
+  // let data = await res.then((data) => data.data);
+  // let rank = 0;
+  // for (let i in data) {
+  //   rank += 1;
+  //   let ticker = data[i].security.ticker;
+  //   let name = data[i].security.name;
+  //   let rating = data[i].data[0].number_value;
+
+  //   comps.push({
+  //     rank: rank,
+  //     ticker: ticker,
+  //     name: name,
+  //     rating: rating,
+  //   });
+  // }
+  // return comps;
+}
+
+/*
+
+const result = await axios.get(`${process.env.PROD_API_URL}/billionaires/list`);
+
+
+
+*/
