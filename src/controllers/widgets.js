@@ -1,9 +1,11 @@
 import db from "../db";
 import axios from "axios";
+import cheerio from "cheerio";
 import * as queue from "../queue";
 import * as companies from "./companies";
 import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
+import * as securities from "./securities";
 
 /* START Scraper */
 
@@ -170,6 +172,15 @@ export async function processInput(widgetInstanceId) {
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
       let data = await getStrongBuys();
+      let json = JSON.stringify(data);
+
+      if (data) {
+        output = json;
+      }
+    }
+    //Top Stocks
+    else if (type == "CompanyTopStocks") {
+      let data = await getTopStocks();
       let json = JSON.stringify(data);
 
       if (data) {
@@ -984,4 +995,64 @@ export async function getTrendingTitans() {
     });
   }
   return titans;
+}
+
+export async function scrapeTopStocks() {
+  try {
+    const response = await axios.get(
+      `https://finviz.com/screener.ashx?v=111&s=ta_topgainers`
+    );
+
+    const $ = cheerio.load(response.data);
+
+    let comps = [];
+
+    $("a.screener-link-primary").each(function (idx, element) {
+      let find = $(element).text();
+      comps.push(find);
+    });
+
+    return comps;
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function getTopStocks() {
+  let stocks = [];
+  let comps = await scrapeTopStocks();
+
+  for (let i = 0; i < comps.length; i++) {
+    let ticker = comps[i];
+    let comp = await companies.getCompanyByTicker(ticker);
+    let sec = await securities.getSecurityByTicker(ticker);
+    let price = await getCompanyPrice(ticker);
+    let comp_metrics = await companies.getCompanyMetrics(ticker);
+
+    if (
+      price &&
+      comp &&
+      sec &&
+      sec.json_metrics &&
+      comp.json &&
+      comp.json.name &&
+      comp_metrics &&
+      comp_metrics.Change
+    ) {
+      let id = comp.id;
+      let name = comp.json.name;
+      let delta = comp_metrics.Change;
+      let metrics = sec.json_metrics;
+      stocks.push({
+        id: id,
+        ticker: ticker,
+        name: name,
+        price: price,
+        delta: delta,
+        metrics: metrics,
+      });
+    }
+  }
+
+  return stocks;
 }
