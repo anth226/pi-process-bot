@@ -4,6 +4,18 @@ import * as queue from "../queue";
 
 import * as companies from "./companies";
 
+export async function getSecurityByTicker(ticker) {
+  let result = await db(`
+        SELECT *
+        FROM securities
+        WHERE ticker = '${ticker}'
+    `);
+
+  if (result && result.length > 0) {
+    return result[0];
+  }
+}
+
 export async function fillSecurities() {
   //get and fill companies
   let result = await db(`
