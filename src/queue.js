@@ -591,6 +591,41 @@ export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
   });
 }
 
+export function publish_ProcessEarningsDate_Securities(ticker, earnings_date) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_EARNINGS;
+
+  let data = {
+    ticker,
+    earnings_date,
+  };
+
+  let params = {
+    MessageAttributes: {
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+      earnings_date: {
+        DataType: "String",
+        StringValue: data.earnings_date,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -993,5 +1028,62 @@ consumer_17.on("error", (err) => {
 });
 
 consumer_17.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_SECURITIES_EARNINGS
+export const consumer_18 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_SECURITIES_EARNINGS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let time_of_day;
+    let estimatedEPS;
+    let actualEPS;
+    let suprisePercent;
+    let ticker = sqsMessage.ticker;
+    let earningsDate = sqsMessage.earnings_date;
+
+    if (ticker) {
+      let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/earnings/latest?api_key=${process.env.INTRINIO_API_KEY}`;
+
+      let res = await axios.get(url);
+
+      if (res.data && res.data.time_of_day) {
+        time_of_day = res.data.time_of_day;
+      }
+
+      url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
+
+      res = await axios.get(url);
+
+      if (res.data && res.data.eps_surprises.length > 0) {
+        let suprise = res.data.eps_surprises[0];
+        estimatedEPS = suprise.eps_mean_estimate;
+        actualEPS = suprise.eps_actual;
+        suprisePercent = suprise.eps_percent_diff;
+      }
+
+      await securities.insertEarnings(
+        ticker,
+        earningsDate,
+        time_of_day,
+        actualEPS,
+        estimatedEPS,
+        suprisePercent
+      );
+
+      console.log(ticker, "earnings date:", earningsDate);
+    }
+  },
+});
+
+consumer_18.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_18.on("processing_error", (err) => {
   console.error(err.message);
 });
