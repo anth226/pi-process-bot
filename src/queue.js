@@ -1,3 +1,5 @@
+import axios from "axios";
+
 import * as companies from "./controllers/companies";
 import * as securities from "./controllers/securities";
 import * as titans from "./controllers/titans";
