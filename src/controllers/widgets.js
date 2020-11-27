@@ -1075,14 +1075,30 @@ export async function getEarningsCalendar() {
     let ticker = data[i].ticker;
     let name = data[i].name;
     let jsonEarnings = data[i].json_earnings;
+
     if (jsonEarnings) {
+      let earningsDate = jsonEarnings.earnings_date;
+      let time_of_day = jsonEarnings.time_of_day;
+      let eps_actual = jsonEarnings.eps_actual;
+      let eps_estimate = jsonEarnings.eps_estimate;
+      let suprise_percentage = jsonEarnings.suprise_percentage;
       secs.push({
+        earnings_date: earningsDate,
         ticker: ticker,
         name: name,
-        json_earnings: jsonEarnings,
+        time_of_day: time_of_day,
+        eps_actual: eps_actual,
+        eps_estimate: eps_estimate,
+        suprise_percentage: suprise_percentage,
       });
     }
   }
 
-  return secs;
+  let sorted = secs.sort(function (a, b) {
+    var aa = a.earnings_date.split("-").join(),
+      bb = b.earnings_date.split("-").join();
+    return aa < bb ? -1 : aa > bb ? 1 : 0;
+  });
+
+  return sorted;
 }
