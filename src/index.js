@@ -198,7 +198,22 @@ app.get("/update_metrics_securities", async (req, res) => {
     res.send("fail");
     return;
   }
-  await securities.addNames();
+  await securities.fillSecurities();
+  res.send("ok");
+});
+
+// /update_earnings_securities?token=XXX
+app.get("/update_earnings_securities", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await securities.fillEarnings();
   res.send("ok");
 });
 
@@ -465,4 +480,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_15.start();
   queue.consumer_16.start();
   queue.consumer_17.start();
+  queue.consumer_18.start();
 });

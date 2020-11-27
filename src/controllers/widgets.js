@@ -187,15 +187,6 @@ export async function processInput(widgetInstanceId) {
         output = json;
       }
     }
-    //Earnings Calendar
-    else if (type == "CompanyEarningsCalendar") {
-      let data = await getEarningsCalendar();
-      let json = JSON.stringify(data);
-
-      if (data) {
-        output = json;
-      }
-    }
     //Prices
     else if (type == "CompanyPrice") {
       if (params.ticker) {
@@ -362,6 +353,16 @@ export async function processInput(widgetInstanceId) {
     //Top Aggregate Analyst Ratings
     else if (type == "SecuritiesTopAggAnalyst") {
       let data = await getAggRatings();
+      let json = JSON.stringify(data);
+
+      if (data) {
+        output = json;
+      }
+    }
+
+    //Earnings Calendar
+    else if (type == "SecuritiesEarningsCalendar") {
+      let data = await getEarningsCalendar();
       let json = JSON.stringify(data);
 
       if (data) {
@@ -1066,80 +1067,22 @@ export async function getTopStocks() {
   return stocks;
 }
 
-export async function getEarningsDates() {
-  let comps = [];
-  let today = new Date().toISOString().slice(0, 10);
-
-  let url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=next_earnings_date&order_direction=asc&page_size=50000&api_key=${process.env.INTRINIO_API_KEY}`;
-  const body = {
-    operator: "AND",
-    clauses: [
-      {
-        field: "next_earnings_date",
-        operator: "gt",
-        value: "2021-01-20",
-      },
-    ],
-  };
-
-  let res = axios
-    .post(url, body)
-    .then(function (data) {
-      //console.log(data);
-      return data;
-    })
-    .catch(function (err) {
-      console.log(err);
-      return err;
-    });
-
-  return res.then((data) => data.data);
-}
-
 export async function getEarningsCalendar() {
-  let comps = [];
+  let secs = [];
+  let data = await securities.getSecurities();
 
-  let data = await getEarningsDates();
   for (let i in data) {
-    let time_of_day;
-    let estimatedEPS;
-    let actualEPS;
-    let suprisePercent;
-    let ticker = data[i].security.ticker;
-    let name = data[i].security.name;
-    let earningsDate = data[i].data[0].text_value;
-
-    if (ticker) {
-      let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/earnings/latest?api_key=${process.env.INTRINIO_API_KEY}`;
-
-      let res = await axios.get(url);
-
-      if (res.data && res.data.time_of_day) {
-        time_of_day = res.data.time_of_day;
-      }
-
-      url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
-
-      res = await axios.get(url);
-
-      if (res.data && res.data.eps_surprises.length > 0) {
-        let suprise = res.data.eps_surprises[0];
-        estimatedEPS = suprise.eps_mean_estimate;
-        actualEPS = suprise.eps_actual;
-        suprisePercent = suprise.eps_percent_diff;
-      }
-
-      comps.push({
+    let ticker = data[i].ticker;
+    let name = data[i].name;
+    let jsonEarnings = data[i].json_earnings;
+    if (jsonEarnings) {
+      secs.push({
         ticker: ticker,
         name: name,
-        earnings_date: earningsDate,
-        time_of_day: time_of_day,
-        eps_actual: actualEPS,
-        eps_estimate: estimatedEPS,
-        suprise_percentage: suprisePercent,
+        json_earnings: jsonEarnings,
       });
-      console.log(ticker, "earnings date:", earningsDate);
     }
   }
-  return comps;
+
+  return secs;
 }
