@@ -1,11 +1,23 @@
 import db from "../db";
 import axios from "axios";
 import cheerio from "cheerio";
+import intrinioSDK from "intrinio-sdk";
+import * as getSecurityData from "./intrinio/get_security_data";
 import * as queue from "../queue";
 import * as companies from "./companies";
 import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
 import * as securities from "./securities";
+
+// init intrinio
+intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
+  process.env.INTRINIO_API_KEY;
+
+intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+
+const companyAPI = new intrinioSDK.CompanyApi();
+const securityAPI = new intrinioSDK.SecurityApi();
+const indexAPI = new intrinioSDK.IndexApi();
 
 /* START Scraper */
 
@@ -194,8 +206,10 @@ export async function processInput(widgetInstanceId) {
         let price = await getCompanyPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
+        let performance = await getSecurityPerformance(ticker);
 
         if (
+          performance &&
           price &&
           comp &&
           comp.json &&
@@ -209,6 +223,7 @@ export async function processInput(widgetInstanceId) {
             name: comp.json.name,
             price: price,
             delta: delta,
+            performance: performance,
           };
           output = tick;
         }
@@ -275,8 +290,10 @@ export async function processInput(widgetInstanceId) {
         let price = await getCompanyPrice(ticker);
         let fund = await mutualfunds.getMutualFundByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
+        let performance = await getSecurityPerformance(ticker);
 
         if (
+          performance &&
           price &&
           fund &&
           fund.json &&
@@ -290,6 +307,7 @@ export async function processInput(widgetInstanceId) {
             name: fund.json.name,
             price: price,
             delta: delta,
+            performance: performance,
           };
           output = tick;
         }
@@ -303,8 +321,10 @@ export async function processInput(widgetInstanceId) {
         let price = await getCompanyPrice(ticker);
         let etf = await etfs.getETFByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
+        let performance = await getSecurityPerformance(ticker);
 
         if (
+          performance &&
           price &&
           etf &&
           etf.json &&
@@ -318,6 +338,7 @@ export async function processInput(widgetInstanceId) {
             name: etf.json.name,
             price: price,
             delta: delta,
+            performance: performance,
           };
           output = tick;
         }
@@ -1101,4 +1122,40 @@ export async function getEarningsCalendar() {
   });
 
   return sorted;
+}
+
+export async function getSecurityPerformance(ticker) {
+  let data = await getSecurityData.getChartData(securityAPI, ticker);
+  if (
+    data.daily[0] &&
+    data.daily[6] &&
+    data.daily[13] &&
+    data.daily[29] &&
+    data.daily[87] &&
+    data.daily[0].value &&
+    data.daily[6].value &&
+    data.daily[13].value &&
+    data.daily[29].value &&
+    data.daily[87].value
+  ) {
+    let perf = {
+      price_percent_change_7_days:
+        (data.daily[0].value / data.daily[6].value - 1) * 100,
+      price_percent_change_14_days:
+        (data.daily[0].value / data.daily[13].value - 1) * 100,
+      price_percent_change_30_days:
+        (data.daily[0].value / data.daily[29].value - 1) * 100,
+      price_percent_change_3_months:
+        (data.daily[0].value / data.daily[87].value - 1) * 100,
+      // values: {
+      //   today: data.daily[0],
+      //   week: data.daily[6],
+      //   twoweek: data.daily[13],
+      //   month: data.daily[29],
+      //   threemonth: data.daily[87],
+      // },
+    };
+    return perf;
+  }
+  return data;
 }
