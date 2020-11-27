@@ -181,7 +181,7 @@ export async function insertEarnings(
   eps_estimate,
   suprise_percentage
 ) {
-  if (!type || !ticker) {
+  if (!earnings_date || !ticker) {
     return;
   }
 
