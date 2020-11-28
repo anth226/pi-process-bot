@@ -101,6 +101,18 @@ export async function getLocalWidgets() {
   return result;
 }
 
+export async function getLocalPriceWidgets() {
+  let result = await db(`
+    SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
+    FROM widget_instances
+    JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
+    JOIN widgets ON widgets.id = widget_instances.widget_id
+    WHERE widget_instances.dashboard_id != 0 AND widgets.type in ('ETFPrice', 'MutualFundPrice', 'CompanyPrice')
+  `);
+
+  return result;
+}
+
 export async function getLocalPerfomanceWidgetForDashboard(dashboard_id) {
   let result = await db(`
   SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
@@ -117,7 +129,7 @@ export async function getWidgetTypeId(widgetType) {
   let result = await db(`
     SELECT id
     FROM widgets
-    WHERE type = ${widgetType}
+    WHERE type = '${widgetType}'
   `);
 
   return result;
@@ -1194,7 +1206,8 @@ export async function getSecurityPerformance(ticker) {
 }
 
 export async function processUsersPortPerf() {
-  let userPerfWidgetId = await getWidgetTypeId("UsersPerformance");
+  let res = await getWidgetTypeId("UsersPerformance");
+  let userPerfWidgetId = res[0].id;
   let widgets = await getLocalPriceWidgets();
   let dashboards = new Map();
 
@@ -1226,7 +1239,7 @@ export async function processUsersPortPerf() {
     }
   }
 
-  dashboards.forEach((value, key) => {
+  dashboards.forEach(async (value, key) => {
     // console.log("key", key);
     // console.log("value", value);
     let perf = {
@@ -1238,9 +1251,9 @@ export async function processUsersPortPerf() {
 
     let widget = await getLocalPerfomanceWidgetForDashboard(key);
 
-    if (widget){
+    if (widget && widget.length > 0) {
       //update
-      let widgetDataId = widget.widget_data_id;
+      let widgetDataId = widget[0].widget_data_id;
       let output = perf;
       let query = {
         text:
@@ -1250,7 +1263,7 @@ export async function processUsersPortPerf() {
 
       await db(query);
       console.log("output updated");
-    }else{
+    } else {
       //insert
       let output = perf;
       let query = {
@@ -1262,11 +1275,11 @@ export async function processUsersPortPerf() {
       let result = await db(query);
 
       query = {
-          text:
-            "INSERT INTO widget_instances (dashboard_id, widget_id, widget_data_id, weight, is_pinned) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-          values: [key, userPerfWidgetId, result.id, 0, true],
-        };
-      
+        text:
+          "INSERT INTO widget_instances (dashboard_id, widget_id, widget_data_id, weight, is_pinned) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        values: [key, userPerfWidgetId, result[0].id, 0, true],
+      };
+
       await db(query);
       console.log("widget added and output updated");
     }
