@@ -158,6 +158,17 @@ export async function processInput(widgetInstanceId) {
       });
     }
 
+    /*          USER */
+    //Movers
+    else if (type == "UsersPortfolioPerf") {
+      // if (params.count && params.count > 0) {
+      //   //let count = params.count;
+      //   //let topComps = { topComps: await getInsidersNMovers(count) };
+      //   if (topComps) {
+      //     output = topComps;
+      //   }
+      // }
+    }
     /*          INSIDERS */
     //Movers
     else if (type == "InsidersNMovers") {
@@ -1147,15 +1158,29 @@ export async function getSecurityPerformance(ticker) {
         (data.daily[0].value / data.daily[29].value - 1) * 100,
       price_percent_change_3_months:
         (data.daily[0].value / data.daily[87].value - 1) * 100,
-      // values: {
-      //   today: data.daily[0],
-      //   week: data.daily[6],
-      //   twoweek: data.daily[13],
-      //   month: data.daily[29],
-      //   threemonth: data.daily[87],
-      // },
+      values: {
+        today: data.daily[0],
+        week: data.daily[6],
+        twoweek: data.daily[13],
+        month: data.daily[29],
+        threemonth: data.daily[87],
+      },
     };
     return perf;
   }
   return data;
+}
+
+export async function processUsersPortPerf() {
+  //get list of users with price widgets
+  let widgets = await getLocalWidgets();
+
+  for (let i in widgets) {
+    console.log(widgets[i]);
+    // let type =  widgets[i].
+    // if (type == "")
+  }
+
+  //get performance VALUES of all those
+  //add all together and then do perf calcs
 }
