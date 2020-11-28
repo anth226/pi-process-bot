@@ -5,6 +5,7 @@ import intrinioSDK from "intrinio-sdk";
 import * as getSecurityData from "./intrinio/get_security_data";
 import * as queue from "../queue";
 import * as companies from "./companies";
+import * as institutions from "./institutions";
 import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
 import * as securities from "./securities";
@@ -1217,24 +1218,52 @@ export async function getSecurityPerformance(ticker) {
   return data;
 }
 
-//https://api.portfolioinsider.com/billionaires/thomas-steyer/summary
-
-//function to get summary
-
 export async function getTitanPerformance(uri) {
-  const response = await axios.get(
-    `https://${process.env.PROD_API_URL}/billionaires/${uri}/summary`
-  );
+  let item;
+  let company;
+  let data;
+  let result = await db(`
+    SELECT b.*, b_c.ciks
+    FROM public.billionaires AS b
+    LEFT JOIN (
+      SELECT titan_id, json_agg(json_build_object('cik', cik, 'name', name, 'is_primary', is_primary, 'rank', rank) ORDER BY rank ASC) AS ciks
+      FROM public.billionaire_ciks
+      GROUP BY titan_id
+    ) AS b_c ON b.id = b_c.titan_id
+    WHERE uri = '${uri}'
+  `);
 
-  let json = response.summary.json;
+  if (result.length > 0) {
+    let ciks = result[0].ciks;
+    if (ciks && ciks.length > 0) {
+      for (let j = 0; j < ciks.length; j += 1) {
+        let cik = ciks[j];
+        if (cik.cik != "0000000000" && cik.is_primary == true) {
+          item = await institutions.getInstitutionByCIK(cik.cik);
 
-  let data = {
+          let { use_company_performance_fallback } = result[0];
+          if (use_company_performance_fallback) {
+            company = await companies.getCompanyByCIK(cik.cik);
+          }
+        }
+      }
+    }
+    data = {
+      profile: result[0],
+      summary: item,
+      company,
+    };
+  }
+
+  let json = data.summary[0].json;
+
+  let perf = {
     performance_five_year: json.performance_five_year,
     performance_one_year: json.performance_one_year,
     performance_quarter: json.performance_quarter,
   };
 
-  return data;
+  return perf;
 }
 
 export async function processUsersPortPerf() {

@@ -79,6 +79,18 @@ export async function getCompanyByTicker(ticker) {
   }
 }
 
+export async function getCompanyByCIK(cik) {
+  let result = await db(`
+        SELECT *
+        FROM companies
+        WHERE cik = '${cik}'
+    `);
+
+  if (result && result.length > 0) {
+    return result[0];
+  }
+}
+
 const companyPage = "https://finviz.com/quote.ashx?t=";
 
 const fetchDataCompany = async (ticker) => {
