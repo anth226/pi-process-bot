@@ -298,6 +298,21 @@ app.get("/widgets/:id/process_input", async (req, res) => {
   res.send("ok");
 });
 
+// /update_user_portfolios?token=XXX
+app.get("/update_user_portfolios", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await widgets.processUsersPortPerf();
+  res.send("ok");
+});
+
 /* ETFs */
 
 // /update_etfs?token=XXX
