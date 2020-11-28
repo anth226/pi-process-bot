@@ -125,6 +125,18 @@ export async function getLocalPerfomanceWidgetForDashboard(dashboard_id) {
   return result;
 }
 
+export async function getTitansFollowed(dashboard_id) {
+  let result = await db(`
+    SELECT bw.titan_id, d.id AS dashboard_id, b.uri
+    FROM billionaire_watchlists AS bw
+    JOIN dashboards AS d ON bw.user_id = d.user_id
+    JOIN billionaires AS b ON b.id = bw.titan_id
+    WHERE d.id = ${dashboard_id}
+    `);
+
+  return result;
+}
+
 export async function getWidgetTypeId(widgetType) {
   let result = await db(`
     SELECT id
@@ -1205,6 +1217,26 @@ export async function getSecurityPerformance(ticker) {
   return data;
 }
 
+//https://api.portfolioinsider.com/billionaires/thomas-steyer/summary
+
+//function to get summary
+
+export async function getTitanPerformance(uri) {
+  const response = await axios.get(
+    `https://${process.env.PROD_API_URL}/billionaires/${uri}/summary`
+  );
+
+  let json = response.summary.json;
+
+  let data = {
+    performance_five_year: json.performance_five_year,
+    performance_one_year: json.performance_one_year,
+    performance_quarter: json.performance_quarter,
+  };
+
+  return data;
+}
+
 export async function processUsersPortPerf() {
   let res = await getWidgetTypeId("UsersPerformance");
   let userPerfWidgetId = res[0].id;
@@ -1242,11 +1274,35 @@ export async function processUsersPortPerf() {
   dashboards.forEach(async (value, key) => {
     // console.log("key", key);
     // console.log("value", value);
-    let perf = {
+    let stocksPerformance = {
       price_percent_change_7_days: (value.today / value.week - 1) * 100,
       price_percent_change_14_days: (value.today / value.twoweek - 1) * 100,
       price_percent_change_30_days: (value.today / value.month - 1) * 100,
       price_percent_change_3_months: (value.today / value.threemonth - 1) * 100,
+    };
+
+    let followedTitans = await getTitansFollowed(key);
+    let total_performance_five_year;
+    let total_performance_one_year;
+    let total_performance_quarter;
+    for (let i in followedTitans) {
+      let uri = followedTitans[i].uri;
+      let titansPerf = await getTitanPerformance(uri);
+      total_performance_five_year += titansPerf.performance_five_year;
+      total_performance_one_year += titansPerf.performance_one_year;
+      total_performance_quarter += titansPerf.performance_quarter;
+    }
+
+    let titansPerformance = {
+      performance_five_year:
+        total_performance_five_year / followedTitans.length,
+      performance_one_year: total_performance_one_year / followedTitans.length,
+      performance_quarter: total_performance_quarter / followedTitans.length,
+    };
+
+    let perf = {
+      stocks: stocksPerformance,
+      titans: titansPerformance,
     };
 
     let widget = await getLocalPerfomanceWidgetForDashboard(key);
