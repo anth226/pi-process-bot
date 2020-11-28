@@ -444,7 +444,7 @@ export async function processInput(widgetInstanceId) {
       };
       await db(query);
       console.log("output updated");
-    } else if (!output && dashboardId != 0) {
+    } else if (!output && dashboardId != 0 && type != "UsersPerformance") {
       let query = {
         text: "DELETE FROM widget_instances WHERE id=($1)",
         values: [widgetInstanceId],
