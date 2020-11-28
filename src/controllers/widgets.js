@@ -101,6 +101,28 @@ export async function getLocalWidgets() {
   return result;
 }
 
+export async function getLocalPerfomanceWidgetForDashboard(dashboard_id) {
+  let result = await db(`
+  SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
+  FROM widget_instances
+  JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
+  JOIN widgets ON widgets.id = widget_instances.widget_id
+  WHERE widget_instances.dashboard_id = ${dashboard_id} AND widgets.type = 'UsersPerformance'
+    `);
+
+  return result;
+}
+
+export async function getWidgetTypeId(widgetType) {
+  let result = await db(`
+    SELECT id
+    FROM widgets
+    WHERE type = ${widgetType}
+  `);
+
+  return result;
+}
+
 export async function getWidget(widgetInstanceId) {
   let result = await db(`
     SELECT widget_instances.*, widget_data.*, widgets.*
@@ -1172,15 +1194,81 @@ export async function getSecurityPerformance(ticker) {
 }
 
 export async function processUsersPortPerf() {
-  //get list of users with price widgets
-  let widgets = await getLocalWidgets();
+  let userPerfWidgetId = await getWidgetTypeId("UsersPerformance");
+  let widgets = await getLocalPriceWidgets();
+  let dashboards = new Map();
 
   for (let i in widgets) {
-    console.log(widgets[i]);
-    // let type =  widgets[i].
-    // if (type == "")
+    let dashboardId = widgets[i].dashboard_id;
+    let values = widgets[i].output.performance.values;
+    if (dashboards.has(dashboardId)) {
+      let totals = dashboards.get(dashboardId);
+      let today = totals.today + values.today.value;
+      let week = totals.week + values.week.value;
+      let twoweek = totals.twoweek + values.twoweek.value;
+      let month = totals.month + values.month.value;
+      let threemonth = totals.threemonth + values.threemonth.value;
+      dashboards.set(dashboardId, {
+        today: today,
+        week: week,
+        twoweek: twoweek,
+        month: month,
+        threemonth: threemonth,
+      });
+    } else {
+      dashboards.set(dashboardId, {
+        today: values.today.value,
+        week: values.week.value,
+        twoweek: values.twoweek.value,
+        month: values.month.value,
+        threemonth: values.threemonth.value,
+      });
+    }
   }
 
-  //get performance VALUES of all those
-  //add all together and then do perf calcs
+  dashboards.forEach((value, key) => {
+    // console.log("key", key);
+    // console.log("value", value);
+    let perf = {
+      price_percent_change_7_days: (value.today / value.week - 1) * 100,
+      price_percent_change_14_days: (value.today / value.twoweek - 1) * 100,
+      price_percent_change_30_days: (value.today / value.month - 1) * 100,
+      price_percent_change_3_months: (value.today / value.threemonth - 1) * 100,
+    };
+
+    let widget = await getLocalPerfomanceWidgetForDashboard(key);
+
+    if (widget){
+      //update
+      let widgetDataId = widget.widget_data_id;
+      let output = perf;
+      let query = {
+        text:
+          "UPDATE widget_data SET output = $1, updated_at = now() WHERE id = $2 RETURNING *",
+        values: [output, widgetDataId],
+      };
+
+      await db(query);
+      console.log("output updated");
+    }else{
+      //insert
+      let output = perf;
+      let query = {
+        text:
+          "INSERT INTO widget_data (output, updated_at) VALUES ($1, now()) RETURNING *",
+        values: [output],
+      };
+
+      let result = await db(query);
+
+      query = {
+          text:
+            "INSERT INTO widget_instances (dashboard_id, widget_id, widget_data_id, weight, is_pinned) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+          values: [key, userPerfWidgetId, result.id, 0, true],
+        };
+      
+      await db(query);
+      console.log("widget added and output updated");
+    }
+  });
 }
