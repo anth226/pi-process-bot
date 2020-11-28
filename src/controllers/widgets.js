@@ -1257,13 +1257,15 @@ export async function getTitanPerformance(uri) {
 
   let json = data.summary[0].json;
 
-  let perf = {
-    performance_five_year: json.performance_five_year,
-    performance_one_year: json.performance_one_year,
-    performance_quarter: json.performance_quarter,
-  };
+  if (json) {
+    let perf = {
+      performance_five_year: json.performance_five_year,
+      performance_one_year: json.performance_one_year,
+      performance_quarter: json.performance_quarter,
+    };
 
-  return perf;
+    return perf;
+  }
 }
 
 export async function processUsersPortPerf() {
@@ -1311,23 +1313,29 @@ export async function processUsersPortPerf() {
     };
 
     let followedTitans = await getTitansFollowed(key);
+    let titansPerformance;
+    let titansWithPerf = 0;
     let total_performance_five_year;
     let total_performance_one_year;
     let total_performance_quarter;
     for (let i in followedTitans) {
       let uri = followedTitans[i].uri;
       let titansPerf = await getTitanPerformance(uri);
-      total_performance_five_year += titansPerf.performance_five_year;
-      total_performance_one_year += titansPerf.performance_one_year;
-      total_performance_quarter += titansPerf.performance_quarter;
+      if (titansPerf) {
+        titansWithPerf += 1;
+        total_performance_five_year += titansPerf.performance_five_year;
+        total_performance_one_year += titansPerf.performance_one_year;
+        total_performance_quarter += titansPerf.performance_quarter;
+      }
     }
 
-    let titansPerformance = {
-      performance_five_year:
-        total_performance_five_year / followedTitans.length,
-      performance_one_year: total_performance_one_year / followedTitans.length,
-      performance_quarter: total_performance_quarter / followedTitans.length,
-    };
+    if (titansWithPerf > 0) {
+      titansPerformance = {
+        performance_five_year: total_performance_five_year / titansWithPerf,
+        performance_one_year: total_performance_one_year / titansWithPerf,
+        performance_quarter: total_performance_quarter / titansWithPerf,
+      };
+    }
 
     let perf = {
       stocks: stocksPerformance,
