@@ -1303,8 +1303,6 @@ export async function processUsersPortPerf() {
   }
 
   dashboards.forEach(async (value, key) => {
-    // console.log("key", key);
-    // console.log("value", value);
     let stocksPerformance = {
       price_percent_change_7_days: (value.today / value.week - 1) * 100,
       price_percent_change_14_days: (value.today / value.twoweek - 1) * 100,
@@ -1315,12 +1313,13 @@ export async function processUsersPortPerf() {
     let followedTitans = await getTitansFollowed(key);
     let titansPerformance;
     let titansWithPerf = 0;
-    let total_performance_five_year;
-    let total_performance_one_year;
-    let total_performance_quarter;
+    let total_performance_five_year = 0;
+    let total_performance_one_year = 0;
+    let total_performance_quarter = 0;
     for (let i in followedTitans) {
       let uri = followedTitans[i].uri;
       let titansPerf = await getTitanPerformance(uri);
+
       if (titansPerf) {
         titansWithPerf += 1;
         total_performance_five_year += titansPerf.performance_five_year;
