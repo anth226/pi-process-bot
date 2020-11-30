@@ -1045,6 +1045,7 @@ export const consumer_18 = Consumer.create({
     let estimatedEPS;
     let actualEPS;
     let suprisePercent;
+    let ranking;
     let ticker = sqsMessage.ticker;
     let earningsDate = sqsMessage.earnings_date;
 
@@ -1068,13 +1069,26 @@ export const consumer_18 = Consumer.create({
         suprisePercent = suprise.eps_percent_diff;
       }
 
+      url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+
+      res = await axios.get(url);
+
+      if (
+        res.data &&
+        res.data.analyst_ratings &&
+        res.data.analyst_ratings.mean
+      ) {
+        ranking = res.data.analyst_ratings.mean;
+      }
+
       await securities.insertEarnings(
         ticker,
         earningsDate,
         time_of_day,
         actualEPS,
         estimatedEPS,
-        suprisePercent
+        suprisePercent,
+        ranking
       );
 
       console.log(ticker, "earnings date:", earningsDate);

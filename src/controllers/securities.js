@@ -179,7 +179,8 @@ export async function insertEarnings(
   time_of_day,
   eps_actual,
   eps_estimate,
-  suprise_percentage
+  suprise_percentage,
+  ranking
 ) {
   if (!earnings_date || !ticker) {
     return;
@@ -192,6 +193,7 @@ export async function insertEarnings(
     eps_actual: eps_actual,
     eps_estimate: eps_estimate,
     suprise_percentage: suprise_percentage,
+    ranking: ranking,
   };
 
   let json = JSON.stringify(json_earnings);

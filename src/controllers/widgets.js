@@ -1161,6 +1161,7 @@ export async function getEarningsCalendar() {
       let eps_actual = jsonEarnings.eps_actual;
       let eps_estimate = jsonEarnings.eps_estimate;
       let suprise_percentage = jsonEarnings.suprise_percentage;
+      let ranking = jsonEarnings.ranking;
       secs.push({
         earnings_date: earningsDate,
         ticker: ticker,
@@ -1169,6 +1170,7 @@ export async function getEarningsCalendar() {
         eps_actual: eps_actual,
         eps_estimate: eps_estimate,
         suprise_percentage: suprise_percentage,
+        ranking: ranking,
       });
     }
   }
