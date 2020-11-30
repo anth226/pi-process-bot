@@ -1087,7 +1087,7 @@ export const consumer_18 = Consumer.create({
           res.data.analyst_ratings[0] &&
           res.data.analyst_ratings[0].mean
         ) {
-          preRanking = res.data.analyst_ratings[0].mean;
+          let preRanking = res.data.analyst_ratings[0].mean;
           ranking = (preRanking - 6) * -1;
         }
       } catch (e) {
