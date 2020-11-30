@@ -1050,35 +1050,47 @@ export const consumer_18 = Consumer.create({
     let earningsDate = sqsMessage.earnings_date;
 
     if (ticker) {
-      let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/earnings/latest?api_key=${process.env.INTRINIO_API_KEY}`;
+      try {
+        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/earnings/latest?api_key=${process.env.INTRINIO_API_KEY}`;
 
-      let res = await axios.get(url);
+        let res = await axios.get(url);
 
-      if (res.data && res.data.time_of_day) {
-        time_of_day = res.data.time_of_day;
+        if (res.data && res.data.time_of_day) {
+          time_of_day = res.data.time_of_day;
+        }
+      } catch (e) {
+        console.error(e);
       }
 
-      url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
+      try {
+        url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
 
-      res = await axios.get(url);
+        res = await axios.get(url);
 
-      if (res.data && res.data.eps_surprises.length > 0) {
-        let suprise = res.data.eps_surprises[0];
-        estimatedEPS = suprise.eps_mean_estimate;
-        actualEPS = suprise.eps_actual;
-        suprisePercent = suprise.eps_percent_diff;
+        if (res.data && res.data.eps_surprises.length > 0) {
+          let suprise = res.data.eps_surprises[0];
+          estimatedEPS = suprise.eps_mean_estimate;
+          actualEPS = suprise.eps_actual;
+          suprisePercent = suprise.eps_percent_diff;
+        }
+      } catch (e) {
+        console.error(e);
       }
 
-      url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+      try {
+        url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
-      res = await axios.get(url);
+        res = await axios.get(url);
 
-      if (
-        res.data &&
-        res.data.analyst_ratings &&
-        res.data.analyst_ratings.mean
-      ) {
-        ranking = res.data.analyst_ratings.mean;
+        if (
+          res.data &&
+          res.data.analyst_ratings &&
+          res.data.analyst_ratings.mean
+        ) {
+          ranking = res.data.analyst_ratings.mean;
+        }
+      } catch (e) {
+        console.error(e);
       }
 
       await securities.insertEarnings(
