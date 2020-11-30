@@ -160,6 +160,26 @@ export async function getWidget(widgetInstanceId) {
   return result;
 }
 
+export async function getPortfolioIDByDashboardID(dashbardId) {
+  let result = await db(`
+    SELECT id
+    FROM portfolios
+    WHERE dashboard_id = ${dashbardId}
+  `);
+
+  return result[0];
+}
+
+export async function getPortfolioHistory(portfolioId) {
+  let result = await db(`
+    SELECT *
+    FROM portfolio_histories
+    WHERE portfolio_id = ${portfolioId}
+  `);
+
+  return result;
+}
+
 export async function updateGlobal() {
   let widgets = await getGlobalWidgets();
 
@@ -1278,39 +1298,75 @@ export async function processUsersPortPerf() {
 
   for (let i in widgets) {
     let dashboardId = widgets[i].dashboard_id;
-    let values = widgets[i].output.performance.values;
+
     if (dashboards.has(dashboardId)) {
-      let totals = dashboards.get(dashboardId);
-      let today = totals.today + values.today.value;
-      let week = totals.week + values.week.value;
-      let twoweek = totals.twoweek + values.twoweek.value;
-      let month = totals.month + values.month.value;
-      let threemonth = totals.threemonth + values.threemonth.value;
-      dashboards.set(dashboardId, {
-        today: today,
-        week: week,
-        twoweek: twoweek,
-        month: month,
-        threemonth: threemonth,
-      });
     } else {
+      let portfolioId = await getPortfolioIDByDashboardID(dashboardId);
+      let portfolioHistory = await getPortfolioHistory(portfolioId);
       dashboards.set(dashboardId, {
-        today: values.today.value,
-        week: values.week.value,
-        twoweek: values.twoweek.value,
-        month: values.month.value,
-        threemonth: values.threemonth.value,
+        portfolio_id: portfolioId,
+        portfolio_history: portfolioHistory,
       });
     }
   }
 
   dashboards.forEach(async (value, key) => {
-    let stocksPerformance = {
-      price_percent_change_7_days: (value.today / value.week - 1) * 100,
-      price_percent_change_14_days: (value.today / value.twoweek - 1) * 100,
-      price_percent_change_30_days: (value.today / value.month - 1) * 100,
-      price_percent_change_3_months: (value.today / value.threemonth - 1) * 100,
-    };
+    let history = value.portfolio_history;
+    let stocks = new Map();
+
+    for (let i in history) {
+      let ticker = history[i].ticker;
+      let type = history[i].type;
+      let open_price = history[i].open_price;
+      let open_date = history[i].open_date;
+      let close_price = history[i].close_price;
+      let close_date = history[i].close_date;
+
+      if (open_price && open_date && close_price && close_date) {
+        if (stocks.has(ticker)) {
+          let trades = stocks.get(ticker).trades;
+          let priceChange = close_price - open_price;
+          //let seconds = Math.abs(date1 - date2) / 1000;
+          let timeChange = close_date - open_date / 86400000;
+          let percentChange = (open_price / close_price - 1) * 100;
+          let trade = {
+            price_change: priceChange,
+            performance: percentChange,
+            days: timeChange,
+            open_date: open_date,
+            close_date: close_date,
+          };
+          trades.push(trade);
+        } else {
+          let trades = [];
+          let priceChange = close_price - open_price;
+          //let seconds = Math.abs(date1 - date2) / 1000;
+          let timeChange = close_date - open_date / 86400000;
+          let percentChange = (open_price / close_price - 1) * 100;
+          let trade = {
+            price_change: priceChange,
+            performance: percentChange,
+            days: timeChange,
+            open_date: open_date,
+            close_date: close_date,
+          };
+          trades.push(trade);
+          stocks.set(ticker, {
+            type: type,
+            trades: trades,
+          });
+        }
+      }
+    }
+
+    let stocksPerformance = {};
+
+    stocks.forEach(async (value, key) => {
+      stocksPerformance[key] = {
+        type: value.type,
+        trades: value.trades,
+      };
+    });
 
     let followedTitans = await getTitansFollowed(key);
     let titansPerformance;
