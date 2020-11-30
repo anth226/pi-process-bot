@@ -1063,9 +1063,9 @@ export const consumer_18 = Consumer.create({
       }
 
       try {
-        url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
+        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
 
-        res = await axios.get(url);
+        let res = await axios.get(url);
 
         if (res.data && res.data.eps_surprises.length > 0) {
           let suprise = res.data.eps_surprises[0];
@@ -1078,9 +1078,9 @@ export const consumer_18 = Consumer.create({
       }
 
       try {
-        url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
-        res = await axios.get(url);
+        let res = await axios.get(url);
 
         if (
           res.data &&
