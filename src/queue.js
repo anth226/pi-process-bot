@@ -1084,10 +1084,10 @@ export const consumer_18 = Consumer.create({
 
         if (
           res.data &&
-          res.data.analyst_ratings &&
-          res.data.analyst_ratings.mean
+          res.data.analyst_ratings[0] &&
+          res.data.analyst_ratings[0].mean
         ) {
-          ranking = res.data.analyst_ratings.mean;
+          ranking = res.data.analyst_ratings[0].mean;
         }
       } catch (e) {
         console.error(e);
