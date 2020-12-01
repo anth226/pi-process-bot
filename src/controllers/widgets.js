@@ -960,7 +960,6 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 }
 
 export async function getStrongBuys(list) {
-  console.log("list", list);
   let buys = [];
   //    INTRINIO SCREENER
   // const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
@@ -988,6 +987,7 @@ export async function getStrongBuys(list) {
   //https://api-v2.intrinio.com/securities/TSLA/zacks/analyst_ratings?api_key=OjljMjViZjQzNWU4NGExZWZlZTFmNTY4ZDU5ZmI5ZDI0
   let data = list;
   for (let i in data) {
+    let logo_url;
     let delta;
     let name;
     let strongBuys;
@@ -1014,7 +1014,9 @@ export async function getStrongBuys(list) {
     if (company && company.json) {
       name = company.json.name;
     }
-    let logo_url = company.logo_url;
+    if (company && company.logo_url) {
+      logo_url = company.logo_url;
+    }
     let price = await getCompanyPrice(ticker);
     let metrics = await companies.getCompanyMetrics(ticker);
     if (metrics) {
