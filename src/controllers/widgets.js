@@ -1011,7 +1011,7 @@ export async function getStrongBuys(list) {
       console.error(e);
     }
     let company = await companies.getCompanyByTicker(ticker);
-    if (company.json) {
+    if (company && company.json) {
       name = company.json.name;
     }
     let logo_url = company.logo_url;
