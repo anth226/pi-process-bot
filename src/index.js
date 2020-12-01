@@ -285,6 +285,7 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
+  console.log("hit endpoint");
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;
@@ -295,6 +296,7 @@ app.get("/widgets/:id/process_input", async (req, res) => {
     return;
   }
   await widgets.processInput(req.params.id);
+  console.log("hit process input");
   res.send("ok");
 });
 

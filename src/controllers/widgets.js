@@ -204,6 +204,7 @@ export async function updateLocal() {
 }
 
 export async function processInput(widgetInstanceId) {
+  console.log("hello");
   let widget;
   let output;
 
@@ -228,13 +229,7 @@ export async function processInput(widgetInstanceId) {
     /*          USER */
     //Movers
     else if (type == "UsersPortfolioPerf") {
-      // if (params.count && params.count > 0) {
-      //   //let count = params.count;
-      //   //let topComps = { topComps: await getInsidersNMovers(count) };
-      //   if (topComps) {
-      //     output = topComps;
-      //   }
-      // }
+      return;
     }
     /*          INSIDERS */
     //Movers
@@ -261,6 +256,7 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
+      console.log("in strong buys");
       console.log("params", params);
       if (params.tickers) {
         console.log("here");
