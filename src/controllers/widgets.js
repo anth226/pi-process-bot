@@ -1010,14 +1010,11 @@ export async function getStrongBuys(list) {
     } catch (e) {
       console.error(e);
     }
-    let company = companies.getCompanyByTicker(ticker);
-    console.log("company", company);
+    let company = await companies.getCompanyByTicker(ticker);
     if (company.json) {
       name = company.json.name;
     }
-    console.log("name", name);
     let logo_url = company.logo_url;
-    console.log("logo_url", logo_url);
     let price = await getCompanyPrice(ticker);
     let metrics = await companies.getCompanyMetrics(ticker);
     if (metrics) {
