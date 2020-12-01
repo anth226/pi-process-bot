@@ -210,6 +210,8 @@ export async function processInput(widgetInstanceId) {
 
   let result = await getWidget(widgetInstanceId);
 
+  console.log("result", result);
+
   if (result) {
     widget = result[0];
   }
@@ -220,10 +222,15 @@ export async function processInput(widgetInstanceId) {
     let dataId = widget.widget_data_id;
     let dashboardId = widget.dashboard_id;
     let params = {};
+    console.log("type", type);
+    console.log("input", input);
+    console.log("dataId", dataId);
+    console.log("dashboardId", dashboardId);
     if (input) {
       Object.entries(input).map((item) => {
         params[item[0]] = item[1];
       });
+      console.log("params", params);
     }
 
     /*          USER */
