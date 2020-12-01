@@ -235,7 +235,7 @@ export async function processInput(widgetInstanceId) {
 
     /*          USER */
     //Movers
-    else if (type == "UsersPortfolioPerf") {
+    if (type == "UsersPortfolioPerf") {
       return;
     }
     /*          INSIDERS */
@@ -319,7 +319,10 @@ export async function processInput(widgetInstanceId) {
     }
     /*          MUTUAL FUNDS */
     //Discount/Premium
-    if (type == "MutualFundsTopNDiscount" || type == "MutualFundsTopNPremium") {
+    else if (
+      type == "MutualFundsTopNDiscount" ||
+      type == "MutualFundsTopNPremium"
+    ) {
       let topFunds;
       if (params.count && params.count > 0) {
         let topNum = params.count;
