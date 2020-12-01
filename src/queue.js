@@ -1095,7 +1095,7 @@ export const consumer_18 = Consumer.create({
       }
 
       let logo_url;
-      let company = companies.getCompanyByTicker(ticker);
+      let company = await companies.getCompanyByTicker(ticker);
       if (company && company.logo_url) {
         logo_url = company.logo_url;
       }
