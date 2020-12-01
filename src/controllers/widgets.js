@@ -261,9 +261,14 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
+      console.log("params", params);
       if (params.tickers) {
+        console.log("here");
+        console.log("params.tickers", params.tickers);
         let data = await getStrongBuys(params.tickers);
+        console.log("data", data);
         let json = JSON.stringify(data);
+        console.log("json", json);
 
         if (data) {
           output = json;
@@ -963,6 +968,7 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 }
 
 export async function getStrongBuys(list) {
+  console.log("list", list);
   let buys = [];
   //    INTRINIO SCREENER
   // const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
@@ -1001,7 +1007,7 @@ export async function getStrongBuys(list) {
 
       let res = await axios.get(url);
 
-      console.log(res);
+      console.log("res", res);
 
       if (res.data) {
         if (res.data.analyst_ratings && res.data.analyst_ratings.strong_buys) {
