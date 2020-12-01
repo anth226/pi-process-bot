@@ -261,11 +261,13 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
-      let data = await getStrongBuys();
-      let json = JSON.stringify(data);
+      if (params.tickers) {
+        let data = await getStrongBuys(params.tickers);
+        let json = JSON.stringify(data);
 
-      if (data) {
-        output = json;
+        if (data) {
+          output = json;
+        }
       }
     }
     //Top Stocks
@@ -960,52 +962,77 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
   return topETFs;
 }
 
-export async function getStrongBuys() {
+export async function getStrongBuys(list) {
   let buys = [];
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
-  const body = {
-    operator: "AND",
-    clauses: [
-      {
-        field: "zacks_analyst_rating_strong_buys",
-        operator: "gt",
-        value: "0",
-      },
-    ],
-  };
-
-  let res = axios
-    .post(url, body)
-    .then(function (data) {
-      //console.log(data);
-      return data;
-    })
-    .catch(function (err) {
-      console.log(err);
-      return err;
-    });
-
-  let data = await res.then((data) => data.data);
+  //    INTRINIO SCREENER
+  // const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
+  // const body = {
+  //   operator: "AND",
+  //   clauses: [
+  //     {
+  //       field: "zacks_analyst_rating_strong_buys",
+  //       operator: "gt",
+  //       value: "0",
+  //     },
+  //   ],
+  // };
+  // let res = axios
+  //   .post(url, body)
+  //   .then(function (data) {
+  //     //console.log(data);
+  //     return data;
+  //   })
+  //   .catch(function (err) {
+  //     console.log(err);
+  //     return err;
+  //   });
+  // let data = await res.then((data) => data.data);
+  //https://api-v2.intrinio.com/securities/TSLA/zacks/analyst_ratings?api_key=OjljMjViZjQzNWU4NGExZWZlZTFmNTY4ZDU5ZmI5ZDI0
+  let data = list;
   for (let i in data) {
     let delta;
-    let ticker = data[i].security.ticker;
-    let compTicker = data[i].security.composite_ticker;
-    let name = data[i].security.name;
-    let numberBuys = data[i].data[0].number_value;
+    let name;
+    let strongBuys;
+    let compTicker;
+    let ticker = data[i];
+
+    try {
+      let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+
+      let res = await axios.get(url);
+
+      console.log(res);
+
+      if (res.data) {
+        if (res.data.analyst_ratings && res.data.analyst_ratings.strong_buys) {
+          strongBuys = res.data.analyst_ratings.strong_buys;
+        }
+        if (res.data.security && res.data.security.composite_ticker) {
+          compTicker = res.data.security.composite_ticker;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    let company = companies.getCompanyByTicker(ticker);
+    if (company.json) {
+      name = company.json.name;
+    }
+    let logo_url = company.logo_url;
     let price = await getCompanyPrice(ticker);
     let metrics = await companies.getCompanyMetrics(ticker);
     if (metrics) {
       delta = metrics.Change;
     }
-    //let pic = await getCompanyPicture(ticker);
+
     buys.push({
       ticker: ticker,
       composite_ticker: compTicker,
       name: name,
-      strong_buys: numberBuys,
+      strong_buys: strongBuys,
       last_price: price,
       delta: delta,
-      //pic_url: ,
+      logo_url: logo_url,
     });
   }
   return buys;
