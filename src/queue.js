@@ -1094,6 +1094,12 @@ export const consumer_18 = Consumer.create({
         console.error(e);
       }
 
+      let logo_url;
+      let company = companies.getCompanyByTicker(ticker);
+      if (company && company.logo_url) {
+        logo_url = company.logo_url;
+      }
+
       await securities.insertEarnings(
         ticker,
         earningsDate,
@@ -1101,7 +1107,8 @@ export const consumer_18 = Consumer.create({
         actualEPS,
         estimatedEPS,
         suprisePercent,
-        ranking
+        ranking,
+        logo_url
       );
 
       console.log(ticker, "earnings date:", earningsDate);
