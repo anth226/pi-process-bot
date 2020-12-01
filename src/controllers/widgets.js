@@ -984,7 +984,6 @@ export async function getStrongBuys(list) {
   //     return err;
   //   });
   // let data = await res.then((data) => data.data);
-  //https://api-v2.intrinio.com/securities/TSLA/zacks/analyst_ratings?api_key=OjljMjViZjQzNWU4NGExZWZlZTFmNTY4ZDU5ZmI5ZDI0
   let data = list;
   for (let i in data) {
     let logo_url;
@@ -1038,7 +1037,7 @@ export async function getStrongBuys(list) {
 
 export async function getAggRatings() {
   let comps = [];
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=desc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
   const body = {
     operator: "AND",
     clauses: [
@@ -1067,7 +1066,8 @@ export async function getAggRatings() {
     rank += 1;
     let ticker = data[i].security.ticker;
     let name = data[i].security.name;
-    let rating = data[i].data[0].number_value;
+    let preRating = data[i].data[0].number_value;
+    let rating = (preRating - 6) * -1;
 
     comps.push({
       rank: rank,
