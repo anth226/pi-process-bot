@@ -204,13 +204,10 @@ export async function updateLocal() {
 }
 
 export async function processInput(widgetInstanceId) {
-  console.log("hello");
   let widget;
   let output;
 
   let result = await getWidget(widgetInstanceId);
-
-  console.log("result", result);
 
   if (result) {
     widget = result[0];
@@ -222,15 +219,10 @@ export async function processInput(widgetInstanceId) {
     let dataId = widget.widget_data_id;
     let dashboardId = widget.dashboard_id;
     let params = {};
-    console.log("type", type);
-    console.log("input", input);
-    console.log("dataId", dataId);
-    console.log("dashboardId", dashboardId);
     if (input) {
       Object.entries(input).map((item) => {
         params[item[0]] = item[1];
       });
-      console.log("params", params);
     }
 
     /*          USER */
@@ -263,15 +255,9 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
-      console.log("in strong buys");
-      console.log("params", params);
       if (params.tickers) {
-        console.log("here");
-        console.log("params.tickers", params.tickers);
         let data = await getStrongBuys(params.tickers);
-        console.log("data", data);
         let json = JSON.stringify(data);
-        console.log("json", json);
 
         if (data) {
           output = json;
@@ -1013,8 +999,6 @@ export async function getStrongBuys(list) {
 
       let res = await axios.get(url);
 
-      console.log("res", res);
-
       if (res.data) {
         if (res.data.analyst_ratings && res.data.analyst_ratings.strong_buys) {
           strongBuys = res.data.analyst_ratings.strong_buys;
@@ -1027,10 +1011,13 @@ export async function getStrongBuys(list) {
       console.error(e);
     }
     let company = companies.getCompanyByTicker(ticker);
+    console.log("company", company);
     if (company.json) {
       name = company.json.name;
     }
+    console.log("name", name);
     let logo_url = company.logo_url;
+    console.log("logo_url", logo_url);
     let price = await getCompanyPrice(ticker);
     let metrics = await companies.getCompanyMetrics(ticker);
     if (metrics) {
