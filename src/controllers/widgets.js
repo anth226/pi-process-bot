@@ -1314,18 +1314,23 @@ export async function getTitanPerformance(uri) {
 }
 
 export async function processUsersPortPerf() {
+  console.log("here");
   let res = await getWidgetTypeId("UsersPerformance");
   let userPerfWidgetId = res[0].id;
   let widgets = await getLocalPriceWidgets();
+  console.log("widgets", widgets);
   let dashboards = new Map();
 
   for (let i in widgets) {
     let dashboardId = widgets[i].dashboard_id;
 
     if (dashboards.has(dashboardId)) {
+      console.log("hmmm");
     } else {
       let portfolioId = await getPortfolioIDByDashboardID(dashboardId);
       let portfolioHistory = await getPortfolioHistory(portfolioId);
+      console.log("portfolioId", portfolioId);
+      console.log("portfolioHistory", portfolioHistory);
       dashboards.set(dashboardId, {
         portfolio_id: portfolioId,
         portfolio_history: portfolioHistory,
