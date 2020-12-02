@@ -1330,8 +1330,8 @@ export async function processUsersPortPerf() {
     } else {
       console.log("here 2");
       let portfolioId = await getPortfolioIDByDashboardID(dashboardId);
-      let portfolioHistory = await getPortfolioHistory(portfolioId);
       console.log("portfolioId", portfolioId);
+      let portfolioHistory = await getPortfolioHistory(portfolioId);
       console.log("portfolioHistory", portfolioHistory);
       dashboards.set(dashboardId, {
         portfolio_id: portfolioId,
