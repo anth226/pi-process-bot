@@ -161,9 +161,9 @@ export async function getWidget(widgetInstanceId) {
   return result;
 }
 
-export async function getPortfolioIDByDashboardID(dashbardId) {
+export async function getPortfolioByDashboardID(dashbardId) {
   let result = await db(`
-    SELECT id
+    SELECT *
     FROM portfolios
     WHERE dashboard_id = ${dashbardId}
   `);
@@ -1331,7 +1331,8 @@ export async function processUsersPortPerf() {
     } else {
       console.log("here 2");
       console.log("dashboardId", dashboardId);
-      let portfolioId = await getPortfolioIDByDashboardID(dashboardId);
+      let portfolio = await getPortfolioByDashboardID(dashboardId);
+      let portfolioId = portfolio.id;
       console.log("portfolioId", portfolioId);
       let portfolioHistory = await getPortfolioHistory(portfolioId);
       console.log("portfolioHistory", portfolioHistory);
