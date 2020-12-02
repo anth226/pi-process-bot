@@ -1059,10 +1059,17 @@ export const consumer_18 = Consumer.create({
 
     let estimatedEPS;
     let ranking;
+    let type;
     let ticker = sqsMessage.ticker;
     let earningsDate = sqsMessage.earnings_date;
     let time_of_day = sqsMessage.time_of_day;
     let name = sqsMessage.name;
+
+    let security = await securities.getSecurityByTicker(ticker);
+
+    if (security) {
+      type = security.type;
+    }
 
     if (ticker) {
       try {
@@ -1107,7 +1114,8 @@ export const consumer_18 = Consumer.create({
         time_of_day,
         estimatedEPS,
         ranking,
-        logo_url
+        logo_url,
+        type
       );
 
       console.log(ticker, "earnings date:", earningsDate);

@@ -171,15 +171,15 @@ export async function insertEarnings(
   time_of_day,
   eps_estimate,
   ranking,
-  logo_url
+  logo_url,
+  type
 ) {
   if (!earnings_date || !ticker) {
     return;
   }
 
   let query = {
-    text:
-      "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL",
+    text: "SELECT * FROM earnings_reports WHERE ticker = $1", // AND eps_actual IS NULL",
     values: [ticker],
   };
   let result = await db(query);
@@ -187,7 +187,7 @@ export async function insertEarnings(
   if (result.length > 0) {
     let query = {
       text:
-        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7 WHERE ticker = $1 AND eps_actual IS NULL",
+        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7, type = $8 WHERE ticker = $1", // AND eps_actual IS NULL",
       values: [
         ticker,
         earnings_date,
@@ -196,13 +196,14 @@ export async function insertEarnings(
         ranking,
         logo_url,
         name,
+        type,
       ],
     };
     await db(query);
   } else {
     let query = {
       text:
-        "INSERT INTO earnings_reports (ticker, earnings_date, time_of_day, eps_estimate, ranking, logo_url, name ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *",
+        "INSERT INTO earnings_reports (ticker, earnings_date, time_of_day, eps_estimate, ranking, logo_url, name, type ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8 ) RETURNING *",
       values: [
         ticker,
         earnings_date,
@@ -211,6 +212,7 @@ export async function insertEarnings(
         ranking,
         logo_url,
         name,
+        type,
       ],
     };
     await db(query);
