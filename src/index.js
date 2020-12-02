@@ -6,6 +6,7 @@ import bodyParser from "body-parser";
 
 import * as companies from "./controllers/companies";
 import * as securities from "./controllers/securities";
+import * as earnings from "./controllers/earnings";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
@@ -213,7 +214,7 @@ app.get("/update_earnings_securities", async (req, res) => {
     res.send("fail");
     return;
   }
-  await securities.fillEarnings();
+  await earnings.fillEarnings();
   res.send("ok");
 });
 

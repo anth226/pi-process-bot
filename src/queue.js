@@ -11,6 +11,7 @@ import * as mutualfunds from "./controllers/mutualfunds";
 import * as widgets from "./controllers/widgets";
 import * as etfs from "./controllers/etfs";
 import * as nlp from "./controllers/nlp";
+import * as earnings from "./controllers/earnings";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -593,12 +594,17 @@ export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
   });
 }
 
-export function publish_ProcessEarningsDate_Securities(ticker, earnings_date) {
+export function publish_ProcessEarningsDate_Securities(
+  ticker,
+  earnings_date,
+  time_of_day
+) {
   let queueUrl = process.env.AWS_SQS_URL_SECURITIES_EARNINGS;
 
   let data = {
     ticker,
     earnings_date,
+    time_of_day,
   };
 
   let params = {
@@ -610,6 +616,10 @@ export function publish_ProcessEarningsDate_Securities(ticker, earnings_date) {
       earnings_date: {
         DataType: "String",
         StringValue: data.earnings_date,
+      },
+      time_of_day: {
+        DataType: "String",
+        StringValue: data.time_of_day,
       },
     },
     MessageBody: JSON.stringify(data),
@@ -1041,37 +1051,21 @@ export const consumer_18 = Consumer.create({
 
     console.log(sqsMessage);
 
-    let time_of_day;
     let estimatedEPS;
-    let actualEPS;
-    let suprisePercent;
     let ranking;
     let ticker = sqsMessage.ticker;
     let earningsDate = sqsMessage.earnings_date;
+    let time_of_day = sqsMessage.time_of_day;
 
     if (ticker) {
       try {
-        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/earnings/latest?api_key=${process.env.INTRINIO_API_KEY}`;
+        //https://api-v2.intrinio.com/zacks/eps_estimates?identifier=FIVE&end_date=2020-12-02
+        let url = `${process.env.INTRINIO_BASE_PATH}/zacks/esp_estimates?identifier=${ticker}&end_date=${earningsDate}&api_key=${process.env.INTRINIO_API_KEY}`;
 
         let res = await axios.get(url);
 
-        if (res.data && res.data.time_of_day) {
-          time_of_day = res.data.time_of_day;
-        }
-      } catch (e) {
-        console.error(e);
-      }
-
-      try {
-        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/eps_surprises?api_key=${process.env.INTRINIO_API_KEY}`;
-
-        let res = await axios.get(url);
-
-        if (res.data && res.data.eps_surprises.length > 0) {
-          let suprise = res.data.eps_surprises[0];
-          estimatedEPS = suprise.eps_mean_estimate;
-          actualEPS = suprise.eps_actual;
-          suprisePercent = suprise.eps_percent_diff;
+        if (res.data && res.data.estimates && res.data.estimates.mean) {
+          estimatedEPS = res.data.estimates.mean;
         }
       } catch (e) {
         console.error(e);
@@ -1100,13 +1094,11 @@ export const consumer_18 = Consumer.create({
         logo_url = company.logo_url;
       }
 
-      await securities.insertEarnings(
+      await earnings.insertEarnings(
         ticker,
         earningsDate,
         time_of_day,
-        actualEPS,
         estimatedEPS,
-        suprisePercent,
         ranking,
         logo_url
       );
