@@ -9,6 +9,7 @@ import * as institutions from "./institutions";
 import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
 import * as securities from "./securities";
+import * as earnings from "./earnings";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
