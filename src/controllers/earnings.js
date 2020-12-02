@@ -123,20 +123,44 @@ export async function updateEarnings() {
 
     let query = {
       text:
-        "UPDATE earnings_reports SET type = $2, fiscal_year = $3, fiscal_quarter = $4, actual_reported_date = $5, eps_actual = $6, suprise_percentage = $7 WHERE ticker = $1",
-      values: [
-        ticker,
-        type,
-        fiscal_year,
-        fiscal_quarter,
-        actual_reported_date,
-        eps_actual,
-        eps_percent_diff,
-      ],
+        "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL",
+      values: [ticker],
     };
-    await db(query);
+    let result = await db(query);
 
-    console.log(ticker + "actual earnings reported");
+    if (result.length > 0) {
+      let query = {
+        text:
+          "UPDATE earnings_reports SET type = $2, fiscal_year = $3, fiscal_quarter = $4, actual_reported_date = $5, eps_actual = $6, suprise_percentage = $7 WHERE ticker = $1",
+        values: [
+          ticker,
+          type,
+          fiscal_year,
+          fiscal_quarter,
+          actual_reported_date,
+          eps_actual,
+          eps_percent_diff,
+        ],
+      };
+      await db(query);
+      console.log(ticker + "actual earnings reported");
+    } else {
+      let query = {
+        text:
+          "INSERT INTO earnings_reports (type, fiscal_year, fiscal_quarter, actual_reported_date, eps_actual, suprise_percentage) VALUES ( $2, $3, $4, $5, $6, $7 )  WHERE ticker = $1",
+        values: [
+          ticker,
+          type,
+          fiscal_year,
+          fiscal_quarter,
+          actual_reported_date,
+          eps_actual,
+          eps_percent_diff,
+        ],
+      };
+      await db(query);
+      console.log(ticker + "actual earnings added and reported");
+    }
   }
 }
 
