@@ -20,9 +20,9 @@ const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
 const indexAPI = new intrinioSDK.IndexApi();
 
-export async function getIntrinioEarnings() {
+export async function getDailyEarnings() {
   try {
-    let today = new Date(); //.toISOString().slice(0, 10);
+    let today = new Date();
 
     let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${today}&end_date=${today}&api_key=${process.env.INTRINIO_API_KEY}`;
 
@@ -31,55 +31,7 @@ export async function getIntrinioEarnings() {
     let eps_surprises = data.eps_surprises;
 
     if (data && eps_surprises.length > 0) {
-      for (let i in eps_surprises) {
-        let type;
-        let time_of_day;
-        let ranking;
-        let logo_url;
-        let name;
-        let fiscal_year = eps_surprises[i].fiscal_year;
-        let fiscal_quarter = eps_surprises[i].fiscal_quarter;
-        let earnings_date = eps_surprises[i].actual_reported_date;
-        let eps_actual = eps_surprises[i].eps_actual;
-        let eps_mean_estimate = eps_surprises[i].eps_mean_estimate;
-        let eps_percent_diff = eps_surprises[i].eps_percent_diff;
-        let ticker = eps_surprises[i].security.ticker;
-        let apiName = eps_surprises[i].security.name;
-
-        let security = await securities.getSecurityByTicker(ticker);
-
-        if (security) {
-          type = security.type;
-        }
-
-        //time of day
-
-        //ranking
-
-        //logo url
-
-        //our name
-
-        // console.log(
-        //   "ticker",
-        //   ticker,
-        //   "name",
-        //   name,
-        //   "fiscal_year",
-        //   fiscal_year,
-        //   "fiscal_quarter",
-        //   fiscal_quarter,
-        //   "earnings_date",
-        //   earnings_date,
-        //   "eps_actual",
-        //   eps_actual,
-        //   "eps_mean_estimate",
-        //   eps_mean_estimate,
-        //   "eps_percent_diff",
-        //   eps_percent_diff,
-        //   "\n"
-        // );
-      }
+      return eps_surprises;
     }
   } catch (e) {
     console.error(e);
@@ -94,40 +46,6 @@ export async function getEarningsReports() {
 
   return result;
 }
-
-//let yesterday = new Date(today);
-
-//yesterday.setDate(yesterday.getDate() - 1);
-
-//const url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${today}&end_date=${today}&api_key=${process.env.INTRINIO_API_KEY}`;
-// const body = {
-//   operator: "AND",
-//   clauses: [
-//     {
-//       field: "next_earnings_date",
-//       operator: "gt",
-//       value: yesterday,
-//     },
-//     {
-//       field: "next_earnings_time_of_day",
-//       operator: "gt",
-//       value: "0",
-//     },
-//   ],
-// };
-
-// let res = axios
-//   .post(url, body)
-//   .then(function (data) {
-//     console.log(data);
-//     return data;
-//   })
-//   .catch(function (err) {
-//     console.log(err);
-//     return err;
-//   });
-
-//let data = await res.then((data) => data.data);
 
 export async function getFutureEarningsDates() {
   let today = new Date(); //.toISOString().slice(0, 10);
@@ -180,6 +98,43 @@ export async function fillEarnings() {
       earningsDate,
       time_of_day
     );
+  }
+}
+
+export async function updateEarnings() {
+  let data = await getDailyEarnings();
+
+  for (let i in data) {
+    let type;
+    let fiscal_year = data[i].fiscal_year;
+    let fiscal_quarter = data[i].fiscal_quarter;
+    let actual_reported_date = data[i].actual_reported_date;
+    let eps_actual = data[i].eps_actual;
+    let eps_percent_diff = data[i].eps_percent_diff;
+    let ticker = data[i].security.ticker;
+
+    let security = await securities.getSecurityByTicker(ticker);
+
+    if (security) {
+      type = security.type;
+    }
+
+    let query = {
+      text:
+        "UPDATE earnings_reports SET type = $2, fiscal_year = $3, fiscal_quarter = $4, actual_reported_date = $5, eps_actual = $6, suprise_percentage = $7 WHERE ticker = $1 AND eps_actual IS NULL",
+      values: [
+        ticker,
+        type,
+        fiscal_year,
+        fiscal_quarter,
+        actual_reported_date,
+        eps_actual,
+        eps_percent_diff,
+      ],
+    };
+    await db(query);
+
+    console.log(ticker + "actual earnings reported");
   }
 }
 

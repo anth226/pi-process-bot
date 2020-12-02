@@ -218,6 +218,23 @@ app.get("/update_earnings_securities", async (req, res) => {
   res.send("ok");
 });
 
+/* Earnings */
+
+// /update_eps_earnings?token=XXX
+app.get("/update_eps_earnings", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await earnings.updateEarnings();
+  res.send("ok");
+});
+
 /* Mutual Funds */
 
 // /update_json_mutualfunds?token=XXX
