@@ -147,7 +147,7 @@ export async function updateEarnings() {
     } else {
       let query = {
         text:
-          "INSERT INTO earnings_reports (type, fiscal_year, fiscal_quarter, actual_reported_date, eps_actual, suprise_percentage) VALUES ( $2, $3, $4, $5, $6, $7 )  WHERE ticker = $1",
+          "INSERT INTO earnings_reports (ticker, type, fiscal_year, fiscal_quarter, actual_reported_date, eps_actual, suprise_percentage) VALUES ( $1, $2, $3, $4, $5, $6, $7 )",
         values: [
           ticker,
           type,
