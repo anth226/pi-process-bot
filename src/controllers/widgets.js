@@ -162,7 +162,9 @@ export async function getWidget(widgetInstanceId) {
 }
 
 export async function getPortfolioByDashboardID(dashbardId) {
+  console.log("here 3");
   let dashbard_id = parseInt(dashbardId);
+  console.log("dashbard_id 2", dashbard_id);
   let result = await db(`
     SELECT *
     FROM portfolios
