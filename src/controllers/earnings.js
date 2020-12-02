@@ -23,8 +23,10 @@ const indexAPI = new intrinioSDK.IndexApi();
 export async function getDailyEarnings() {
   try {
     let today = new Date().toISOString().slice(0, 10);
+    let yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
-    let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${today}&end_date=${today}&api_key=${process.env.INTRINIO_API_KEY}`;
+    let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${yesterday}&end_date=${yesterday}&api_key=${process.env.INTRINIO_API_KEY}`;
 
     let response = await axios.get(url);
     console.log("response", response);
