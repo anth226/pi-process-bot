@@ -1220,8 +1220,8 @@ export async function getEarningsCalendar() {
     });
   }
   let sorted = reports.sort(function (a, b) {
-    var aa = a.earnings_date.split("-").join(),
-      bb = b.earnings_date.split("-").join();
+    var aa = a.earnings_datez + "".split("-").join(),
+      bb = b.earnings_date + "".split("-").join();
     return aa < bb ? -1 : aa > bb ? 1 : 0;
   });
   return sorted;
