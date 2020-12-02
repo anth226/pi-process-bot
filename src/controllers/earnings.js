@@ -170,11 +170,13 @@ export async function fillEarnings() {
 
   for (let i in data) {
     let ticker = data[i].security.ticker;
+    let name = data[i].security.name;
     let earningsDate = data[i].data[0].text_value;
     let time_of_day = data[i].data[1].text_value;
 
     queue.publish_ProcessEarningsDate_Securities(
       ticker,
+      name,
       earningsDate,
       time_of_day
     );
@@ -183,6 +185,7 @@ export async function fillEarnings() {
 
 export async function insertEarnings(
   ticker,
+  name,
   earnings_date,
   time_of_day,
   eps_estimate,
@@ -203,7 +206,7 @@ export async function insertEarnings(
   if (result.length > 0) {
     let query = {
       text:
-        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6 WHERE ticker = $1 AND eps_actual IS NULL",
+        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7 WHERE ticker = $1 AND eps_actual IS NULL",
       values: [
         ticker,
         earnings_date,
@@ -211,13 +214,14 @@ export async function insertEarnings(
         eps_estimate,
         ranking,
         logo_url,
+        name,
       ],
     };
     await db(query);
   } else {
     let query = {
       text:
-        "INSERT INTO earnings_reports (ticker, earnings_date, time_of_day, eps_estimate, ranking, logo_url ) VALUES ( $1, $2, $3, $4, $5, $6 ) RETURNING *",
+        "INSERT INTO earnings_reports (ticker, earnings_date, time_of_day, eps_estimate, ranking, logo_url, name ) VALUES ( $1, $2, $3, $4, $5, $6, $7 ) RETURNING *",
       values: [
         ticker,
         earnings_date,
@@ -225,6 +229,7 @@ export async function insertEarnings(
         eps_estimate,
         ranking,
         logo_url,
+        name,
       ],
     };
     await db(query);

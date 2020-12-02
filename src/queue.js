@@ -596,6 +596,7 @@ export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
 
 export function publish_ProcessEarningsDate_Securities(
   ticker,
+  name,
   earnings_date,
   time_of_day
 ) {
@@ -603,6 +604,7 @@ export function publish_ProcessEarningsDate_Securities(
 
   let data = {
     ticker,
+    name,
     earnings_date,
     time_of_day,
   };
@@ -612,6 +614,10 @@ export function publish_ProcessEarningsDate_Securities(
       ticker: {
         DataType: "String",
         StringValue: data.ticker,
+      },
+      name: {
+        DataType: "String",
+        StringValue: data.name,
       },
       earnings_date: {
         DataType: "String",
@@ -1056,6 +1062,7 @@ export const consumer_18 = Consumer.create({
     let ticker = sqsMessage.ticker;
     let earningsDate = sqsMessage.earnings_date;
     let time_of_day = sqsMessage.time_of_day;
+    let name = sqsMessage.name;
 
     if (ticker) {
       try {
@@ -1095,6 +1102,7 @@ export const consumer_18 = Consumer.create({
 
       await earnings.insertEarnings(
         ticker,
+        name,
         earningsDate,
         time_of_day,
         estimatedEPS,
