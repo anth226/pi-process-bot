@@ -1325,24 +1325,62 @@ export async function processUsersPortPerf() {
 
   for (let i in widgets) {
     let dashboardId = widgets[i].dashboard_id;
+    let values = widgets[i].output.performance.values;
 
     if (dashboards.has(dashboardId)) {
-      console.log("hmmm");
+      //stocks historical
+      let totals = dashboards.get(dashboardId).totals;
+      let today = totals.today + values.today.value;
+      let week = totals.week + values.week.value;
+      let twoweek = totals.twoweek + values.twoweek.value;
+      let month = totals.month + values.month.value;
+      let threemonth = totals.threemonth + values.threemonth.value;
+      totals = {
+        today: today,
+        week: week,
+        twoweek: twoweek,
+        month: month,
+        threemonth: threemonth,
+      };
+      console.log(dashboardId, " totals update", totals);
     } else {
+      //stocks historical
+      let totals = {
+        today: values.today.value,
+        week: values.week.value,
+        twoweek: values.twoweek.value,
+        month: values.month.value,
+        threemonth: values.threemonth.value,
+      };
+      console.log(dashboardId, " totals insert", totals);
+
+      //user portfolio
       let portfolio = await getPortfolioByDashboardID(dashboardId);
       let portfolioId = portfolio.id;
       let portfolioHistory = await getPortfolioHistory(portfolioId);
-      console.log("portfolioHistory", portfolioHistory);
+
       dashboards.set(dashboardId, {
         portfolio_id: portfolioId,
         portfolio_history: portfolioHistory,
+        totals: totals,
       });
     }
   }
 
-  console.log("dashboards", dashboards);
+  //console.log("dashboards", dashboards);
 
   dashboards.forEach(async (value, key) => {
+    //stocks historical
+    let totals = value.totals;
+    let stocksHistory = {
+      price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
+      price_percent_change_14_days: (totals.today / totals.twoweek - 1) * 100,
+      price_percent_change_30_days: (totals.today / totals.month - 1) * 100,
+      price_percent_change_3_months:
+        (totals.today / totals.threemonth - 1) * 100,
+    };
+
+    //user portfolio
     let history = value.portfolio_history;
     let stocks = new Map();
 
@@ -1357,7 +1395,6 @@ export async function processUsersPortPerf() {
       if (open_price && open_date && close_price && close_date) {
         if (stocks.has(ticker)) {
           let trades = stocks.get(ticker).trades;
-          console.log("update trades", trades);
           let priceChange = close_price - open_price;
           //let seconds = Math.abs(date1 - date2) / 1000;
           let timeChange = close_date - open_date / 86400000;
@@ -1369,7 +1406,6 @@ export async function processUsersPortPerf() {
             open_date: open_date,
             close_date: close_date,
           };
-          console.log("update trade", trade);
           trades.push(trade);
         } else {
           let trades = [];
@@ -1384,7 +1420,6 @@ export async function processUsersPortPerf() {
             open_date: open_date,
             close_date: close_date,
           };
-          console.log("trade", trade);
           trades.push(trade);
           stocks.set(ticker, {
             type: type,
@@ -1394,8 +1429,6 @@ export async function processUsersPortPerf() {
       }
     }
 
-    console.log("stocks", stocks);
-
     let stocksPerformance = {};
 
     stocks.forEach(async (value, key) => {
@@ -1404,8 +1437,6 @@ export async function processUsersPortPerf() {
         trades: value.trades,
       };
     });
-
-    console.log("stocksPerformance", stocksPerformance);
 
     let followedTitans = await getTitansFollowed(key);
     let titansPerformance;
@@ -1434,6 +1465,7 @@ export async function processUsersPortPerf() {
     }
 
     let perf = {
+      stocks_historical: stocksHistory,
       stocks: stocksPerformance,
       titans: titansPerformance,
     };
