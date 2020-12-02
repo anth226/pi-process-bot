@@ -86,15 +86,14 @@ export async function getIntrinioEarnings() {
   }
 }
 
-// export async function getEarningsReports() {
-//   //fix!
-//   let result = await db(`
-//       SELECT widget_instances.*, widget_data.*, widgets.*
-//       FROM widget_instances
-//     `);
+export async function getEarningsReports() {
+  let result = await db(`
+      SELECT *
+      FROM earnings_reports
+    `);
 
-//   return result;
-// }
+  return result;
+}
 
 //let yesterday = new Date(today);
 

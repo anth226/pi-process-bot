@@ -1192,42 +1192,38 @@ export async function getTopStocks() {
 }
 
 export async function getEarningsCalendar() {
-  let secs = [];
-  let data = await securities.getSecurities();
-
+  let reports = [];
+  let data = await earnings.getEarningsReports();
   for (let i in data) {
     let ticker = data[i].ticker;
-    let name = data[i].name;
-    let jsonEarnings = data[i].json_earnings;
-
-    if (jsonEarnings) {
-      let earningsDate = jsonEarnings.earnings_date;
-      let time_of_day = jsonEarnings.time_of_day;
-      let eps_actual = jsonEarnings.eps_actual;
-      let eps_estimate = jsonEarnings.eps_estimate;
-      let suprise_percentage = jsonEarnings.suprise_percentage;
-      let ranking = jsonEarnings.ranking;
-      let logo_url = jsonEarnings.logo_url;
-      secs.push({
-        earnings_date: earningsDate,
-        ticker: ticker,
-        name: name,
-        time_of_day: time_of_day,
-        eps_actual: eps_actual,
-        eps_estimate: eps_estimate,
-        suprise_percentage: suprise_percentage,
-        ranking: ranking,
-        logo_url: logo_url,
-      });
-    }
+    let sec = await securities.getSecurityByTicker(ticker);
+    let name = sec.name;
+    let earningsDate = data[i].earnings_date;
+    let time_of_day = data[i].time_of_day;
+    let eps_actual = data[i].eps_actual;
+    let eps_estimate = data[i].eps_estimate;
+    let suprise_percentage = data[i].suprise_percentage;
+    let ranking = data[i].ranking;
+    let logo_url = data[i].logo_url;
+    let actual_reported_date = data[i].actual_reported_date;
+    reports.push({
+      earnings_date: earningsDate,
+      ticker: ticker,
+      name: name,
+      time_of_day: time_of_day,
+      eps_actual: eps_actual,
+      eps_estimate: eps_estimate,
+      suprise_percentage: suprise_percentage,
+      ranking: ranking,
+      logo_url: logo_url,
+      actual_reported_date: actual_reported_date,
+    });
   }
-
-  let sorted = secs.sort(function (a, b) {
+  let sorted = reports.sort(function (a, b) {
     var aa = a.earnings_date.split("-").join(),
       bb = b.earnings_date.split("-").join();
     return aa < bb ? -1 : aa > bb ? 1 : 0;
   });
-
   return sorted;
 }
 
