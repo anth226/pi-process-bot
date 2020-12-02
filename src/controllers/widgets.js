@@ -1207,9 +1207,11 @@ export async function getEarningsCalendar() {
     let ranking = data[i].ranking;
     let logo_url = data[i].logo_url;
     let actual_reported_date = data[i].actual_reported_date;
+    let type = data[i].type;
     reports.push({
       earnings_date: earningsDate,
       ticker: ticker,
+      type: type,
       name: name,
       time_of_day: time_of_day,
       eps_actual: eps_actual,
