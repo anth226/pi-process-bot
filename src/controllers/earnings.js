@@ -102,6 +102,7 @@ export async function fillEarnings() {
 }
 
 export async function updateEarnings() {
+  console.log("here");
   let data = await getDailyEarnings();
 
   for (let i in data) {
