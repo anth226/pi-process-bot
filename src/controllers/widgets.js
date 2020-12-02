@@ -1342,7 +1342,6 @@ export async function processUsersPortPerf() {
         month: month,
         threemonth: threemonth,
       };
-      console.log(dashboardId, " totals update", totals);
     } else {
       //stocks historical
       let totals = {
@@ -1352,7 +1351,6 @@ export async function processUsersPortPerf() {
         month: values.month.value,
         threemonth: values.threemonth.value,
       };
-      console.log(dashboardId, " totals insert", totals);
 
       //user portfolio
       let portfolio = await getPortfolioByDashboardID(dashboardId);
@@ -1366,8 +1364,6 @@ export async function processUsersPortPerf() {
       });
     }
   }
-
-  //console.log("dashboards", dashboards);
 
   dashboards.forEach(async (value, key) => {
     //stocks historical
