@@ -27,10 +27,14 @@ export async function getDailyEarnings() {
     let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${today}&end_date=${today}&api_key=${process.env.INTRINIO_API_KEY}`;
 
     let response = await axios.get(url);
+    console.log("response", response);
     let data = response.data;
+    console.log("data", data);
     let eps_surprises = data.eps_surprises;
+    console.log("eps_surprises", eps_surprises);
 
     if (data && eps_surprises.length > 0) {
+      console.log("eps_surprises 2", eps_surprises);
       return eps_surprises;
     }
   } catch (e) {
