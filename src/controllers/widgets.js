@@ -1197,8 +1197,7 @@ export async function getEarningsCalendar() {
   let data = await earnings.getEarningsReports();
   for (let i in data) {
     let ticker = data[i].ticker;
-    let sec = await securities.getSecurityByTicker(ticker);
-    let name = sec.name;
+    let name = data[i].earnings_date;
     let earningsDate = data[i].earnings_date;
     let time_of_day = data[i].time_of_day;
     let eps_actual = data[i].eps_actual;
