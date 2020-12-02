@@ -167,8 +167,9 @@ export async function getPortfolioIDByDashboardID(dashbardId) {
     FROM portfolios
     WHERE dashboard_id = ${dashbardId}
   `);
+  console.log("result", result);
 
-  return result[0];
+  return result;
 }
 
 export async function getPortfolioHistory(portfolioId) {
@@ -1329,6 +1330,7 @@ export async function processUsersPortPerf() {
       console.log("hmmm");
     } else {
       console.log("here 2");
+      console.log("dashboardId", dashboardId);
       let portfolioId = await getPortfolioIDByDashboardID(dashboardId);
       console.log("portfolioId", portfolioId);
       let portfolioHistory = await getPortfolioHistory(portfolioId);
