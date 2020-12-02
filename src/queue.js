@@ -1063,8 +1063,8 @@ export const consumer_18 = Consumer.create({
 
         let res = await axios.get(url);
 
-        if (res.data && res.data.estimates && res.data.estimates.mean) {
-          estimatedEPS = res.data.estimates.mean;
+        if (res.data && res.data.estimates[0] && res.data.estimates[0].mean) {
+          estimatedEPS = res.data.estimates[0].mean;
         }
       } catch (e) {
         console.error(e);
