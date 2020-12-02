@@ -1333,6 +1333,8 @@ export async function processUsersPortPerf() {
     }
   }
 
+  console.log("dashboards", dashboards);
+
   dashboards.forEach(async (value, key) => {
     let history = value.portfolio_history;
     let stocks = new Map();
@@ -1348,6 +1350,7 @@ export async function processUsersPortPerf() {
       if (open_price && open_date && close_price && close_date) {
         if (stocks.has(ticker)) {
           let trades = stocks.get(ticker).trades;
+          console.log("update trades", trades);
           let priceChange = close_price - open_price;
           //let seconds = Math.abs(date1 - date2) / 1000;
           let timeChange = close_date - open_date / 86400000;
@@ -1359,6 +1362,7 @@ export async function processUsersPortPerf() {
             open_date: open_date,
             close_date: close_date,
           };
+          console.log("update trade", trade);
           trades.push(trade);
         } else {
           let trades = [];
@@ -1373,6 +1377,7 @@ export async function processUsersPortPerf() {
             open_date: open_date,
             close_date: close_date,
           };
+          console.log("trade", trade);
           trades.push(trade);
           stocks.set(ticker, {
             type: type,
@@ -1382,6 +1387,8 @@ export async function processUsersPortPerf() {
       }
     }
 
+    console.log("stocks", stocks);
+
     let stocksPerformance = {};
 
     stocks.forEach(async (value, key) => {
@@ -1390,6 +1397,8 @@ export async function processUsersPortPerf() {
         trades: value.trades,
       };
     });
+
+    console.log("stocksPerformance", stocksPerformance);
 
     let followedTitans = await getTitansFollowed(key);
     let titansPerformance;
