@@ -104,8 +104,10 @@ export async function fillEarnings() {
 export async function updateEarnings() {
   console.log("here");
   let data = await getDailyEarnings();
+  console.log("data", data);
 
   for (let i in data) {
+    console.log("data[i]", data[i]);
     let type;
     let fiscal_year = data[i].fiscal_year;
     let fiscal_quarter = data[i].fiscal_quarter;
@@ -115,6 +117,8 @@ export async function updateEarnings() {
     let ticker = data[i].security.ticker;
 
     let security = await securities.getSecurityByTicker(ticker);
+
+    console.log("security", security);
 
     if (security) {
       type = security.type;
@@ -133,6 +137,7 @@ export async function updateEarnings() {
         eps_percent_diff,
       ],
     };
+    console.log("query", query);
     await db(query);
 
     console.log(ticker + "actual earnings reported");
