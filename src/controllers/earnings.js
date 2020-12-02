@@ -29,14 +29,10 @@ export async function getDailyEarnings() {
     let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${yesterday}&end_date=${yesterday}&api_key=${process.env.INTRINIO_API_KEY}`;
 
     let response = await axios.get(url);
-    console.log("response", response);
     let data = response.data;
-    console.log("data", data);
     let eps_surprises = data.eps_surprises;
-    console.log("eps_surprises", eps_surprises);
 
     if (data && eps_surprises.length > 0) {
-      console.log("eps_surprises 2", eps_surprises);
       return eps_surprises;
     }
   } catch (e) {
@@ -108,12 +104,9 @@ export async function fillEarnings() {
 }
 
 export async function updateEarnings() {
-  console.log("here");
   let data = await getDailyEarnings();
-  console.log("data", data);
 
   for (let i in data) {
-    console.log("data[i]", data[i]);
     let type;
     let fiscal_year = data[i].fiscal_year;
     let fiscal_quarter = data[i].fiscal_quarter;
@@ -124,15 +117,13 @@ export async function updateEarnings() {
 
     let security = await securities.getSecurityByTicker(ticker);
 
-    console.log("security", security);
-
     if (security) {
       type = security.type;
     }
 
     let query = {
       text:
-        "UPDATE earnings_reports SET type = $2, fiscal_year = $3, fiscal_quarter = $4, actual_reported_date = $5, eps_actual = $6, suprise_percentage = $7 WHERE ticker = $1 AND eps_actual IS NULL",
+        "UPDATE earnings_reports SET type = $2, fiscal_year = $3, fiscal_quarter = $4, actual_reported_date = $5, eps_actual = $6, suprise_percentage = $7 WHERE ticker = $1",
       values: [
         ticker,
         type,
@@ -143,7 +134,6 @@ export async function updateEarnings() {
         eps_percent_diff,
       ],
     };
-    console.log("query", query);
     await db(query);
 
     console.log(ticker + "actual earnings reported");
