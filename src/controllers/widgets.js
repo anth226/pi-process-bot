@@ -162,10 +162,11 @@ export async function getWidget(widgetInstanceId) {
 }
 
 export async function getPortfolioByDashboardID(dashbardId) {
+  let dashbard_id = parseInt(dashbardId);
   let result = await db(`
     SELECT *
     FROM portfolios
-    WHERE dashboard_id = ${dashbardId}
+    WHERE dashboard_id = ${dashbard_id}
   `);
   console.log("result", result);
 
