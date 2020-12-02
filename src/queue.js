@@ -1059,8 +1059,7 @@ export const consumer_18 = Consumer.create({
 
     if (ticker) {
       try {
-        //https://api-v2.intrinio.com/zacks/eps_estimates?identifier=FIVE&end_date=2020-12-02
-        let url = `${process.env.INTRINIO_BASE_PATH}/zacks/esp_estimates?identifier=${ticker}&end_date=${earningsDate}&api_key=${process.env.INTRINIO_API_KEY}`;
+        let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_estimates?identifier=${ticker}&end_date=${earningsDate}&api_key=${process.env.INTRINIO_API_KEY}`;
 
         let res = await axios.get(url);
 
