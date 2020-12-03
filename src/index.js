@@ -18,6 +18,8 @@ import * as etfs from "./controllers/etfs";
 import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
 
+import * as yahoo from "./controllers/yahoo";
+
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
 import redis from "./redis";
@@ -487,6 +489,21 @@ app.get("/bot/widgets/", async (req, res) => {
   if (data.length > 0) {
     res.send({ data });
   }
+});
+
+// /update_local_widgets?token=XXX
+app.get("/create_indices_candles_daily", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await yahoo.sync();
+  res.send("ok");
 });
 
 // Start Server
