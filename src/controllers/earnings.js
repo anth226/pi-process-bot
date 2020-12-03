@@ -176,7 +176,7 @@ export async function updateEarnings() {
         "SELECT * FROM earnings_reports WHERE ticker = $1 AND earnings_date = $2",
       values: [ticker, est],
     };
-    let result = await db(query, est);
+    let result = await db(query);
 
     if (result.length > 0) {
       let query = {
