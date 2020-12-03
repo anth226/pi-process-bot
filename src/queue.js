@@ -607,6 +607,8 @@ export function publish_ProcessEarningsDate_Securities(
     name,
     earnings_date,
     time_of_day,
+    fiscal_year,
+    fiscal_quarter,
   };
 
   let params = {
@@ -626,6 +628,14 @@ export function publish_ProcessEarningsDate_Securities(
       time_of_day: {
         DataType: "String",
         StringValue: data.time_of_day,
+      },
+      fiscal_year: {
+        DataType: "String",
+        StringValue: data.fiscal_year,
+      },
+      fiscal_quarter: {
+        DataType: "String",
+        StringValue: data.fiscal_quarter,
       },
     },
     MessageBody: JSON.stringify(data),
@@ -1064,6 +1074,8 @@ export const consumer_18 = Consumer.create({
     let earningsDate = sqsMessage.earnings_date;
     let time_of_day = sqsMessage.time_of_day;
     let name = sqsMessage.name;
+    let fiscal_year = sqsMessage.fiscal_year;
+    let fiscal_quarter = sqsMessage.fiscal_quarter;
 
     let security = await securities.getSecurityByTicker(ticker);
 
@@ -1115,7 +1127,9 @@ export const consumer_18 = Consumer.create({
         estimatedEPS,
         ranking,
         logo_url,
-        type
+        type,
+        fiscal_year,
+        fiscal_quarter
       );
 
       console.log(ticker, "earnings date:", earningsDate);

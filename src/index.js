@@ -203,8 +203,8 @@ app.get("/update_metrics_securities", async (req, res) => {
   res.send("ok");
 });
 
-// /update_earnings_securities?token=XXX
-app.get("/update_earnings_securities", async (req, res) => {
+// /fill_earnings_securities?token=XXX
+app.get("/fill_earnings_securities", async (req, res) => {
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;
