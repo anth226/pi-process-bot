@@ -22,7 +22,7 @@ const indexAPI = new intrinioSDK.IndexApi();
 
 export async function getDailyEarnings() {
   try {
-    let today = new Date(); //.toISOString().slice(0, 10);
+    let today = new Date();
     let est = new Date(today);
     est.setHours(est.getHours() - 5);
     est.toISOString().slice(0, 10);
@@ -160,10 +160,12 @@ export async function fillEarnings() {
 
 export async function updateEarnings() {
   let data = await getDailyEarnings();
+  let today = new Date();
+  let est = new Date(today);
+  est.setHours(est.getHours() - 5);
+  est.toISOString().slice(0, 10);
 
   for (let i in data) {
-    let fiscal_year = data[i].fiscal_year;
-    let fiscal_quarter = data[i].fiscal_quarter;
     let actual_reported_date = data[i].actual_reported_date;
     let eps_actual = data[i].eps_actual;
     let eps_percent_diff = data[i].eps_percent_diff;
@@ -171,22 +173,21 @@ export async function updateEarnings() {
 
     let query = {
       text:
-        "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL AND fiscal_year = $2 AND fiscal_quarter = $3",
-      values: [ticker, fiscal_year, fiscal_quarter],
+        "SELECT * FROM earnings_reports WHERE ticker = $1 AND earnings_date = $2",
+      values: [ticker],
     };
-    let result = await db(query);
+    let result = await db(query, est);
 
     if (result.length > 0) {
       let query = {
         text:
-          "UPDATE earnings_reports SET actual_reported_date = $2, eps_actual = $3, suprise_percentage = $4 WHERE ticker = $1 AND fiscal_year = $5 AND fiscal_quarter = $6",
+          "UPDATE earnings_reports SET actual_reported_date = $2, eps_actual = $3, suprise_percentage = $4 WHERE ticker = $1 AND earnings_date = $5",
         values: [
           ticker,
           actual_reported_date,
           eps_actual,
           eps_percent_diff,
-          fiscal_year,
-          fiscal_quarter,
+          est,
         ],
       };
       await db(query);
