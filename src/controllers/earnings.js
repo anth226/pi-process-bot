@@ -144,8 +144,10 @@ export async function fillEarnings() {
     let name = data[i].security.name;
     let earningsDate = data[i].data[0].text_value;
     let time_of_day = data[i].data[1].text_value;
-    let fiscal_year = data[i].data[0].number_value;
-    let fiscal_quarter = data[i].data[1].text_value;
+    let fiscal_quarter = data[i].data[3].text_value;
+
+    let fiscalYear = data[i].data[2].number_value;
+    let fiscal_year = fiscalYear.toString();
 
     queue.publish_ProcessEarningsDate_Securities(
       ticker,
