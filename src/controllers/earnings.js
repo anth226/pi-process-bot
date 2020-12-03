@@ -24,10 +24,8 @@ export async function getDailyEarnings() {
   try {
     let today = new Date(); //.toISOString().slice(0, 10);
     let est = new Date(today);
-    est
-      .setHours(est.getHours() - 5)
-      .toISOString()
-      .slice(0, 10);
+    est.setHours(est.getHours() - 5);
+    est.toISOString().slice(0, 10);
 
     let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${est}&end_date=${est}&api_key=${process.env.INTRINIO_API_KEY}`;
 
@@ -164,7 +162,6 @@ export async function updateEarnings() {
   let data = await getDailyEarnings();
 
   for (let i in data) {
-    let type;
     let fiscal_year = data[i].fiscal_year;
     let fiscal_quarter = data[i].fiscal_quarter;
     let actual_reported_date = data[i].actual_reported_date;
@@ -172,51 +169,43 @@ export async function updateEarnings() {
     let eps_percent_diff = data[i].eps_percent_diff;
     let ticker = data[i].security.ticker;
 
-    let security = await securities.getSecurityByTicker(ticker);
-
-    if (security) {
-      type = security.type;
-    }
-
     let query = {
       text:
-        "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL",
-      values: [ticker],
+        "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL AND fiscal_year = $2 AND fiscal_quarter = $3",
+      values: [ticker, fiscal_year, fiscal_quarter],
     };
     let result = await db(query);
 
     if (result.length > 0) {
       let query = {
         text:
-          "UPDATE earnings_reports SET type = $2, fiscal_year = $3, fiscal_quarter = $4, actual_reported_date = $5, eps_actual = $6, suprise_percentage = $7 WHERE ticker = $1",
+          "UPDATE earnings_reports SET actual_reported_date = $2, eps_actual = $3, suprise_percentage = $4 WHERE ticker = $1 AND fiscal_year = $5 AND fiscal_quarter = $6",
         values: [
           ticker,
-          type,
-          fiscal_year,
-          fiscal_quarter,
           actual_reported_date,
           eps_actual,
           eps_percent_diff,
+          fiscal_year,
+          fiscal_quarter,
         ],
       };
       await db(query);
-      console.log(ticker + "actual earnings reported");
+      console.log(ticker + " actual earnings reported");
     } else {
-      let query = {
-        text:
-          "INSERT INTO earnings_reports (ticker, type, fiscal_year, fiscal_quarter, actual_reported_date, eps_actual, suprise_percentage) VALUES ( $1, $2, $3, $4, $5, $6, $7 )",
-        values: [
-          ticker,
-          type,
-          fiscal_year,
-          fiscal_quarter,
-          actual_reported_date,
-          eps_actual,
-          eps_percent_diff,
-        ],
-      };
-      await db(query);
-      console.log(ticker + "actual earnings added and reported");
+      //   let query = {
+      //     text:
+      //       "INSERT INTO earnings_reports (ticker, type, fiscal_year, fiscal_quarter, actual_reported_date, eps_actual, suprise_percentage) VALUES ( $1, $2, $3, $4, $5, $6, $7 )",
+      //     values: [
+      //       ticker,
+      //       fiscal_year,
+      //       fiscal_quarter,
+      //       actual_reported_date,
+      //       eps_actual,
+      //       eps_percent_diff,
+      //     ],
+      //   };
+      //   await db(query);
+      //   console.log(ticker + "actual earnings added and reported");
     }
   }
 }
@@ -238,29 +227,30 @@ export async function insertEarnings(
   }
 
   let query = {
-    text: "SELECT * FROM earnings_reports WHERE ticker = $1", // AND eps_actual IS NULL",
+    text:
+      "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL",
     values: [ticker],
   };
   let result = await db(query);
 
   if (result.length > 0) {
-    let query = {
-      text:
-        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7, type = $8, fiscal_year = $9, fiscal_quarter = $10 WHERE ticker = $1", // AND eps_actual IS NULL",
-      values: [
-        ticker,
-        earnings_date,
-        time_of_day,
-        eps_estimate,
-        ranking,
-        logo_url,
-        name,
-        type,
-        fiscal_year,
-        fiscal_quarter,
-      ],
-    };
-    await db(query);
+    // let query = {
+    //   text:
+    //     "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7, type = $8, fiscal_year = $9, fiscal_quarter = $10 WHERE ticker = $1 AND eps_actual IS NULL", // AND eps_actual IS NULL",
+    //   values: [
+    //     ticker,
+    //     earnings_date,
+    //     time_of_day,
+    //     eps_estimate,
+    //     ranking,
+    //     logo_url,
+    //     name,
+    //     type,
+    //     fiscal_year,
+    //     fiscal_quarter,
+    //   ],
+    // };
+    // await db(query);
   } else {
     let query = {
       text:
