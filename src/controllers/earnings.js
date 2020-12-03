@@ -166,6 +166,7 @@ export async function updateEarnings() {
   est.toISOString().slice(0, 10);
 
   for (let i in data) {
+    let suprise_percentage;
     let actual_reported_date = data[i].actual_reported_date;
     let eps_actual = data[i].eps_actual;
     let eps_percent_diff = data[i].eps_percent_diff;
@@ -179,6 +180,12 @@ export async function updateEarnings() {
     let result = await db(query);
 
     if (result.length > 0) {
+      if (!eps_percent_diff && eps_actual) {
+        suprise_percentage = (eps_actual / result[0].eps_estimate - 1) * 100;
+      } else {
+        suprise_percentage = eps_percent_diff;
+      }
+
       let query = {
         text:
           "UPDATE earnings_reports SET actual_reported_date = $2, eps_actual = $3, suprise_percentage = $4 WHERE ticker = $1 AND earnings_date = $5",
@@ -186,7 +193,7 @@ export async function updateEarnings() {
           ticker,
           actual_reported_date,
           eps_actual,
-          eps_percent_diff,
+          suprise_percentage,
           est,
         ],
       };
