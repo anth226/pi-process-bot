@@ -232,6 +232,7 @@ app.get("/update_eps_earnings", async (req, res) => {
     return;
   }
   await earnings.updateEarnings();
+  await widgets.processInput(322);
   res.send("ok");
 });
 
