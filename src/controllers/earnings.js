@@ -22,11 +22,14 @@ const indexAPI = new intrinioSDK.IndexApi();
 
 export async function getDailyEarnings() {
   try {
-    let today = new Date().toISOString().slice(0, 10);
-    let yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
+    let today = new Date(); //.toISOString().slice(0, 10);
+    let est = new Date(today);
+    est
+      .setHours(est.getHours() - 5)
+      .toISOString()
+      .slice(0, 10);
 
-    let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${yesterday}&end_date=${yesterday}&api_key=${process.env.INTRINIO_API_KEY}`;
+    let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${est}&end_date=${est}&api_key=${process.env.INTRINIO_API_KEY}`;
 
     let response = await axios.get(url);
     let data = response.data;
@@ -51,7 +54,9 @@ export async function getEarningsReports() {
 
 export async function getFutureEarningsDates() {
   let today = new Date(); //.toISOString().slice(0, 10);
-  let yesterday = new Date(today);
+  let est = new Date(today);
+  est.setHours(est.getHours() - 5);
+  let yesterday = new Date(est);
   yesterday.setDate(yesterday.getDate() - 1);
 
   let url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=next_earnings_date&order_direction=asc&page_size=10000&api_key=${process.env.INTRINIO_API_KEY}`;
@@ -62,6 +67,52 @@ export async function getFutureEarningsDates() {
         field: "next_earnings_date",
         operator: "gt",
         value: yesterday,
+      },
+      {
+        field: "next_earnings_time_of_day",
+        operator: "gt",
+        value: "0",
+      },
+      {
+        field: "next_earnings_year",
+        operator: "gt",
+        value: "0",
+      },
+      {
+        field: "next_earnings_quarter",
+        operator: "gt",
+        value: "0",
+      },
+    ],
+  };
+
+  let res = axios
+    .post(url, body)
+    .then(function (data) {
+      //console.log(data);
+      return data;
+    })
+    .catch(function (err) {
+      console.log(err);
+      return err;
+    });
+
+  return res.then((data) => data.data);
+}
+
+export async function getPastEarningsDates() {
+  let today = new Date(); //.toISOString().slice(0, 10);
+  let est = new Date(today);
+  est.setHours(est.getHours() - 5);
+
+  let url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=next_earnings_date&order_direction=desc&page_size=10000&api_key=${process.env.INTRINIO_API_KEY}`;
+  const body = {
+    operator: "AND",
+    clauses: [
+      {
+        field: "next_earnings_date",
+        operator: "lt",
+        value: est,
       },
       {
         field: "next_earnings_time_of_day",
@@ -93,12 +144,16 @@ export async function fillEarnings() {
     let name = data[i].security.name;
     let earningsDate = data[i].data[0].text_value;
     let time_of_day = data[i].data[1].text_value;
+    let fiscal_year = data[i].data[0].number_value;
+    let fiscal_quarter = data[i].data[1].text_value;
 
     queue.publish_ProcessEarningsDate_Securities(
       ticker,
       name,
       earningsDate,
-      time_of_day
+      time_of_day,
+      fiscal_year,
+      fiscal_quarter
     );
   }
 }
@@ -172,7 +227,9 @@ export async function insertEarnings(
   eps_estimate,
   ranking,
   logo_url,
-  type
+  type,
+  fiscal_year,
+  fiscal_quarter
 ) {
   if (!earnings_date || !ticker) {
     return;
@@ -187,7 +244,7 @@ export async function insertEarnings(
   if (result.length > 0) {
     let query = {
       text:
-        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7, type = $8 WHERE ticker = $1", // AND eps_actual IS NULL",
+        "UPDATE earnings_reports SET earnings_date = $2, time_of_day = $3, eps_estimate = $4, ranking = $5, logo_url = $6, name = $7, type = $8, fiscal_year = $9, fiscal_quarter = $10 WHERE ticker = $1", // AND eps_actual IS NULL",
       values: [
         ticker,
         earnings_date,
@@ -197,13 +254,15 @@ export async function insertEarnings(
         logo_url,
         name,
         type,
+        fiscal_year,
+        fiscal_quarter,
       ],
     };
     await db(query);
   } else {
     let query = {
       text:
-        "INSERT INTO earnings_reports (ticker, earnings_date, time_of_day, eps_estimate, ranking, logo_url, name, type ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8 ) RETURNING *",
+        "INSERT INTO earnings_reports (ticker, earnings_date, time_of_day, eps_estimate, ranking, logo_url, name, type, fiscal_year, fiscal_quarter ) VALUES ( $1, $2, $3, $4, $5, $6, $7, $8, $9, $10 ) RETURNING *",
       values: [
         ticker,
         earnings_date,
@@ -213,6 +272,8 @@ export async function insertEarnings(
         logo_url,
         name,
         type,
+        fiscal_year,
+        fiscal_quarter,
       ],
     };
     await db(query);
