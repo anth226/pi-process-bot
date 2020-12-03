@@ -229,8 +229,8 @@ export async function insertEarnings(
 
   let query = {
     text:
-      "SELECT * FROM earnings_reports WHERE ticker = $1 AND eps_actual IS NULL",
-    values: [ticker],
+      "SELECT * FROM earnings_reports WHERE ticker = $1 AND earnings_date = $2",
+    values: [ticker, earnings_date],
   };
   let result = await db(query);
 
