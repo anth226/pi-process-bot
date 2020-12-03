@@ -14,7 +14,8 @@
     "whalewisdom": "babel-node src/whalewisdom/index.js",
     "billionaires": "babel-node src/billionaires/index.js",
     "forbes": "babel-node src/forbes/index.js",
-    "subscribers": "babel-node src/subscribers/index.js"
+    "subscribers": "babel-node src/subscribers/index.js",
+    "yahoo": "babel-node src/controllers/yahoo.js"
   },
   "repository": {
     "type": "git",
