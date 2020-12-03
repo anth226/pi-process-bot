@@ -598,7 +598,9 @@ export function publish_ProcessEarningsDate_Securities(
   ticker,
   name,
   earnings_date,
-  time_of_day
+  time_of_day,
+  fiscal_year,
+  fiscal_quarter
 ) {
   let queueUrl = process.env.AWS_SQS_URL_SECURITIES_EARNINGS;
 
