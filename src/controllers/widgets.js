@@ -1316,6 +1316,43 @@ export async function getTitanPerformance(uri) {
   }
 }
 
+export async function getSnPPerformance() {
+  let data = await db(`
+    SELECT *
+      FROM indices_candles_daily
+      WHERE index = 'INDEXSP'
+      ORDER BY timestamp DESC
+    `);
+
+  if (
+    data[0] &&
+    data[5] &&
+    data[12] &&
+    data[24] &&
+    data[64] &&
+    data[0].close &&
+    data[5].close &&
+    data[12].close &&
+    data[24].close &&
+    data[64].close
+  ) {
+    let perf = {
+      price_percent_change_7_days: (data[0].close / data[5].close - 1) * 100,
+      price_percent_change_14_days: (data[0].close / data[12].close - 1) * 100,
+      price_percent_change_30_days: (data[0].close / data[24].close - 1) * 100,
+      price_percent_change_3_months: (data[0].close / data[64].close - 1) * 100,
+      values: {
+        today: data[0].close,
+        week: data[5].close,
+        twoweek: data[12].close,
+        month: data[24].close,
+        threemonth: data[64].close,
+      },
+    };
+    return perf;
+  }
+}
+
 export async function processUsersPortPerf() {
   let res = await getWidgetTypeId("UsersPerformance");
   let userPerfWidgetId = res[0].id;
@@ -1368,6 +1405,7 @@ export async function processUsersPortPerf() {
   dashboards.forEach(async (value, key) => {
     //stocks historical
     let totals = value.totals;
+
     let stocksHistory = {
       price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
       price_percent_change_14_days: (totals.today / totals.twoweek - 1) * 100,
@@ -1375,6 +1413,20 @@ export async function processUsersPortPerf() {
       price_percent_change_3_months:
         (totals.today / totals.threemonth - 1) * 100,
     };
+
+    let snp = await getSnPPerformance();
+    stocksHistory.price_percent_change_7_days =
+      stocksHistory.price_percent_change_7_days -
+      snp.price_percent_change_7_days;
+    stocksHistory.price_percent_change_14_days =
+      stocksHistory.price_percent_change_14_days -
+      snp.price_percent_change_14_days;
+    stocksHistory.price_percent_change_30_days =
+      stocksHistory.price_percent_change_30_days -
+      snp.price_percent_change_30_days;
+    stocksHistory.price_percent_change_3_months =
+      stocksHistory.price_percent_change_3_months -
+      snp.price_percent_change_3_months;
 
     //user portfolio
     let history = value.portfolio_history;
