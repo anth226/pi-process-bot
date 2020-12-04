@@ -180,7 +180,7 @@ export async function updateEarnings() {
     let result = await db(query);
 
     if (result.length > 0) {
-      if (!eps_percent_diff && eps_actual) {
+      if (!eps_percent_diff && eps_actual && result[0].eps_estimate) {
         suprise_percentage = (eps_actual / result[0].eps_estimate - 1) * 100;
       } else {
         suprise_percentage = eps_percent_diff;
