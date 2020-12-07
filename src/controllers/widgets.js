@@ -1237,13 +1237,13 @@ export async function getSecurityPerformance(ticker) {
     data.daily[6] &&
     data.daily[13] &&
     data.daily[29] &&
-    data.daily[87] &&
     data.daily[0].value &&
     data.daily[6].value &&
     data.daily[13].value &&
-    data.daily[29].value &&
-    data.daily[87].value
+    data.daily[29].value
   ) {
+    let latest = data.daily[87] ? data.daily[87] : data.daily.pop();
+    let latest_val = latest.value;
     let perf = {
       price_percent_change_7_days:
         (data.daily[0].value / data.daily[6].value - 1) * 100,
@@ -1252,13 +1252,13 @@ export async function getSecurityPerformance(ticker) {
       price_percent_change_30_days:
         (data.daily[0].value / data.daily[29].value - 1) * 100,
       price_percent_change_3_months:
-        (data.daily[0].value / data.daily[87].value - 1) * 100,
+        (data.daily[0].value / latest_val - 1) * 100,
       values: {
         today: data.daily[0],
         week: data.daily[6],
         twoweek: data.daily[13],
         month: data.daily[29],
-        threemonth: data.daily[87],
+        threemonth: latest,
       },
     };
     return perf;
@@ -1363,9 +1363,6 @@ export async function processUsersPortPerf() {
   for (let i in widgets) {
     let dashboardId = widgets[i].dashboard_id;
     let values = widgets[i].output.performance.values;
-    console.log("Widget Instance ID: " + i);
-    console.log("Dashboard ID: " + dashboardId);
-    console.log("values: \n", values);
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
