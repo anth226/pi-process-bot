@@ -1357,7 +1357,7 @@ export async function processUsersPortPerf() {
   let res = await getWidgetTypeId("UsersPerformance");
   let userPerfWidgetId = res[0].id;
   let widgets = await getLocalPriceWidgets();
-  //console.log("widgets", widgets);
+  console.log("widgets", widgets);
   let dashboards = new Map();
 
   for (let i in widgets) {
@@ -1460,9 +1460,10 @@ export async function processUsersPortPerf() {
           let trade = {
             price_change: priceChange,
             performance: percentChange,
-            days: timeChange,
             open_date: open_date,
+            open_price: open_price,
             close_date: close_date,
+            close_price: close_price,
           };
           trades.push(trade);
         } else {
@@ -1483,9 +1484,10 @@ export async function processUsersPortPerf() {
           let trade = {
             price_change: priceChange,
             performance: percentChange,
-            time_change: timeChange,
             open_date: open_date,
+            open_price: open_price,
             close_date: close_date,
+            close_price: close_price,
           };
           trades.push(trade);
           stocks.set(ticker, {
