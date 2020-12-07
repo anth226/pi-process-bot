@@ -236,6 +236,7 @@ app.get("/update_eps_earnings", async (req, res) => {
   await earnings.updateEarnings();
 
   let id = widgets.getWidgetTypeId("SecuritiesEarningsCalendar");
+  console.log("id", id);
   await widgets.processInput(id);
   res.send("ok");
 });
