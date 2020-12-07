@@ -1439,14 +1439,24 @@ export async function processUsersPortPerf() {
       let open_date = history[i].open_date;
       let close_price = history[i].close_price;
       let close_date = history[i].close_date;
+      let today_date = new Date();
 
-      if (open_price && open_date && close_price && close_date) {
+      if (open_price && open_date) {
         if (stocks.has(ticker)) {
+          let priceChange;
+          let timeChange;
+          let percentChange;
           let trades = stocks.get(ticker).trades;
-          let priceChange = close_price - open_price;
-          //let seconds = Math.abs(date1 - date2) / 1000;
-          let timeChange = close_date - open_date / 86400000;
-          let percentChange = (open_price / close_price - 1) * 100;
+          if (close_price && close_date) {
+            priceChange = close_price - open_price;
+            timeChange = close_date - open_date / 86400000;
+            percentChange = (open_price / close_price - 1) * 100;
+          } else {
+            let today_price = await getCompanyPrice(ticker);
+            priceChange = today_price - open_price;
+            timeChange = today_date - open_date / 86400000;
+            percentChange = (open_price / today_price - 1) * 100;
+          }
           let trade = {
             price_change: priceChange,
             performance: percentChange,
@@ -1456,11 +1466,20 @@ export async function processUsersPortPerf() {
           };
           trades.push(trade);
         } else {
+          let priceChange;
+          let timeChange;
+          let percentChange;
           let trades = [];
-          let priceChange = close_price - open_price;
-          //let seconds = Math.abs(date1 - date2) / 1000;
-          let timeChange = close_date - open_date / 86400000;
-          let percentChange = (open_price / close_price - 1) * 100;
+          if (close_price && close_date) {
+            priceChange = close_price - open_price;
+            timeChange = close_date - open_date / 86400000;
+            percentChange = (open_price / close_price - 1) * 100;
+          } else {
+            let today_price = await getCompanyPrice(ticker);
+            priceChange = today_price - open_price;
+            timeChange = today_date - open_date / 86400000;
+            percentChange = (open_price / today_price - 1) * 100;
+          }
           let trade = {
             price_change: priceChange,
             performance: percentChange,
