@@ -413,6 +413,23 @@ app.get("/calculate_performances_institutions", async (req, res) => {
   res.send("ok");
 });
 
+/* S&P History */
+
+// /create_indices_candles_daily?token=XXX
+app.get("/create_indices_candles_daily", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await yahoo.sync();
+  res.send("ok");
+});
+
 /* PAGES */
 
 // /generate_pages_portfolios?token=XXX
@@ -490,21 +507,6 @@ app.get("/bot/widgets/", async (req, res) => {
   if (data.length > 0) {
     res.send({ data });
   }
-});
-
-// /update_local_widgets?token=XXX
-app.get("/create_indices_candles_daily", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
-    res.send("disabled");
-    return;
-  }
-  let { query } = req;
-  if (query.token != "XXX") {
-    res.send("fail");
-    return;
-  }
-  await yahoo.sync();
-  res.send("ok");
 });
 
 // Start Server
