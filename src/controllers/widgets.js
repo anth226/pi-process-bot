@@ -1472,18 +1472,18 @@ export async function processUsersPortPerf() {
           let trades = [];
           if (close_price && close_date) {
             priceChange = close_price - open_price;
-            timeChange = close_date - open_date / 86400000;
+            timeChange = close_date - open_date;
             percentChange = (open_price / close_price - 1) * 100;
           } else {
             let today_price = await getCompanyPrice(ticker);
             priceChange = today_price - open_price;
-            timeChange = today_date - open_date / 86400000;
+            timeChange = today_date - open_date;
             percentChange = (open_price / today_price - 1) * 100;
           }
           let trade = {
             price_change: priceChange,
             performance: percentChange,
-            days: timeChange,
+            time_change: timeChange,
             open_date: open_date,
             close_date: close_date,
           };
