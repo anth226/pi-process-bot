@@ -1244,17 +1244,18 @@ export async function getSecurityPerformance(ticker) {
   ) {
     let latest = data.daily[87] ? data.daily[87] : data.daily.pop();
     let latest_val = latest.value;
+    let earliest = data.daily[0] ? data.daily[0] : data.daily[1];
+    let earliest_val = earliest.value;
     let perf = {
       price_percent_change_7_days:
-        (data.daily[0].value / data.daily[6].value - 1) * 100,
+        (earliest_val / data.daily[6].value - 1) * 100,
       price_percent_change_14_days:
-        (data.daily[0].value / data.daily[13].value - 1) * 100,
+        (earliest_val / data.daily[13].value - 1) * 100,
       price_percent_change_30_days:
-        (data.daily[0].value / data.daily[29].value - 1) * 100,
-      price_percent_change_3_months:
-        (data.daily[0].value / latest_val - 1) * 100,
+        (earliest_val / data.daily[29].value - 1) * 100,
+      price_percent_change_3_months: (earliest_val / latest_val - 1) * 100,
       values: {
-        today: data.daily[0],
+        today: earliest,
         week: data.daily[6],
         twoweek: data.daily[13],
         month: data.daily[29],
@@ -1263,7 +1264,7 @@ export async function getSecurityPerformance(ticker) {
     };
     return perf;
   }
-  return data;
+  return null;
 }
 
 export async function getTitanPerformance(uri) {
