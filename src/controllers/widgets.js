@@ -1363,12 +1363,13 @@ export async function processUsersPortPerf() {
   for (let i in widgets) {
     let dashboardId = widgets[i].dashboard_id;
     let values = widgets[i].output.performance.values;
+    console.log("Widget Instance ID: " + i);
+    console.log("Dashboard ID: " + dashboardId);
+    console.log("values: \n", values);
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
-      console.log("totals 1", totals);
       let totals = dashboards.get(dashboardId).totals;
-      console.log("totals 2", totals);
       let today = totals.today + values.today.value;
       let week = totals.week + values.week.value;
       let twoweek = totals.twoweek + values.twoweek.value;
