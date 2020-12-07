@@ -1366,8 +1366,9 @@ export async function processUsersPortPerf() {
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
-      console.log("totals", totals);
+      console.log("totals 1", totals);
       let totals = dashboards.get(dashboardId).totals;
+      console.log("totals 2", totals);
       let today = totals.today + values.today.value;
       let week = totals.week + values.week.value;
       let twoweek = totals.twoweek + values.twoweek.value;
