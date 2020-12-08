@@ -1,4 +1,7 @@
+import axios from "axios";
+
 import * as companies from "./controllers/companies";
+import * as securities from "./controllers/securities";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as institutions from "./controllers/institutions";
@@ -8,6 +11,7 @@ import * as mutualfunds from "./controllers/mutualfunds";
 import * as widgets from "./controllers/widgets";
 import * as etfs from "./controllers/etfs";
 import * as nlp from "./controllers/nlp";
+import * as earnings from "./controllers/earnings";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -545,6 +549,113 @@ export function publish_ProcessInstitutionalPerformance(cik) {
   });
 }
 
+export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_METRICS;
+
+  let data = {
+    ticker,
+    type,
+    cik,
+    name,
+  };
+
+  let params = {
+    MessageAttributes: {
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+      type: {
+        DataType: "String",
+        StringValue: data.type,
+      },
+      cik: {
+        DataType: "String",
+        StringValue: data.cik,
+      },
+      name: {
+        DataType: "String",
+        StringValue: data.name,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+export function publish_ProcessEarningsDate_Securities(
+  ticker,
+  name,
+  earnings_date,
+  time_of_day,
+  fiscal_year,
+  fiscal_quarter
+) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_EARNINGS;
+
+  let data = {
+    ticker,
+    name,
+    earnings_date,
+    time_of_day,
+    fiscal_year,
+    fiscal_quarter,
+  };
+
+  let params = {
+    MessageAttributes: {
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+      name: {
+        DataType: "String",
+        StringValue: data.name,
+      },
+      earnings_date: {
+        DataType: "String",
+        StringValue: data.earnings_date,
+      },
+      time_of_day: {
+        DataType: "String",
+        StringValue: data.time_of_day,
+      },
+      fiscal_year: {
+        DataType: "String",
+        StringValue: data.fiscal_year,
+      },
+      fiscal_quarter: {
+        DataType: "String",
+        StringValue: data.fiscal_quarter,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -912,5 +1023,126 @@ consumer_16.on("error", (err) => {
 });
 
 consumer_16.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_SECURITIES_METRICS
+export const consumer_17 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_SECURITIES_METRICS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let cik;
+    let metrics = await securities.getMetrics(sqsMessage.ticker);
+
+    if (sqsMessage.cik == "?") {
+      cik = null;
+    } else {
+      cik = sqsMessage.cik;
+    }
+
+    await securities.insertSecurity(
+      metrics,
+      sqsMessage.ticker,
+      sqsMessage.type,
+      cik,
+      sqsMessage.name
+    );
+  },
+});
+
+consumer_17.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_17.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_SECURITIES_EARNINGS
+export const consumer_18 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_SECURITIES_EARNINGS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let estimatedEPS;
+    let ranking;
+    let type;
+    let ticker = sqsMessage.ticker;
+    let earningsDate = sqsMessage.earnings_date;
+    let time_of_day = sqsMessage.time_of_day;
+    let name = sqsMessage.name;
+    let fiscal_year = sqsMessage.fiscal_year;
+    let fiscal_quarter = sqsMessage.fiscal_quarter;
+
+    let security = await securities.getSecurityByTicker(ticker);
+
+    if (security) {
+      type = security.type;
+    }
+
+    if (ticker) {
+      try {
+        let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_estimates?identifier=${ticker}&end_date=${earningsDate}&api_key=${process.env.INTRINIO_API_KEY}`;
+
+        let res = await axios.get(url);
+
+        if (res.data && res.data.estimates[0] && res.data.estimates[0].mean) {
+          estimatedEPS = res.data.estimates[0].mean;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      try {
+        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+
+        let res = await axios.get(url);
+
+        if (
+          res.data &&
+          res.data.analyst_ratings[0] &&
+          res.data.analyst_ratings[0].mean
+        ) {
+          let preRanking = res.data.analyst_ratings[0].mean;
+          ranking = (preRanking - 6) * -1;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      let logo_url;
+      let company = await companies.getCompanyByTicker(ticker);
+      if (company && company.logo_url) {
+        logo_url = company.logo_url;
+      }
+
+      await earnings.insertEarnings(
+        ticker,
+        name,
+        earningsDate,
+        time_of_day,
+        estimatedEPS,
+        ranking,
+        logo_url,
+        type,
+        fiscal_year,
+        fiscal_quarter
+      );
+
+      console.log(ticker, "earnings date:", earningsDate);
+    }
+  },
+});
+
+consumer_18.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_18.on("processing_error", (err) => {
   console.error(err.message);
 });
