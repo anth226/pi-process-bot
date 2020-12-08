@@ -1021,7 +1021,8 @@ export async function getStrongBuys(list) {
     let price = await getCompanyPrice(ticker);
     let metrics = await companies.getCompanyMetrics(ticker);
     if (metrics) {
-      delta = metrics.Change;
+      //delta = metrics.Change;
+      delta = metrics["Perf Month"];
     }
     // let perf = await getSecurityPerformance(ticker);
     // if (perf) {
