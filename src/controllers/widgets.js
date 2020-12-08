@@ -1400,7 +1400,7 @@ export async function processUsersPortPerf() {
   let res = await getWidgetTypeId("UsersPerformance");
   let userPerfWidgetId = res[0].id;
   let widgets = await getLocalPriceWidgets();
-  console.log("widgets", widgets);
+  //console.log("widgets", widgets);
   let dashboards = new Map();
 
   for (let i in widgets) {
@@ -1487,18 +1487,15 @@ export async function processUsersPortPerf() {
       if (open_price && open_date) {
         if (stocks.has(ticker)) {
           let priceChange;
-          let timeChange;
           let percentChange;
           let trades = stocks.get(ticker).trades;
           if (close_price && close_date) {
             priceChange = close_price - open_price;
-            timeChange = close_date - open_date / 86400000;
-            percentChange = (open_price / close_price - 1) * 100;
+            percentChange = (close_price / open_price - 1) * 100;
           } else {
             let today_price = await getCompanyPrice(ticker);
             priceChange = today_price - open_price;
-            timeChange = today_date - open_date / 86400000;
-            percentChange = (open_price / today_price - 1) * 100;
+            percentChange = (today_price / open_price - 1) * 100;
           }
           let trade = {
             price_change: priceChange,
@@ -1511,18 +1508,15 @@ export async function processUsersPortPerf() {
           trades.push(trade);
         } else {
           let priceChange;
-          let timeChange;
           let percentChange;
           let trades = [];
           if (close_price && close_date) {
             priceChange = close_price - open_price;
-            timeChange = close_date - open_date;
-            percentChange = (open_price / close_price - 1) * 100;
+            percentChange = (close_price / open_price - 1) * 100;
           } else {
             let today_price = await getCompanyPrice(ticker);
             priceChange = today_price - open_price;
-            timeChange = today_date - open_date;
-            percentChange = (open_price / today_price - 1) * 100;
+            percentChange = (today_price / open_price - 1) * 100;
           }
           let trade = {
             price_change: priceChange,
