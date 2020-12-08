@@ -525,12 +525,14 @@ export async function getETFHoldings(ticker, count) {
       return {};
     });
 
-  for (let i = 0; i < count; i++) {
-    if (result.holdings[i]) {
-      holdings.push(result.holdings[i]);
+  if (result && result.holdings) {
+    for (let i = 0; i < count; i++) {
+      if (result.holdings[i]) {
+        holdings.push(result.holdings[i]);
+      }
     }
+    return holdings;
   }
-  return holdings;
 }
 
 export async function getMutualFundsTopNDiscountOrPremium(topNum, isDiscount) {
