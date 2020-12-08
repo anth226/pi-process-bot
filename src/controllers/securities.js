@@ -1,7 +1,31 @@
 import db from "../db";
+import axios from "axios";
 import * as queue from "../queue";
 
 import * as companies from "./companies";
+
+export async function getSecurityByTicker(ticker) {
+  let result = await db(`
+        SELECT *
+        FROM securities
+        WHERE ticker = '${ticker}'
+    `);
+
+  if (result && result.length > 0) {
+    return result[0];
+  }
+}
+
+export async function getSecurities() {
+  let result = await db(`
+        SELECT *
+        FROM securities
+    `);
+
+  if (result && result.length > 0) {
+    return result;
+  }
+}
 
 export async function fillSecurities() {
   //get and fill companies
@@ -10,12 +34,13 @@ export async function fillSecurities() {
             FROM companies
         `);
 
+  console.log("COMPANIES");
   for (let i in result) {
     let type = "common_stock";
     let ticker = result[i].ticker;
-    let cik = result[i].cik;
-    let metrics = await companies.getCompanyMetrics(ticker);
-    await insertSecurity(metrics, ticker, type, cik);
+    let cik = result[i].cik ? result[i].cik : "?";
+    let name = result[i].json.name;
+    await queue.publish_ProcessMetrics_Securities(ticker, type, cik, name);
     console.log(ticker);
   }
 
@@ -25,12 +50,13 @@ export async function fillSecurities() {
           FROM mutual_funds
       `);
 
+  console.log("MUTUAL FUNDS");
   for (let i in result) {
     let type = "mutual_fund";
     let ticker = result[i].ticker;
-    let cik = result[i].json.cik;
-    let metrics = await companies.getCompanyMetrics(ticker);
-    await insertSecurity(metrics, ticker, type, cik);
+    let cik = result[i].cik ? result[i].cik : "?";
+    let name = result[i].json.name;
+    await queue.publish_ProcessMetrics_Securities(ticker, type, cik, name);
     console.log(ticker);
   }
 
@@ -40,17 +66,18 @@ export async function fillSecurities() {
         FROM etfs
     `);
 
+  console.log("ETFS");
   for (let i in result) {
     let type = "etf";
     let ticker = result[i].ticker;
-    let metrics = await companies.getCompanyMetrics(ticker);
-    await insertSecurity(metrics, ticker, type, null);
+    let name = result[i].json.name;
+    await queue.publish_ProcessMetrics_Securities(ticker, type, "?", name);
     console.log(ticker);
   }
   console.log("DONE");
 }
 
-export async function insertSecurity(metrics, ticker, type, cik) {
+export async function insertSecurity(metrics, ticker, type, cik, name) {
   if (!type || !ticker) {
     return;
   }
@@ -70,9 +97,38 @@ export async function insertSecurity(metrics, ticker, type, cik) {
   } else {
     let query = {
       text:
-        "INSERT INTO securities (json_metrics, ticker, type, cik ) VALUES ( $1, $2, $3, $4 ) RETURNING *",
-      values: [metrics, ticker, type, cik],
+        "INSERT INTO securities (json_metrics, ticker, type, cik, name ) VALUES ( $1, $2, $3, $4, $5 ) RETURNING *",
+      values: [metrics, ticker, type, cik, name],
     };
     await db(query);
   }
+}
+
+export async function getMetrics(ticker) {
+  let dataPoints = [
+    "52_week_high",
+    "52_week_low",
+    "marketcap",
+    "debttoequity",
+    "pricetobook",
+    "pricetoearnings",
+    "netincome",
+    "roic",
+    "average_daily_volume",
+  ];
+  let metrics = {};
+  for (let i in dataPoints) {
+    let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/data_point/${dataPoints[i]}/number?api_key=${process.env.INTRINIO_API_KEY}`;
+    let data = {};
+    try {
+      data = await axios.get(url);
+    } catch {}
+    if (data && data.data) {
+      metrics[dataPoints[i]] = data.data;
+    } else {
+      metrics[dataPoints[i]] = null;
+    }
+  }
+
+  return metrics;
 }

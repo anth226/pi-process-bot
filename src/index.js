@@ -5,6 +5,8 @@ import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 
 import * as companies from "./controllers/companies";
+import * as securities from "./controllers/securities";
+import * as earnings from "./controllers/earnings";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
 import * as performances from "./controllers/performances";
@@ -15,6 +17,8 @@ import * as mutualfunds from "./controllers/mutualfunds";
 import * as etfs from "./controllers/etfs";
 import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
+
+import * as yahoo from "./controllers/yahoo";
 
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
@@ -184,6 +188,58 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
   res.send("ok");
 });
 
+/* Securities */
+
+// /update_metrics_securities?token=XXX
+app.get("/update_metrics_securities", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await securities.fillSecurities();
+  res.send("ok");
+});
+
+// /fill_earnings_securities?token=XXX
+app.get("/fill_earnings_securities", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await earnings.fillEarnings();
+  res.send("ok");
+});
+
+/* Earnings */
+
+// /update_eps_earnings?token=XXX
+app.get("/update_eps_earnings", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await earnings.updateEarnings();
+
+  let id = await widgets.getWidgetTypeId("SecuritiesEarningsCalendar");
+  await widgets.processInput(id[0].id);
+  res.send("ok");
+});
+
 /* Mutual Funds */
 
 // /update_json_mutualfunds?token=XXX
@@ -265,6 +321,21 @@ app.get("/widgets/:id/process_input", async (req, res) => {
   res.send("ok");
 });
 
+// /update_user_portfolios?token=XXX
+app.get("/update_user_portfolios", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await widgets.processUsersPortPerf();
+  res.send("ok");
+});
+
 /* ETFs */
 
 // /update_etfs?token=XXX
@@ -341,6 +412,23 @@ app.get("/calculate_performances_institutions", async (req, res) => {
     return;
   }
   //await institutions.calculatePerformances();
+  res.send("ok");
+});
+
+/* S&P History */
+
+// /create_indices_candles_daily?token=XXX
+app.get("/create_indices_candles_daily", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await yahoo.sync();
   res.send("ok");
 });
 
@@ -446,4 +534,6 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_14.start();
   queue.consumer_15.start();
   queue.consumer_16.start();
+  queue.consumer_17.start();
+  queue.consumer_18.start();
 });
