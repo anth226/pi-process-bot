@@ -401,6 +401,7 @@ export async function processInput(widgetInstanceId) {
         let etf = await etfs.getETFByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
+        let topHoldings = await getETFHoldings(ticker, 10);
 
         if (
           performance &&
@@ -418,6 +419,7 @@ export async function processInput(widgetInstanceId) {
             price: price,
             delta: delta,
             performance: performance,
+            top_holdings: topHoldings,
           };
           output = tick;
         }
@@ -497,6 +499,39 @@ export async function processInput(widgetInstanceId) {
 }
 
 // Helper functions
+
+export async function getETFHoldings(ticker, count) {
+  // .get(
+  //   `${
+  //     process.env.INTRINIO_BASE_PATH
+  //   }/zacks/etf_holdings?etf_ticker=${ticker.toUpperCase()}&api_key=${
+  //     process.env.INTRINIO_API_KEY
+  //   }`
+  // )
+  let holdings = [];
+  let result = await axios
+    .get(
+      `${
+        process.env.INTRINIO_BASE_PATH
+      }/etfs/${ticker.toUpperCase()}/holdings?api_key=${
+        process.env.INTRINIO_API_KEY
+      }`
+    )
+    .then(function (res) {
+      return res.data;
+    })
+    .catch(function (err) {
+      console.log(err);
+      return {};
+    });
+
+  for (let i = 0; i < count; i++) {
+    if (result.holdings[i]) {
+      holdings.push(result.holdings[i]);
+    }
+  }
+  return holdings;
+}
 
 export async function getMutualFundsTopNDiscountOrPremium(topNum, isDiscount) {
   let eFunds = [];
