@@ -1019,14 +1019,14 @@ export async function getStrongBuys(list) {
       logo_url = company.logo_url;
     }
     let price = await getCompanyPrice(ticker);
-    // let metrics = await companies.getCompanyMetrics(ticker);
-    // if (metrics) {
-    //   delta = metrics.Change;
-    // }
-    let perf = await getSecurityPerformance(ticker);
-    if (perf) {
-      delta = perf.price_percent_change_30_days;
+    let metrics = await companies.getCompanyMetrics(ticker);
+    if (metrics) {
+      delta = metrics.Change;
     }
+    // let perf = await getSecurityPerformance(ticker);
+    // if (perf) {
+    //   delta = perf.price_percent_change_30_days;
+    // }
 
     buys.push({
       ticker: ticker,
