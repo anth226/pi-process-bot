@@ -1419,33 +1419,42 @@ export async function processUsersPortPerf() {
   let dashboards = new Map();
 
   for (let i in widgets) {
+    let values;
     let dashboardId = widgets[i].dashboard_id;
-    let values = widgets[i].output.performance.values;
+    let output = widgets[i].output;
+    if (output && output.performance && output.performance.values) {
+      values = output.performance.values;
+    }
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
-      let totals = dashboards.get(dashboardId).totals;
-      let today = totals.today + values.today.value;
-      let week = totals.week + values.week.value;
-      let twoweek = totals.twoweek + values.twoweek.value;
-      let month = totals.month + values.month.value;
-      let threemonth = totals.threemonth + values.threemonth.value;
-      totals = {
-        today: today,
-        week: week,
-        twoweek: twoweek,
-        month: month,
-        threemonth: threemonth,
-      };
+      if (values.today) {
+        let totals = dashboards.get(dashboardId).totals;
+        let today = totals.today + values.today.value;
+        let week = totals.week + values.week.value;
+        let twoweek = totals.twoweek + values.twoweek.value;
+        let month = totals.month + values.month.value;
+        let threemonth = totals.threemonth + values.threemonth.value;
+        totals = {
+          today: today,
+          week: week,
+          twoweek: twoweek,
+          month: month,
+          threemonth: threemonth,
+        };
+      }
     } else {
       //stocks historical
-      let totals = {
-        today: values.today.value,
-        week: values.week.value,
-        twoweek: values.twoweek.value,
-        month: values.month.value,
-        threemonth: values.threemonth.value,
-      };
+      let totals;
+      if (values.today) {
+        totals = {
+          today: values.today.value,
+          week: values.week.value,
+          twoweek: values.twoweek.value,
+          month: values.month.value,
+          threemonth: values.threemonth.value,
+        };
+      }
 
       //user portfolio
       let portfolio = await getPortfolioByDashboardID(dashboardId);
