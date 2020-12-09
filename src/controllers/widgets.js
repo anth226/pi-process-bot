@@ -1431,8 +1431,8 @@ export async function processUsersPortPerf() {
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
-      if (values.today) {
-        console.log("values.today", values.today);
+      if (values) {
+        console.log("values", values);
         let totals = dashboards.get(dashboardId).totals;
         let today = totals.today + values.today.value;
         let week = totals.week + values.week.value;
@@ -1450,8 +1450,8 @@ export async function processUsersPortPerf() {
     } else {
       //stocks historical
       let totals;
-      if (values.today) {
-        console.log("values.today first", values.today);
+      if (values) {
+        console.log("values first", values);
         totals = {
           today: values.today.value,
           week: values.week.value,
