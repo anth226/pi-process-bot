@@ -303,7 +303,7 @@ export async function processInput(widgetInstanceId) {
         if (comp && comp.json && comp.json.name) {
           name = comp.json.name;
         } else {
-          let sec = await getSecurityData.lookupSecurity(ticker);
+          let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
           name = sec.name;
         }
 
@@ -390,7 +390,7 @@ export async function processInput(widgetInstanceId) {
         if (fund && fund.json && fund.json.name) {
           name = fund.json.name;
         } else {
-          let sec = await getSecurityData.lookupSecurity(ticker);
+          let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
           name = sec.name;
         }
 
@@ -422,7 +422,7 @@ export async function processInput(widgetInstanceId) {
         if (etf && etf.json && etf.json.name) {
           name = etf.json.name;
         } else {
-          let sec = await getSecurityData.lookupSecurity(ticker);
+          let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
           name = sec.name;
         }
 
