@@ -66,20 +66,20 @@ export async function getSecurityLastPrice(symbol) {
   }
 }
 
-export async function getSecurityNameFromIntrinio(ticker) {
-  try {
-    let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+// export async function getSecurityNameFromIntrinio(ticker) {
+//   try {
+//     let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
-    let res = await axios.get(url);
+//     let res = await axios.get(url);
 
-    if (res.security && res.security.name) {
-      let name = res.security.name;
-      return name;
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
+//     if (res.security && res.security.name) {
+//       let name = res.security.name;
+//       return name;
+//     }
+//   } catch (e) {
+//     console.error(e);
+//   }
+// }
 
 /* END Scraper */
 
@@ -303,10 +303,11 @@ export async function processInput(widgetInstanceId) {
         if (comp && comp.json && comp.json.name) {
           name = comp.json.name;
         } else {
-          name = await getSecurityNameFromIntrinio(ticker);
+          let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+          name = sec.name;
         }
 
-        if (performance && price && metrics && metrics.Change) {
+        if (price && metrics && metrics.Change) {
           let delta = metrics.Change;
           let tick = {
             ticker: ticker,
@@ -389,10 +390,11 @@ export async function processInput(widgetInstanceId) {
         if (fund && fund.json && fund.json.name) {
           name = fund.json.name;
         } else {
-          name = await getSecurityNameFromIntrinio(ticker);
+          let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+          name = sec.name;
         }
 
-        if (performance && price && metrics && metrics.Change) {
+        if (price && metrics && metrics.Change) {
           let delta = metrics.Change;
           let tick = {
             ticker: ticker,
@@ -420,10 +422,11 @@ export async function processInput(widgetInstanceId) {
         if (etf && etf.json && etf.json.name) {
           name = etf.json.name;
         } else {
-          name = await getSecurityNameFromIntrinio(ticker);
+          let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+          name = sec.name;
         }
 
-        if (performance && price && metrics && metrics.Change) {
+        if (price && metrics && metrics.Change) {
           let delta = metrics.Change;
           let tick = {
             ticker: ticker,
@@ -1416,33 +1419,42 @@ export async function processUsersPortPerf() {
   let dashboards = new Map();
 
   for (let i in widgets) {
+    let values;
     let dashboardId = widgets[i].dashboard_id;
-    let values = widgets[i].output.performance.values;
+    let output = widgets[i].output;
+    if (output && output.performance && output.performance.values) {
+      values = output.performance.values;
+    }
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
-      let totals = dashboards.get(dashboardId).totals;
-      let today = totals.today + values.today.value;
-      let week = totals.week + values.week.value;
-      let twoweek = totals.twoweek + values.twoweek.value;
-      let month = totals.month + values.month.value;
-      let threemonth = totals.threemonth + values.threemonth.value;
-      totals = {
-        today: today,
-        week: week,
-        twoweek: twoweek,
-        month: month,
-        threemonth: threemonth,
-      };
+      if (values) {
+        let totals = dashboards.get(dashboardId).totals;
+        let today = totals.today + values.today.value;
+        let week = totals.week + values.week.value;
+        let twoweek = totals.twoweek + values.twoweek.value;
+        let month = totals.month + values.month.value;
+        let threemonth = totals.threemonth + values.threemonth.value;
+        totals = {
+          today: today,
+          week: week,
+          twoweek: twoweek,
+          month: month,
+          threemonth: threemonth,
+        };
+      }
     } else {
       //stocks historical
-      let totals = {
-        today: values.today.value,
-        week: values.week.value,
-        twoweek: values.twoweek.value,
-        month: values.month.value,
-        threemonth: values.threemonth.value,
-      };
+      let totals;
+      if (values) {
+        totals = {
+          today: values.today.value,
+          week: values.week.value,
+          twoweek: values.twoweek.value,
+          month: values.month.value,
+          threemonth: values.threemonth.value,
+        };
+      }
 
       //user portfolio
       let portfolio = await getPortfolioByDashboardID(dashboardId);
@@ -1459,15 +1471,18 @@ export async function processUsersPortPerf() {
 
   dashboards.forEach(async (value, key) => {
     //stocks historical
+    let stocksHistory;
     let totals = value.totals;
 
-    let stocksHistory = {
-      price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
-      price_percent_change_14_days: (totals.today / totals.twoweek - 1) * 100,
-      price_percent_change_30_days: (totals.today / totals.month - 1) * 100,
-      price_percent_change_3_months:
-        (totals.today / totals.threemonth - 1) * 100,
-    };
+    if (totals) {
+      stocksHistory = {
+        price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
+        price_percent_change_14_days: (totals.today / totals.twoweek - 1) * 100,
+        price_percent_change_30_days: (totals.today / totals.month - 1) * 100,
+        price_percent_change_3_months:
+          (totals.today / totals.threemonth - 1) * 100,
+      };
+    }
 
     let snp = await getSnPPerformance();
     stocksHistory.price_percent_change_7_days =
@@ -1601,7 +1616,7 @@ export async function processUsersPortPerf() {
       };
 
       await db(query);
-      console.log("output updated");
+      console.log("portfolio output updated");
     } else {
       //insert
       let output = perf;
