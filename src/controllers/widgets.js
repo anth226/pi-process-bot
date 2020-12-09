@@ -305,7 +305,13 @@ export async function processInput(widgetInstanceId) {
         } else {
           let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
           name = sec.name;
+          console.log("name", name);
         }
+
+        console.log("performance", performance);
+        console.log("price", price);
+        console.log("metrics", metrics);
+        console.log("metrics.Change", metrics.Change);
 
         if (performance && price && metrics && metrics.Change) {
           let delta = metrics.Change;
