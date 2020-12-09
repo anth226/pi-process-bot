@@ -292,7 +292,6 @@ export async function processInput(widgetInstanceId) {
     }
     //Prices
     else if (type == "CompanyPrice") {
-      console.log("CompanyPrice");
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
@@ -300,11 +299,6 @@ export async function processInput(widgetInstanceId) {
         let comp = await companies.getCompanyByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
-        console.log(ticker, " ", price);
-        console.log("price", price);
-        console.log("comp", comp);
-        console.log("metrics", metrics);
-        console.log("performance", performance, "\n");
 
         if (comp && comp.json && comp.json.name) {
           name = comp.json.name;
@@ -385,25 +379,24 @@ export async function processInput(widgetInstanceId) {
     //Price
     else if (type == "MutualFundPrice") {
       if (params.ticker) {
+        let name;
         let ticker = params.ticker;
         let price = await getCompanyPrice(ticker);
         let fund = await mutualfunds.getMutualFundByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
 
-        if (
-          performance &&
-          price &&
-          fund &&
-          fund.json &&
-          fund.json.name &&
-          metrics &&
-          metrics.Change
-        ) {
+        if (fund && fund.json && fund.json.name) {
+          name = fund.json.name;
+        } else {
+          name = await getSecurityNameFromIntrinio(ticker);
+        }
+
+        if (performance && price && metrics && metrics.Change) {
           let delta = metrics.Change;
           let tick = {
             ticker: ticker,
-            name: fund.json.name,
+            name: name,
             price: price,
             delta: delta,
             performance: performance,
@@ -416,6 +409,7 @@ export async function processInput(widgetInstanceId) {
     //Price
     else if (type == "ETFPrice") {
       if (params.ticker) {
+        let name;
         let ticker = params.ticker;
         let price = await getCompanyPrice(ticker);
         let etf = await etfs.getETFByTicker(ticker);
@@ -423,19 +417,17 @@ export async function processInput(widgetInstanceId) {
         let performance = await getSecurityPerformance(ticker);
         let topHoldings = await getETFHoldings(ticker, 10);
 
-        if (
-          performance &&
-          price &&
-          etf &&
-          etf.json &&
-          etf.json.name &&
-          metrics &&
-          metrics.Change
-        ) {
+        if (etf && etf.json && etf.json.name) {
+          name = etf.json.name;
+        } else {
+          name = await getSecurityNameFromIntrinio(ticker);
+        }
+
+        if (performance && price && metrics && metrics.Change) {
           let delta = metrics.Change;
           let tick = {
             ticker: ticker,
-            name: etf.json.name,
+            name: name,
             price: price,
             delta: delta,
             performance: performance,
