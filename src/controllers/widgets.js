@@ -1425,10 +1425,14 @@ export async function processUsersPortPerf() {
     if (output && output.performance && output.performance.values) {
       values = output.performance.values;
     }
+    console.log("dashboardId", dashboardId);
+    console.log("output", output);
+    console.log("values", values);
 
     if (dashboards.has(dashboardId)) {
       //stocks historical
       if (values.today) {
+        console.log("values.today", values.today);
         let totals = dashboards.get(dashboardId).totals;
         let today = totals.today + values.today.value;
         let week = totals.week + values.week.value;
@@ -1447,6 +1451,7 @@ export async function processUsersPortPerf() {
       //stocks historical
       let totals;
       if (values.today) {
+        console.log("values.today first", values.today);
         totals = {
           today: values.today.value,
           week: values.week.value,
@@ -1474,6 +1479,8 @@ export async function processUsersPortPerf() {
     let stocksHistory;
     let totals = value.totals;
 
+    console.log("totals", totals);
+
     if (totals) {
       stocksHistory = {
         price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
@@ -1482,6 +1489,8 @@ export async function processUsersPortPerf() {
         price_percent_change_3_months:
           (totals.today / totals.threemonth - 1) * 100,
       };
+
+      console.log("stocksHistory", stocksHistory);
     }
 
     let snp = await getSnPPerformance();
@@ -1502,7 +1511,11 @@ export async function processUsersPortPerf() {
     let history = value.portfolio_history;
     let stocks = new Map();
 
+    console.log("history", history);
+
     for (let i in history) {
+      console.log("history: ", i, history[i]);
+
       let ticker = history[i].ticker;
       let type = history[i].type;
       let open_price = history[i].open_price;
@@ -1603,7 +1616,11 @@ export async function processUsersPortPerf() {
       titans: titansPerformance,
     };
 
+    console.log("perf", perf);
+
     let widget = await getLocalPerfomanceWidgetForDashboard(key);
+
+    console.log("widget", widget);
 
     if (widget && widget.length > 0) {
       //update
