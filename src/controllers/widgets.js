@@ -66,20 +66,20 @@ export async function getSecurityLastPrice(symbol) {
   }
 }
 
-export async function getSecurityNameFromIntrinio(ticker) {
-  try {
-    let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+// export async function getSecurityNameFromIntrinio(ticker) {
+//   try {
+//     let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
-    let res = await axios.get(url);
+//     let res = await axios.get(url);
 
-    if (res.security && res.security.name) {
-      let name = res.security.name;
-      return name;
-    }
-  } catch (e) {
-    console.error(e);
-  }
-}
+//     if (res.security && res.security.name) {
+//       let name = res.security.name;
+//       return name;
+//     }
+//   } catch (e) {
+//     console.error(e);
+//   }
+// }
 
 /* END Scraper */
 
@@ -303,7 +303,8 @@ export async function processInput(widgetInstanceId) {
         if (comp && comp.json && comp.json.name) {
           name = comp.json.name;
         } else {
-          name = await getSecurityNameFromIntrinio(ticker);
+          let sec = await getSecurityData.lookupSecurity(ticker);
+          name = sec.name;
         }
 
         if (performance && price && metrics && metrics.Change) {
@@ -389,7 +390,8 @@ export async function processInput(widgetInstanceId) {
         if (fund && fund.json && fund.json.name) {
           name = fund.json.name;
         } else {
-          name = await getSecurityNameFromIntrinio(ticker);
+          let sec = await getSecurityData.lookupSecurity(ticker);
+          name = sec.name;
         }
 
         if (performance && price && metrics && metrics.Change) {
@@ -420,7 +422,8 @@ export async function processInput(widgetInstanceId) {
         if (etf && etf.json && etf.json.name) {
           name = etf.json.name;
         } else {
-          name = await getSecurityNameFromIntrinio(ticker);
+          let sec = await getSecurityData.lookupSecurity(ticker);
+          name = sec.name;
         }
 
         if (performance && price && metrics && metrics.Change) {
