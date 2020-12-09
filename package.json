@@ -64,7 +64,7 @@
     "express": "^4.17.1",
     "firebase": "^7.6.1",
     "firebase-admin": "^8.12.1",
-    "intrinio-sdk": "^5.0.0",
+    "intrinio-sdk": "^5.6.4",
     "json2csv": "^5.0.1",
     "mobx-react-lite": "^1.5.2",
     "mqtt": "^3.0.0",
