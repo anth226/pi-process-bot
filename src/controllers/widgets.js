@@ -277,18 +277,12 @@ export async function processInput(widgetInstanceId) {
     }
     //Prices
     else if (type == "CompanyPrice") {
-      console.log("CompanyPrice");
       if (params.ticker) {
         let ticker = params.ticker;
         let price = await getCompanyPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
-        console.log(ticker, " ", price);
-        console.log("price", price);
-        console.log("comp", comp);
-        console.log("metrics", metrics);
-        console.log("performance", performance, "\n");
 
         if (
           performance &&
