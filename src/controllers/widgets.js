@@ -66,7 +66,7 @@ export async function getSecurityLastPrice(symbol) {
   }
 }
 
-export async function getSecurityNameFromIntrinio(symbol) {
+export async function getSecurityNameFromIntrinio(ticker) {
   try {
     let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
