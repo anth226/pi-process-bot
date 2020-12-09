@@ -1471,15 +1471,18 @@ export async function processUsersPortPerf() {
 
   dashboards.forEach(async (value, key) => {
     //stocks historical
+    let stocksHistory;
     let totals = value.totals;
 
-    let stocksHistory = {
-      price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
-      price_percent_change_14_days: (totals.today / totals.twoweek - 1) * 100,
-      price_percent_change_30_days: (totals.today / totals.month - 1) * 100,
-      price_percent_change_3_months:
-        (totals.today / totals.threemonth - 1) * 100,
-    };
+    if (totals) {
+      stocksHistory = {
+        price_percent_change_7_days: (totals.today / totals.week - 1) * 100,
+        price_percent_change_14_days: (totals.today / totals.twoweek - 1) * 100,
+        price_percent_change_30_days: (totals.today / totals.month - 1) * 100,
+        price_percent_change_3_months:
+          (totals.today / totals.threemonth - 1) * 100,
+      };
+    }
 
     let snp = await getSnPPerformance();
     stocksHistory.price_percent_change_7_days =
