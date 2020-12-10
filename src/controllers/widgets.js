@@ -1173,8 +1173,12 @@ export async function getTrendingTitans() {
       b.performance_one_year * b.sortFactor -
       a.performance_one_year * a.sortFactor
   );
-  for (let i = 0; i < 24; i++) {
+  for (let i = 0; i < 25; i++) {
     let id = holdingsSorted[i].id;
+    //remove specific titan
+    if (id == 6) {
+      continue;
+    }
     let name = holdingsSorted[i].name;
     let perf = holdingsSorted[i].performance_one_year;
     let photo = holdingsSorted[i].photo_url;
