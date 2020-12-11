@@ -272,6 +272,7 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
+      console.log("in process type");
       if (params.tickers) {
         let data = await getStrongBuys(params.tickers);
         let json = JSON.stringify(data);

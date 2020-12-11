@@ -308,6 +308,7 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
+  console.log("in endpoint call");
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;
