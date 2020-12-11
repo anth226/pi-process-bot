@@ -1304,10 +1304,9 @@ export async function getClosestPriceDate(ticker, date) {
   let daily = data.daily;
 
   for (let i in daily) {
-    // let apiDate = daily[i].date;
-    // apiDate = apiDate.slice(0, 10);
-    let apiDate = daily[i].date.slice(0, 10);
-    if (apiDate <= date && daily[i].value) {
+    let apiDate = daily[i].date;
+    let pricedate = apiDate.slice(0, 10);
+    if (pricedate <= date && daily[i].value) {
       return daily[i];
     }
   }
