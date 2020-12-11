@@ -1071,15 +1071,15 @@ export async function getStrongBuys(list) {
       logo_url = company.logo_url;
     }
     let price = await getCompanyPrice(ticker);
-    let metrics = await companies.getCompanyMetrics(ticker);
-    if (metrics) {
-      //delta = metrics.Change;
-      delta = metrics["Perf Month"];
-    }
-    // let perf = await getSecurityPerformance(ticker);
-    // if (perf) {
-    //   delta = perf.price_percent_change_30_days;
+    // let metrics = await companies.getCompanyMetrics(ticker);
+    // if (metrics) {
+    //   //delta = metrics.Change;
+    //   delta = metrics["Perf Month"];
     // }
+    let perf = await getSecurityPerformance(ticker);
+    if (perf) {
+      delta = perf.price_percent_change_30_days;
+    }
 
     buys.push({
       ticker: ticker,
@@ -1291,36 +1291,82 @@ export async function getEarningsCalendar() {
   return sorted;
 }
 
-export async function getSecurityPerformance(ticker) {
+export async function getClosestPriceDate(ticker, date) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
+  let daily = data.daily;
+
+  for (let i in daily) {
+    // let apiDate = daily[i].date;
+    // apiDate = apiDate.slice(0, 10);
+    let apiDate = daily[i].date.slice(0, 10);
+    if (apiDate <= date && daily[i].value) {
+      return daily[i];
+    }
+  }
+}
+
+export async function getSecurityPerformance(ticker) {
+  let today = new Date();
+  let est = new Date(today);
+  est.setHours(est.getHours() - 5);
+  let week = new Date(est);
+  week.setDate(est.getDate() - 7);
+  week = week.toISOString().slice(0, 10);
+  let twoweek = new Date(est);
+  twoweek.setDate(est.getDate() - 14);
+  twoweek = twoweek.toISOString().slice(0, 10);
+  let month = new Date(est);
+  month.setDate(est.getDate() - 30);
+  month = month.toISOString().slice(0, 10);
+  let threemonth = new Date(est);
+  threemonth.setDate(est.getDate() - 90);
+  threemonth = threemonth.toISOString().slice(0, 10);
+  est = est.toISOString().slice(0, 10);
+
+  // console.log("est", est);
+  // console.log("week", week);
+  // console.log("twoweek", twoweek);
+  // console.log("month", month);
+  // console.log("threemonth", threemonth);
+
+  let todayPrice = await getClosestPriceDate(ticker, est);
+  let weekPrice = await getClosestPriceDate(ticker, week);
+  let twoweekPrice = await getClosestPriceDate(ticker, twoweek);
+  let monthPrice = await getClosestPriceDate(ticker, month);
+  let threemonthPrice = await getClosestPriceDate(ticker, threemonth);
+
+  // console.log("todayPrice", todayPrice);
+  // console.log("weekPrice", weekPrice);
+  // console.log("twoweekPrice", twoweekPrice);
+  // console.log("monthPrice", monthPrice);
+  // console.log("threemonthPrice", threemonthPrice);
+
   if (
-    data.daily[0] &&
-    data.daily[6] &&
-    data.daily[13] &&
-    data.daily[29] &&
-    data.daily[0].value &&
-    data.daily[6].value &&
-    data.daily[13].value &&
-    data.daily[29].value
+    todayPrice &&
+    weekPrice &&
+    twoweekPrice &&
+    monthPrice &&
+    threemonthPrice
   ) {
-    let latest = data.daily[87] ? data.daily[87] : data.daily.pop();
-    let latest_val = latest.value;
-    let earliest = data.daily[0] ? data.daily[0] : data.daily[1];
-    let earliest_val = earliest.value;
+    // let latest = data.daily[87] ? data.daily[87] : data.daily.pop();
+    // let latest_val = latest.value;
+    // let earliest = data.daily[0] ? data.daily[0] : data.daily[1];
+    // let earliest_val = earliest.value;
     let perf = {
       price_percent_change_7_days:
-        (earliest_val / data.daily[6].value - 1) * 100,
+        (todayPrice.value / weekPrice.value - 1) * 100,
       price_percent_change_14_days:
-        (earliest_val / data.daily[13].value - 1) * 100,
+        (todayPrice.value / twoweekPrice.value - 1) * 100,
       price_percent_change_30_days:
-        (earliest_val / data.daily[29].value - 1) * 100,
-      price_percent_change_3_months: (earliest_val / latest_val - 1) * 100,
+        (todayPrice.value / monthPrice.value - 1) * 100,
+      price_percent_change_3_months:
+        (todayPrice.value / threemonthPrice.value - 1) * 100,
       values: {
-        today: earliest,
-        week: data.daily[6],
-        twoweek: data.daily[13],
-        month: data.daily[29],
-        threemonth: latest,
+        today: todayPrice,
+        week: weekPrice,
+        twoweek: twoweekPrice,
+        month: monthPrice,
+        threemonth: threemonthPrice,
       },
     };
     return perf;
