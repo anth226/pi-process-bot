@@ -1335,11 +1335,11 @@ export async function getSecurityPerformance(ticker) {
   let monthPrice = await getClosestPriceDate(ticker, month);
   let threemonthPrice = await getClosestPriceDate(ticker, threemonth);
 
-  // console.log("todayPrice", todayPrice);
-  // console.log("weekPrice", weekPrice);
-  // console.log("twoweekPrice", twoweekPrice);
-  // console.log("monthPrice", monthPrice);
-  // console.log("threemonthPrice", threemonthPrice);
+  console.log("todayPrice", todayPrice);
+  console.log("weekPrice", weekPrice);
+  console.log("twoweekPrice", twoweekPrice);
+  console.log("monthPrice", monthPrice);
+  console.log("threemonthPrice", threemonthPrice);
 
   if (
     todayPrice &&
