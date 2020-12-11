@@ -1053,6 +1053,7 @@ export async function getStrongBuys(list) {
       let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
       let res = await axios.get(url);
+      console.log("res", res);
 
       if (res.data) {
         if (res.data.analyst_ratings && res.data.analyst_ratings.strong_buys) {
@@ -1066,7 +1067,6 @@ export async function getStrongBuys(list) {
       console.error(e);
     }
 
-    console.log("res", res);
     let company = await companies.getCompanyByTicker(ticker);
     console.log("company", company);
 
@@ -1304,7 +1304,7 @@ export async function getClosestPriceDate(ticker, date) {
   let daily = data.daily;
 
   for (let i in daily) {
-    let apiDate = daily[i].date;
+    let apiDate = daily[i].date.toString();
     let pricedate = apiDate.slice(0, 10);
     if (pricedate <= date && daily[i].value) {
       return daily[i];
@@ -1342,11 +1342,11 @@ export async function getSecurityPerformance(ticker) {
   let monthPrice = await getClosestPriceDate(ticker, month);
   let threemonthPrice = await getClosestPriceDate(ticker, threemonth);
 
-  console.log("todayPrice", todayPrice);
-  console.log("weekPrice", weekPrice);
-  console.log("twoweekPrice", twoweekPrice);
-  console.log("monthPrice", monthPrice);
-  console.log("threemonthPrice", threemonthPrice);
+  // console.log("todayPrice", todayPrice);
+  // console.log("weekPrice", weekPrice);
+  // console.log("twoweekPrice", twoweekPrice);
+  // console.log("monthPrice", monthPrice);
+  // console.log("threemonthPrice", threemonthPrice);
 
   if (
     todayPrice &&
