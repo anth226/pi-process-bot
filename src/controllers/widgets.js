@@ -1015,7 +1015,6 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 }
 
 export async function getStrongBuys(list) {
-  console.log("here");
   let buys = [];
   //    INTRINIO SCREENER
   // const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
@@ -1053,7 +1052,6 @@ export async function getStrongBuys(list) {
       let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
 
       let res = await axios.get(url);
-      console.log("res", res);
 
       if (res.data) {
         if (res.data.analyst_ratings && res.data.analyst_ratings.strong_buys) {
@@ -1068,7 +1066,6 @@ export async function getStrongBuys(list) {
     }
 
     let company = await companies.getCompanyByTicker(ticker);
-    console.log("company", company);
 
     if (company && company.json) {
       name = company.json.name;
@@ -1077,14 +1074,12 @@ export async function getStrongBuys(list) {
       logo_url = company.logo_url;
     }
     let price = await getCompanyPrice(ticker);
-    console.log("price", price);
     // let metrics = await companies.getCompanyMetrics(ticker);
     // if (metrics) {
     //   //delta = metrics.Change;
     //   delta = metrics["Perf Month"];
     // }
     let perf = await getSecurityPerformance(ticker);
-    console.log("perf", perf);
     if (perf) {
       delta = perf.price_percent_change_30_days;
     }
