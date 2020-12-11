@@ -1483,18 +1483,20 @@ export async function processUsersPortPerf() {
       //stocks historical
       if (values) {
         let totals = dashboards.get(dashboardId).totals;
-        let today = totals.today + values.today.value;
-        let week = totals.week + values.week.value;
-        let twoweek = totals.twoweek + values.twoweek.value;
-        let month = totals.month + values.month.value;
-        let threemonth = totals.threemonth + values.threemonth.value;
-        totals = {
-          today: today,
-          week: week,
-          twoweek: twoweek,
-          month: month,
-          threemonth: threemonth,
-        };
+        if (totals) {
+          let today = totals.today + values.today.value;
+          let week = totals.week + values.week.value;
+          let twoweek = totals.twoweek + values.twoweek.value;
+          let month = totals.month + values.month.value;
+          let threemonth = totals.threemonth + values.threemonth.value;
+          totals = {
+            today: today,
+            week: week,
+            twoweek: twoweek,
+            month: month,
+            threemonth: threemonth,
+          };
+        }
       }
     } else {
       //stocks historical
