@@ -8,7 +8,7 @@ locals {
   git_org      = "portfolioinsider"
   git_repo     = format("%s/%s", local.git_org, "pi-process-bot")
   git_branch = {
-    prod = "master"
+    prod = "main"
     stag = "staging"
   }
 
