@@ -41,7 +41,7 @@ resource "aws_elastic_beanstalk_environment" "process" {
   setting {
     namespace = "aws:ec2:instances"
     name      = "InstanceTypes"
-    value     = "t3.micro,t2.micro"
+    value     = "t3.small,t2.small"
   }
   # setting {
   #   namespace = "aws:ec2:instances"
