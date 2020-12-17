@@ -1,15 +1,14 @@
 locals {
   org  = "pi"
   name = "process-bot"
-  # env    = ["stag", "prod"]
-  env    = ["stag"]
+  env    = ["stag", "prod"]
   region = "us-east-1"
 
   git_conn_arn = "arn:aws:codestar-connections:us-east-1:724178372978:connection/8b658c00-d2c4-470f-98db-529ca8ff67f3"
   git_org      = "portfolioinsider"
   git_repo     = format("%s/%s", local.git_org, "pi-process-bot")
   git_branch = {
-    prod = "master"
+    prod = "main"
     stag = "staging"
   }
 
