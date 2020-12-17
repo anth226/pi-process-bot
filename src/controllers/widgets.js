@@ -1071,7 +1071,12 @@ export async function getStrongBuys(list) {
       name = company.json.name;
     } else {
       let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
-      name = sec.name;
+      if (sec) {
+        name = sec.name;
+        if (!compTicker) {
+          compTicker = sec.composite_ticker;
+        }
+      }
     }
     if (company && company.logo_url) {
       logo_url = company.logo_url;
