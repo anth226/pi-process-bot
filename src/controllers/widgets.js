@@ -1069,6 +1069,9 @@ export async function getStrongBuys(list) {
 
     if (company && company.json) {
       name = company.json.name;
+    } else {
+      let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+      name = sec.name;
     }
     if (company && company.logo_url) {
       logo_url = company.logo_url;
@@ -1082,7 +1085,8 @@ export async function getStrongBuys(list) {
     let perf = await getSecurityPerformance(ticker);
     if (perf) {
       let perf30Day = perf.price_percent_change_30_days.toFixed(2);
-      delta = perf30Day.toString() + "%";
+      let perfString = perf30Day.toString();
+      delta = perfString + "%";
     }
 
     buys.push({
