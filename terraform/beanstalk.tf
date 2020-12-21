@@ -10,7 +10,9 @@ resource "aws_elastic_beanstalk_environment" "process" {
   count = length(local.env)
 
   name                = format("%s-%s-%s", local.env[count.index], local.org, local.name)
+
   cname_prefix        = format("%s-%s-%s", local.env[count.index], local.org, local.name)
+
   application         = aws_elastic_beanstalk_application.process.name
   tier                = "WebServer"
   solution_stack_name = "64bit Amazon Linux 2 v5.2.3 running Node.js 12"
@@ -73,6 +75,7 @@ resource "aws_elastic_beanstalk_environment" "process" {
   #   value     = "/"
   # }
 
+
   # loadbalancer
   setting {
     namespace = "aws:elasticbeanstalk:environment"
@@ -89,6 +92,7 @@ resource "aws_elastic_beanstalk_environment" "process" {
     name      = "LoadBalancerIsShared"
     value     = false
   }
+
 
   # Add environment variables if provided
   dynamic "setting" {
