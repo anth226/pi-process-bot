@@ -67,6 +67,8 @@
     "intrinio-sdk": "^5.6.4",
     "json2csv": "^5.0.1",
     "mobx-react-lite": "^1.5.2",
+    "moment": "^2.29.1",
+    "moment-timezone": "^0.5.32",
     "mqtt": "^3.0.0",
     "natural": "^2.1.5",
     "pg": "8.1.0",
