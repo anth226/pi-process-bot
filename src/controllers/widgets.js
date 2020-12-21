@@ -10,6 +10,7 @@ import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
 import * as securities from "./securities";
 import * as earnings from "./earnings";
+import * as quodd from "./quodd";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
@@ -21,7 +22,7 @@ const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
 const indexAPI = new intrinioSDK.IndexApi();
 
-/* START Scraper */
+/* START API */
 
 const s3AllInsider = `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
@@ -34,54 +35,7 @@ async function getAllInsider() {
   }
 }
 
-export async function getSecurityLastPrice(symbol) {
-  let lastPrice = axios
-    .get(
-      `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=iex&api_key=${process.env.INTRINIO_API_KEY}`
-    )
-    .then(function (res) {
-      return res;
-    })
-    .catch(function (err) {
-      return err;
-    });
-
-  let price = await lastPrice.then((data) => data.data);
-
-  if (price) {
-    return price;
-  } else {
-    let backupLastPrice = axios
-      .get(
-        `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=bats_delayed&api_key=${process.env.INTRINIO_API_KEY}`
-      )
-      .then(function (res) {
-        return res;
-      })
-      .catch(function (err) {
-        return err;
-      });
-
-    return backupLastPrice.then((data) => data.data);
-  }
-}
-
-// export async function getSecurityNameFromIntrinio(ticker) {
-//   try {
-//     let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
-
-//     let res = await axios.get(url);
-
-//     if (res.security && res.security.name) {
-//       let name = res.security.name;
-//       return name;
-//     }
-//   } catch (e) {
-//     console.error(e);
-//   }
-// }
-
-/* END Scraper */
+/* END API */
 
 export async function getWidgets() {
   let result = await db(`
@@ -272,7 +226,6 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
-      console.log("in process type");
       if (params.tickers) {
         let data = await getStrongBuys(params.tickers);
         let json = JSON.stringify(data);
@@ -296,7 +249,7 @@ export async function processInput(widgetInstanceId) {
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
+        let price = await getPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
@@ -383,7 +336,7 @@ export async function processInput(widgetInstanceId) {
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
+        let price = await getPrice(ticker);
         let fund = await mutualfunds.getMutualFundByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
@@ -414,7 +367,7 @@ export async function processInput(widgetInstanceId) {
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
+        let price = await getPrice(ticker);
         let etf = await etfs.getETFByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
         let performance = await getSecurityPerformance(ticker);
@@ -850,8 +803,8 @@ export async function getInsidersNMovers(topNum) {
   return compsSorted;
 }
 
-export async function getCompanyPrice(ticker) {
-  let data = await getSecurityLastPrice(ticker);
+export async function getPrice(ticker) {
+  let data = await quodd.getLastPrice(ticker);
   if (data && data.last_price) {
     return data.last_price;
   }
@@ -1081,7 +1034,7 @@ export async function getStrongBuys(list) {
     if (company && company.logo_url) {
       logo_url = company.logo_url;
     }
-    let price = await getCompanyPrice(ticker);
+    let price = await getPrice(ticker);
     // let metrics = await companies.getCompanyMetrics(ticker);
     // if (metrics) {
     //   //delta = metrics.Change;
@@ -1236,7 +1189,7 @@ export async function getTopStocks() {
     let ticker = comps[i];
     let comp = await companies.getCompanyByTicker(ticker);
     let sec = await securities.getSecurityByTicker(ticker);
-    let price = await getCompanyPrice(ticker);
+    let price = await getPrice(ticker);
     let comp_metrics = await companies.getCompanyMetrics(ticker);
 
     if (
@@ -1584,7 +1537,7 @@ export async function processUsersPortPerf() {
             priceChange = close_price - open_price;
             percentChange = (close_price / open_price - 1) * 100;
           } else {
-            let today_price = await getCompanyPrice(ticker);
+            let today_price = await getPrice(ticker);
             priceChange = today_price - open_price;
             percentChange = (today_price / open_price - 1) * 100;
           }
@@ -1605,7 +1558,7 @@ export async function processUsersPortPerf() {
             priceChange = close_price - open_price;
             percentChange = (close_price / open_price - 1) * 100;
           } else {
-            let today_price = await getCompanyPrice(ticker);
+            let today_price = await getPrice(ticker);
             priceChange = today_price - open_price;
             percentChange = (today_price / open_price - 1) * 100;
           }

@@ -89,11 +89,14 @@ export async function insertSecurity(metrics, ticker, type, cik, name) {
   let result = await db(query);
 
   if (result.length > 0) {
-    let query = {
-      text: "UPDATE securities SET json_metrics = $1 WHERE ticker = $2",
-      values: [metrics, ticker],
-    };
-    await db(query);
+    if (name) {
+      let query = {
+        text:
+          "UPDATE securities SET json_metrics = $1, name = $3 WHERE ticker = $2",
+        values: [metrics, ticker, name],
+      };
+      await db(query);
+    }
   } else {
     let query = {
       text:
