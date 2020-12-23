@@ -137,7 +137,6 @@ export async function getClosestPriceDate(date, dailyData) {
 
 export async function getSecurityPerformance(ticker) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
-  console.log(data);
   if (!data || !data.daily || data.daily.length < 1) {
     return;
   }
