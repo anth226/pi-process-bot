@@ -549,19 +549,11 @@ export function publish_ProcessInstitutionalPerformance(cik) {
   });
 }
 
-export function publish_ProcessPerformances_Securities(
-  ticker,
-  type,
-  cik,
-  name
-) {
+export function publish_ProcessPerformances_Securities(ticker) {
   let queueUrl = process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES;
 
   let data = {
     ticker,
-    type,
-    cik,
-    name,
   };
 
   let params = {
@@ -569,18 +561,6 @@ export function publish_ProcessPerformances_Securities(
       ticker: {
         DataType: "String",
         StringValue: data.ticker,
-      },
-      type: {
-        DataType: "String",
-        StringValue: data.type,
-      },
-      cik: {
-        DataType: "String",
-        StringValue: data.cik,
-      },
-      name: {
-        DataType: "String",
-        StringValue: data.name,
       },
     },
     MessageBody: JSON.stringify(data),
@@ -1039,24 +1019,30 @@ export const consumer_17 = Consumer.create({
 
     console.log(sqsMessage);
 
-    let cik;
     let performance = await securities.getSecurityPerformance(
       sqsMessage.ticker
     );
 
-    if (sqsMessage.cik == "?") {
-      cik = null;
-    } else {
-      cik = sqsMessage.cik;
-    }
+    if (performance) {
+      let perf_7_days = performance.price_percent_change_7_days;
+      let perf_14_days = performance.price_percent_change_14_days;
+      let perf_30_days = performance.price_percent_change_30_days;
+      let perf_3_months = performance.price_percent_change_3_months;
+      let perf_1_year = performance.price_percent_change_1_year;
+      let perf_values = performance.values;
 
-    await securities.insertPerformanceSecurity(
-      performance,
-      sqsMessage.ticker,
-      sqsMessage.type,
-      cik,
-      sqsMessage.name
-    );
+      let jsonPerf = JSON.stringify(perf_values);
+
+      await securities.insertPerformanceSecurity(
+        sqsMessage.ticker,
+        perf_7_days,
+        perf_14_days,
+        perf_30_days,
+        perf_3_months,
+        perf_1_year,
+        jsonPerf
+      );
+    }
   },
 });
 
