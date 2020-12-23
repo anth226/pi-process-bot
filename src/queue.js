@@ -549,8 +549,13 @@ export function publish_ProcessInstitutionalPerformance(cik) {
   });
 }
 
-export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_METRICS;
+export function publish_ProcessPerformances_Securities(
+  ticker,
+  type,
+  cik,
+  name
+) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES;
 
   let data = {
     ticker,
@@ -1026,16 +1031,18 @@ consumer_16.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_SECURITIES_METRICS
+// AWS_SQS_URL_SECURITIES_PERFORMANCES
 export const consumer_17 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_SECURITIES_METRICS,
+  queueUrl: process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
     console.log(sqsMessage);
 
     let cik;
-    let metrics = await securities.getMetrics(sqsMessage.ticker);
+    let performance = await securities.getSecurityPerformance(
+      sqsMessage.ticker
+    );
 
     if (sqsMessage.cik == "?") {
       cik = null;
@@ -1043,8 +1050,8 @@ export const consumer_17 = Consumer.create({
       cik = sqsMessage.cik;
     }
 
-    await securities.insertSecurity(
-      metrics,
+    await securities.insertPerformanceSecurity(
+      performance,
       sqsMessage.ticker,
       sqsMessage.type,
       cik,
