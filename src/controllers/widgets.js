@@ -252,7 +252,8 @@ export async function processInput(widgetInstanceId) {
         let price = await getPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
-        let performance = await getSecurityPerformance(ticker);
+        //get perf from db instead
+        let performance = await securities.getSecurityPerformance(ticker);
 
         if (comp && comp.json && comp.json.name) {
           name = comp.json.name;
@@ -339,7 +340,8 @@ export async function processInput(widgetInstanceId) {
         let price = await getPrice(ticker);
         let fund = await mutualfunds.getMutualFundByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
-        let performance = await getSecurityPerformance(ticker);
+        //get perf from db instead
+        let performance = await securities.getSecurityPerformance(ticker);
 
         if (fund && fund.json && fund.json.name) {
           name = fund.json.name;
@@ -370,7 +372,8 @@ export async function processInput(widgetInstanceId) {
         let price = await getPrice(ticker);
         let etf = await etfs.getETFByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
-        let performance = await getSecurityPerformance(ticker);
+        //get perf from db instead
+        let performance = await securities.getSecurityPerformance(ticker);
         let topHoldings = await getETFHoldings(ticker, 10);
 
         if (etf && etf.json && etf.json.name) {
@@ -1040,7 +1043,10 @@ export async function getStrongBuys(list) {
     //   //delta = metrics.Change;
     //   delta = metrics["Perf Month"];
     // }
-    let perf = await getSecurityPerformance(ticker);
+    //
+    //
+    //get perf from db instead
+    let perf = await securities.getSecurityPerformance(ticker);
     if (perf) {
       let perf30Day = perf.price_percent_change_30_days.toFixed(2);
       let perfString = perf30Day.toString();
@@ -1255,88 +1261,6 @@ export async function getEarningsCalendar() {
     return aa < bb ? -1 : aa > bb ? 1 : 0;
   });
   return sorted;
-}
-
-export async function getClosestPriceDate(ticker, date) {
-  let data = await getSecurityData.getChartData(securityAPI, ticker);
-  let daily = data.daily;
-
-  for (let i in daily) {
-    let apiDate = daily[i].date.toString();
-    let pricedate = apiDate.slice(0, 10);
-    if (pricedate <= date && daily[i].value) {
-      return daily[i];
-    }
-  }
-}
-
-export async function getSecurityPerformance(ticker) {
-  let today = new Date();
-  let est = new Date(today);
-  est.setHours(est.getHours() - 5);
-  let week = new Date(est);
-  week.setDate(est.getDate() - 7);
-  week = week.toISOString().slice(0, 10);
-  let twoweek = new Date(est);
-  twoweek.setDate(est.getDate() - 14);
-  twoweek = twoweek.toISOString().slice(0, 10);
-  let month = new Date(est);
-  month.setDate(est.getDate() - 30);
-  month = month.toISOString().slice(0, 10);
-  let threemonth = new Date(est);
-  threemonth.setDate(est.getDate() - 90);
-  threemonth = threemonth.toISOString().slice(0, 10);
-  est = est.toISOString().slice(0, 10);
-
-  // console.log("est", est);
-  // console.log("week", week);
-  // console.log("twoweek", twoweek);
-  // console.log("month", month);
-  // console.log("threemonth", threemonth);
-
-  let todayPrice = await getClosestPriceDate(ticker, est);
-  let weekPrice = await getClosestPriceDate(ticker, week);
-  let twoweekPrice = await getClosestPriceDate(ticker, twoweek);
-  let monthPrice = await getClosestPriceDate(ticker, month);
-  let threemonthPrice = await getClosestPriceDate(ticker, threemonth);
-
-  // console.log("todayPrice", todayPrice);
-  // console.log("weekPrice", weekPrice);
-  // console.log("twoweekPrice", twoweekPrice);
-  // console.log("monthPrice", monthPrice);
-  // console.log("threemonthPrice", threemonthPrice);
-
-  if (
-    todayPrice &&
-    weekPrice &&
-    twoweekPrice &&
-    monthPrice &&
-    threemonthPrice
-  ) {
-    // let latest = data.daily[87] ? data.daily[87] : data.daily.pop();
-    // let latest_val = latest.value;
-    // let earliest = data.daily[0] ? data.daily[0] : data.daily[1];
-    // let earliest_val = earliest.value;
-    let perf = {
-      price_percent_change_7_days:
-        (todayPrice.value / weekPrice.value - 1) * 100,
-      price_percent_change_14_days:
-        (todayPrice.value / twoweekPrice.value - 1) * 100,
-      price_percent_change_30_days:
-        (todayPrice.value / monthPrice.value - 1) * 100,
-      price_percent_change_3_months:
-        (todayPrice.value / threemonthPrice.value - 1) * 100,
-      values: {
-        today: todayPrice,
-        week: weekPrice,
-        twoweek: twoweekPrice,
-        month: monthPrice,
-        threemonth: threemonthPrice,
-      },
-    };
-    return perf;
-  }
-  return null;
 }
 
 export async function getTitanPerformance(uri) {

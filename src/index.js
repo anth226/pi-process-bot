@@ -190,8 +190,25 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 
 /* Securities */
 
+//    FETCH BOT
 // /update_metrics_securities?token=XXX
-app.get("/update_metrics_securities", async (req, res) => {
+// app.get("/update_metrics_securities", async (req, res) => {
+//   if (process.env.DISABLE_CRON == "true") {
+//     res.send("disabled");
+//     return;
+//   }
+//   let { query } = req;
+//   if (query.token != "XXX") {
+//     res.send("fail");
+//     return;
+//   }
+//   await securities.fillSecurities();
+//   res.send("ok");
+// });
+//    FETCH BOT
+
+// /update_performances_securities?token=XXX
+app.get("/update_performances_securities", async (req, res) => {
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;
@@ -201,7 +218,7 @@ app.get("/update_metrics_securities", async (req, res) => {
     res.send("fail");
     return;
   }
-  await securities.fillSecurities();
+  await securities.fillPerformancesSecurities();
   res.send("ok");
 });
 
