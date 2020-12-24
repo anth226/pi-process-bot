@@ -128,10 +128,16 @@ export async function insertPerformanceSecurity(
 
 export async function getClosestPriceDate(date, dailyData) {
   for (let i in dailyData) {
-    let apiDate = dailyData[i].date.toString();
+    let data;
+    if (dailyData[i].exports) {
+      data = dailyData[i].exports;
+    } else {
+      data = dailyData[i];
+    }
+    let apiDate = data.date.toString();
     let pricedate = apiDate.slice(0, 10);
-    if (pricedate <= date && dailyData[i].value) {
-      return dailyData[i];
+    if (pricedate <= date && data.value) {
+      return data;
     }
   }
 }
