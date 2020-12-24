@@ -148,7 +148,7 @@ export async function getSecurityPerformance(ticker) {
     return;
   }
   let dailyData = data.daily;
-  //console.log("dailyData", dailyData);
+  console.log("dailyData", dailyData);
 
   let today = new Date();
   let est = new Date(today);
@@ -177,7 +177,7 @@ export async function getSecurityPerformance(ticker) {
   let threemonthPrice = await getClosestPriceDate(threemonth, dailyData);
   let yearPrice = await getClosestPriceDate(year, dailyData);
 
-  //console.log("yearPrice", yearPrice);
+  console.log("yearPrice", yearPrice);
 
   if (
     todayPrice &&
@@ -187,9 +187,12 @@ export async function getSecurityPerformance(ticker) {
     threemonthPrice
   ) {
     let latest = yearPrice ? yearPrice : data.daily.pop();
+    console.log("latest", latest);
     if (latest.exports) {
       latest = latest.exports;
     }
+    console.log("latest after exports", latest);
+
     let perf = {
       price_percent_change_7_days:
         (todayPrice.value / weekPrice.value - 1) * 100,
