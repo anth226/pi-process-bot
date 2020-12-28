@@ -37,7 +37,6 @@ async function historicalPages(intrinioApi, identifier, opts, hist) {
     });
 
     if (data.next_page == null) {
-      console.log("hist", hist);
       return hist;
     } else {
       let newOpts = opts;
@@ -67,7 +66,6 @@ export function getHistoricalData(intrinioApi, identifier, days, freq) {
 
 export async function getChartData(intrinioApi, identifier) {
   let cache = await redis.get(`${KEY_CHART_DATA}-${identifier}`);
-  console.log("cache", cache);
 
   if (!cache) {
     const [daily, weekly] = await Promise.all([
@@ -75,7 +73,6 @@ export async function getChartData(intrinioApi, identifier) {
       getHistoricalData(intrinioApi, identifier, 1825, "weekly"),
     ]);
     let data = { daily: daily, weekly: weekly };
-    console.log("data", data);
 
     redis.set(
       `${KEY_CHART_DATA}-${identifier}`,

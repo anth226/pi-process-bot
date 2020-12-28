@@ -128,34 +128,17 @@ export async function insertPerformanceSecurity(
 
 export async function getClosestPriceDate(date, dailyData) {
   for (let i in dailyData) {
-    //let json;
-    console.log("dailyData[" + i + "]", dailyData[i]);
-
-    if (!dailyData[i].date) {
-      let str = dailyData[i].substring(8);
-      console.log("str", str);
-      //json = JSON.parse(str);
+    let priceDate;
+    let apiDate = dailyData[i].date;
+    if (typeof apiDate === "string" || apiDate instanceof String) {
+      priceDate = apiDate.slice(0, 10);
+    } else {
+      let strDate = apiDate.toISOString();
+      priceDate = strDate.slice(0, 10);
     }
-
-    //console.log("json", json);
-
-    // let data;
-    // if (json.exports) {
-    //   //console.log("here");
-    //   //console.log("dailyData[i].exports", dailyData[i].exports);
-    //   data = json.exports;
-    // } else {
-    //   //console.log("here instead");
-    //   data = json;
-    // }
-    //console.log("data", data);
-    //
-    //
-    // let apiDate = json.date.toString();
-    // let pricedate = apiDate.slice(0, 10);
-    // if (pricedate <= date && json.value) {
-    //   return json;
-    // }
+    if (priceDate <= date && dailyData[i].value) {
+      return dailyData[i];
+    }
   }
 }
 
@@ -165,7 +148,6 @@ export async function getSecurityPerformance(ticker) {
     return;
   }
   let dailyData = data.daily;
-  console.log("dailyData", dailyData);
 
   let today = new Date();
   let est = new Date(today);
@@ -194,8 +176,6 @@ export async function getSecurityPerformance(ticker) {
   let threemonthPrice = await getClosestPriceDate(threemonth, dailyData);
   let yearPrice = await getClosestPriceDate(year, dailyData);
 
-  console.log("yearPrice", yearPrice);
-
   if (
     todayPrice &&
     weekPrice &&
@@ -204,11 +184,6 @@ export async function getSecurityPerformance(ticker) {
     threemonthPrice
   ) {
     let latest = yearPrice ? yearPrice : data.daily.pop();
-    console.log("latest", latest);
-    if (latest.exports) {
-      latest = latest.exports;
-    }
-    console.log("latest after exports", latest);
 
     let perf = {
       price_percent_change_7_days:
