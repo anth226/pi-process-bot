@@ -128,17 +128,34 @@ export async function insertPerformanceSecurity(
 
 export async function getClosestPriceDate(date, dailyData) {
   for (let i in dailyData) {
-    let data;
-    if (dailyData[i].exports) {
-      data = dailyData[i].exports;
-    } else {
-      data = dailyData[i];
+    //let json;
+    console.log("dailyData[" + i + "]", dailyData[i]);
+
+    if (!dailyData[i].date) {
+      let str = dailyData[i].substring(8);
+      console.log("str", str);
+      //json = JSON.parse(str);
     }
-    let apiDate = data.date.toString();
-    let pricedate = apiDate.slice(0, 10);
-    if (pricedate <= date && data.value) {
-      return data;
-    }
+
+    //console.log("json", json);
+
+    // let data;
+    // if (json.exports) {
+    //   //console.log("here");
+    //   //console.log("dailyData[i].exports", dailyData[i].exports);
+    //   data = json.exports;
+    // } else {
+    //   //console.log("here instead");
+    //   data = json;
+    // }
+    //console.log("data", data);
+    //
+    //
+    // let apiDate = json.date.toString();
+    // let pricedate = apiDate.slice(0, 10);
+    // if (pricedate <= date && json.value) {
+    //   return json;
+    // }
   }
 }
 
