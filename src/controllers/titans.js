@@ -662,6 +662,9 @@ export async function getTitanSnapshot(id) {
   let tickerList = [];
   let data = await getTitanHoldings(id);
   console.log("titan holdings", data);
+  if (!data) {
+    return null;
+  }
   for (let i in data) {
     let ticker = data[i].company.ticker;
     tickerList.push(ticker);
@@ -718,7 +721,6 @@ export async function getTitanSnapshot(id) {
       };
     }
   }
-  return null;
 }
 
 export async function insertSnapshotTitan(id, snapshot) {
