@@ -713,18 +713,24 @@ export async function insertSnapshotTitan(id, snapshot) {
     return;
   }
 
+  console.log("snapshot json insert", snapshot);
+
   let query = {
     text: "SELECT * FROM billionaires WHERE id = $1",
     values: [id],
   };
   let result = await db(query);
 
+  console.log("result", result);
+
   if (result.length > 0) {
+    console.log("in update");
     let query = {
       text: "UPDATE billionaires SET json_snapshot = $2 WHERE id = $1",
       values: [id, snapshot],
     };
     await db(query);
+    console.log("updated");
   }
 }
 
