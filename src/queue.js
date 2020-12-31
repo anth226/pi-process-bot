@@ -1182,6 +1182,8 @@ export const consumer_19 = Consumer.create({
 
     let snapshot = await titans.getTitanSnapshot(id);
 
+    console.log("snapshot", snapshot);
+
     if (snapshot) {
       let json = JSON.stringify(snapshot);
       await titans.insertSnapshotTitan(id, json);
