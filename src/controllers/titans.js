@@ -598,6 +598,25 @@ export async function processHoldingsPerformanceAndSummary(id) {
   }
 }
 
+export async function getTitanLargestHolding(id) {
+  let holdingList = [];
+  let data = await getTitanHoldings(id);
+  let newestDate = data[0].as_of_date;
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    let openDate = data[i].as_of_date;
+    let marketValue = data[i].market_value;
+    if (ticker && openDate == newestDate && marketValue && marketValue > 0) {
+      holdingList.push(data[i]);
+    }
+  }
+  holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
+  let topStock = holdingList.pop();
+  if (topStock) {
+    return topStock;
+  }
+}
+
 export async function getTitanTopHolding(id, sort, direction) {
   let tickerList = [];
   let data = await getTitanHoldings(id);
@@ -641,6 +660,9 @@ export async function getTitanHoldings(titanId) {
   }
   console.log("primaryCik", primaryCik);
   if (primaryCik) {
+    //get holds from intrinio as backup
+    //https://api-v2.intrinio.com/zacks/institutional_holdings?api_key=OjljMjViZjQzNWU4NGExZWZlZTFmNTY4ZDU5ZmI5ZDI0&owner_cik=0001061165
+    //need to account for next page batches
     let holds = await institutions.getInstitutionsHoldings(primaryCik);
     console.log("holds", holds);
     if (holds && holds.length > 0) {
@@ -658,10 +680,8 @@ export async function calculateHoldingPrice(holding) {
 }
 
 export async function getTitanSnapshot(id) {
-  console.log("here");
   let tickerList = [];
   let data = await getTitanHoldings(id);
-  console.log("titan holdings", data);
   if (!data) {
     return null;
   }
@@ -685,20 +705,25 @@ export async function getTitanSnapshot(id) {
     "institutional_holdings_count",
     "desc"
   );
+  let largest = await getTitanLargestHolding(id);
 
-  console.log("topPerf", topPerf);
-  console.log("common", common);
-  console.log("uncommon", uncommon);
+  // console.log("topPerf", topPerf);
+  // console.log("common", common);
+  // console.log("uncommon", uncommon);
+  // console.log("largest", largest);
 
   if (topPerf && common && uncommon) {
     let topPerfPrice = await calculateHoldingPrice(topPerf);
     let commonPrice = await calculateHoldingPrice(common);
     let uncommonPrice = await calculateHoldingPrice(uncommon);
-    console.log("topPerfPrice", topPerfPrice);
-    console.log("commonPrice", commonPrice);
-    console.log("uncommonPrice", uncommonPrice);
+    let largestPrice = await calculateHoldingPrice(largest);
 
-    if (topPerfPrice && commonPrice && uncommonPrice) {
+    // console.log("topPerfPrice", topPerfPrice);
+    // console.log("commonPrice", commonPrice);
+    // console.log("uncommonPrice", uncommonPrice);
+    // console.log("largestPrice", largestPrice);
+
+    if (topPerfPrice && commonPrice && uncommonPrice && largestPrice) {
       return {
         top_performing: {
           ticker: topPerf.company.ticker,
@@ -717,6 +742,12 @@ export async function getTitanSnapshot(id) {
           name: uncommon.company.name,
           open_date: uncommon.as_of_date,
           open_price: uncommonPrice,
+        },
+        largest: {
+          ticker: largest.company.ticker,
+          name: largest.company.name,
+          open_date: largest.as_of_date,
+          open_price: largestPrice,
         },
       };
     }
