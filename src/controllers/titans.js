@@ -643,7 +643,7 @@ export async function getTitanHoldings(titanId) {
   if (primaryCik) {
     let holds = await institutions.getInstitutionsHoldings(primaryCik);
     console.log("holds", holds);
-    if (holds.length > 0) {
+    if (holds && holds.length > 0) {
       return holds;
     }
   }
