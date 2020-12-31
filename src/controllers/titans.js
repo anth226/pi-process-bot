@@ -626,7 +626,9 @@ export async function getTitanTopHolding(id, sort, direction) {
 
 export async function getTitanHoldings(titanId) {
   let primaryCik;
+  console.log("titanId", titanId);
   let titan = await getBillionaireCiks(titanId);
+  console.log("titan", titan);
   if (titan.length > 0) {
     let ciks = titan[0].ciks;
     for (let i in ciks) {
@@ -637,8 +639,10 @@ export async function getTitanHoldings(titanId) {
       }
     }
   }
+  console.log("primaryCik", primaryCik);
   if (primaryCik) {
     let holds = await institutions.getInstitutionsHoldings(primaryCik);
+    console.log("holds", holds);
     if (holds.length > 0) {
       return holds;
     }
