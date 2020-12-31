@@ -677,10 +677,17 @@ export async function getTitanSnapshot(id) {
     "desc"
   );
 
+  console.log("topPerf", topPerf);
+  console.log("common", common);
+  console.log("uncommon", uncommon);
+
   if (topPerf && common && uncommon) {
     let topPerfPrice = await calculateHoldingPrice(topPerf);
     let commonPrice = await calculateHoldingPrice(common);
     let uncommonPrice = await calculateHoldingPrice(uncommon);
+    console.log("topPerfPrice", topPerfPrice);
+    console.log("commonPrice", commonPrice);
+    console.log("uncommonPrice", uncommonPrice);
 
     if (topPerfPrice && commonPrice && uncommonPrice) {
       return {

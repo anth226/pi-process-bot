@@ -1181,6 +1181,8 @@ export const consumer_19 = Consumer.create({
     let strId = sqsMessage.id;
     let id = parseInt(strId);
 
+    console.log("id", id);
+
     let snapshot = await titans.getTitanSnapshot(id);
 
     console.log("snapshot", snapshot);
