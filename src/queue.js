@@ -641,6 +641,36 @@ export function publish_ProcessEarningsDate_Securities(
   });
 }
 
+export function publish_ProcessSnapshot_Titans(id) {
+  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "Number",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -1137,5 +1167,32 @@ consumer_18.on("error", (err) => {
 });
 
 consumer_18.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS
+export const consumer_19 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let id = sqsMessage.id;
+
+    let snapshot = await titans.getTitanSnapshot(id);
+
+    if (snapshot) {
+      let json = JSON.stringify(snapshot);
+      await titans.insertSnapshotTitan(id, json);
+    }
+  },
+});
+
+consumer_19.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_19.on("processing_error", (err) => {
   console.error(err.message);
 });
