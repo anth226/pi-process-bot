@@ -738,8 +738,7 @@ export async function processTitansSnapshots() {
   let result = await getBillionaires({ size: 5000 });
   if (result.length > 0) {
     for (let i in result) {
-      let strId = result[i].id;
-      let id = parseInt(strId);
+      let id = result[i].id;
       await queue.publish_ProcessSnapshot_Titans(id);
     }
   }
