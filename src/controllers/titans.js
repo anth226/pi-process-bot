@@ -654,8 +654,10 @@ export async function calculateHoldingPrice(holding) {
 }
 
 export async function getTitanSnapshot(id) {
+  console.log("here");
   let tickerList = [];
   let data = await getTitanHoldings(id);
+  console.log("titan holdings", data);
   for (let i in data) {
     let ticker = data[i].company.ticker;
     tickerList.push(ticker);

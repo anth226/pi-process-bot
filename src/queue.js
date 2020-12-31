@@ -1179,6 +1179,8 @@ export const consumer_19 = Consumer.create({
     console.log(sqsMessage);
 
     let strId = sqsMessage.id;
+    console.log("strId", strId);
+
     let id = parseInt(strId);
 
     console.log("id", id);
