@@ -10,6 +10,8 @@ import { orderBy, find, sumBy } from "lodash";
 import redis, { KEY_FORBES_TITANS } from "../redis";
 import { nullFormatter } from "../components/common/Table/helpers";
 import * as performances from "./performances";
+import * as securities from "./securities";
+import * as institutions from "./institutions";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
@@ -592,6 +594,146 @@ export async function processHoldingsPerformanceAndSummary(id) {
           }
         }
       }
+    }
+  }
+}
+
+export async function getTitanTopHolding(id, sort, direction) {
+  let tickerList = [];
+  let data = await getTitanHoldings(id);
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    tickerList.push(ticker);
+  }
+  let tickers = await tickerList.map((x) => "'" + x + "'").toString();
+  let secs = await securities.getSecuritiesByTickers(tickers);
+  if (direction == "asc") {
+    secs.sort((a, b) => a[sort] - b[sort]);
+  } else {
+    secs.sort((a, b) => b[sort] - a[sort]);
+  }
+  let topStock = secs.pop();
+  if (topStock) {
+    let topTicker = topStock.ticker;
+    for (let i in data) {
+      let ticker = data[i].company.ticker;
+      if (topTicker == ticker) {
+        return data[i];
+      }
+    }
+  }
+}
+
+export async function getTitanHoldings(titanId) {
+  let primaryCik;
+  let titan = await getBillionaireCiks(titanId);
+  if (titan.length > 0) {
+    let ciks = titan[0].ciks;
+    for (let i in ciks) {
+      let cik = ciks[i].cik;
+      let isPrimary = ciks[i].is_primary;
+      if (cik != "0000000000" && isPrimary) {
+        primaryCik = cik;
+      }
+    }
+  }
+  if (primaryCik) {
+    let holds = await institutions.getInstitutionsHoldings(primaryCik);
+    if (holds.length > 0) {
+      return holds;
+    }
+  }
+}
+
+export async function calculateHoldingPrice(holding) {
+  let shares = holding.shares_held;
+  let marketValue = holding.market_value;
+  if (shares > 0 && marketValue > 0) {
+    return marketValue / shares;
+  }
+}
+
+export async function getTitanSnapshot(id) {
+  let tickerList = [];
+  let data = await getTitanHoldings(id);
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    tickerList.push(ticker);
+  }
+
+  let topPerf = await getTitanTopHolding(
+    id,
+    "price_percent_change_1_year",
+    "asc"
+  );
+  let common = await getTitanTopHolding(
+    id,
+    "institutional_holdings_count",
+    "asc"
+  );
+  let uncommon = await getTitanTopHolding(
+    id,
+    "institutional_holdings_count",
+    "desc"
+  );
+
+  if (topPerf && common && uncommon) {
+    let topPerfPrice = await calculateHoldingPrice(topPerf);
+    let commonPrice = await calculateHoldingPrice(common);
+    let uncommonPrice = await calculateHoldingPrice(uncommon);
+
+    if (topPerfPrice && commonPrice && uncommonPrice) {
+      return {
+        top_performing: {
+          ticker: topPerf.company.ticker,
+          name: topPerf.company.name,
+          open_date: topPerf.as_of_date,
+          open_price: topPerfPrice,
+        },
+        common: {
+          ticker: common.company.ticker,
+          name: common.company.name,
+          open_date: common.as_of_date,
+          open_price: commonPrice,
+        },
+        uncommon: {
+          ticker: uncommon.company.ticker,
+          name: uncommon.company.name,
+          open_date: uncommon.as_of_date,
+          open_price: uncommonPrice,
+        },
+      };
+    }
+  }
+  return null;
+}
+
+export async function insertSnapshotTitan(id, snapshot) {
+  if (!id || !snapshot) {
+    return;
+  }
+
+  let query = {
+    text: "SELECT * FROM billionaires WHERE id = $1",
+    values: [id],
+  };
+  let result = await db(query);
+
+  if (result.length > 0) {
+    let query = {
+      text: "UPDATE billionaires SET json_snapshot = $2 WHERE id = $1",
+      values: [id, snapshot],
+    };
+    await db(query);
+  }
+}
+
+export async function processTitansSnapshots() {
+  let result = await getBillionaires({ size: 5000 });
+  if (result.length > 0) {
+    for (let i in result) {
+      let id = result[i].id;
+      await queue.publish_ProcessSnapshot_Titans(id);
     }
   }
 }

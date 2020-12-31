@@ -4,6 +4,7 @@ import * as queue from "../queue";
 import intrinioSDK from "intrinio-sdk";
 
 import * as companies from "./companies";
+import * as institutions from "./institutions";
 import * as getSecurityData from "./intrinio/get_security_data";
 
 // init intrinio
@@ -25,6 +26,18 @@ export async function getSecurityByTicker(ticker) {
 
   if (result && result.length > 0) {
     return result[0];
+  }
+}
+
+export async function getSecuritiesByTickers(tickers) {
+  let result = await db(`
+        SELECT *
+        FROM securities
+        WHERE ticker in (${tickers})
+    `);
+
+  if (result && result.length > 0) {
+    return result;
   }
 }
 
@@ -113,6 +126,53 @@ export async function insertPerformanceSecurity(
         perf_1_year,
         perf_values,
       ],
+    };
+    await db(query);
+  }
+  // else {
+  //   let query = {
+  //     text:
+  //       "INSERT INTO securities (json_metrics, ticker, type, cik, name ) VALUES ( $1, $2, $3, $4, $5 ) RETURNING *",
+  //     values: [performance, ticker, type, cik, name],
+  //   };
+  //   await db(query);
+  // }
+}
+
+export async function fillHoldingsCountSecurities() {
+  let holdingsArr = [];
+  let holdingsCount = await institutions.getInstitutionHoldingsCount();
+  holdingsCount.forEach(async (value, key) => {
+    holdingsArr.push({
+      ticker: key,
+      count: value,
+    });
+  });
+  if (holdingsArr.length > 0) {
+    for (let i in holdingsArr) {
+      let ticker = holdingsArr[i].ticker;
+      let count = holdingsArr[i].count;
+      await insertHoldingsCountSecurity(ticker, count);
+    }
+  }
+}
+
+export async function insertHoldingsCountSecurity(ticker, count) {
+  if (!ticker || !count) {
+    return;
+  }
+
+  let query = {
+    text: "SELECT * FROM securities WHERE ticker = $1",
+    values: [ticker],
+  };
+  let result = await db(query);
+
+  if (result.length > 0) {
+    let query = {
+      text:
+        "UPDATE securities SET institutional_holdings_count = $2 WHERE ticker = $1",
+      values: [ticker, count],
     };
     await db(query);
   }

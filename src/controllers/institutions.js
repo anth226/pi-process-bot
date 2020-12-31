@@ -1,5 +1,6 @@
 import db from "../db";
 import * as titans from "./titans";
+import * as securities from "./securities";
 
 import * as queue from "../queue";
 
@@ -155,6 +156,40 @@ export async function getInstitutionsHoldings(cik) {
     return filtered;
   }
   return null;
+}
+
+export async function getInstitutionHoldingsCount() {
+  let holdingsCount = new Map();
+  let ints = await db(`
+    SELECT *
+    FROM institution_holdings
+    WHERE json_holdings IS NOT NULL
+    ORDER BY id DESC
+  `);
+  if (ints.length > 0) {
+    for (let i in ints) {
+      //console.log("holdings[" + i + "]", holdings[i]);
+      if (ints[i].json_holdings) {
+        let holdings = ints[i].json_holdings;
+        for (let j in holdings) {
+          let ticker = holdings[j].company.ticker;
+          let sharesHeld = holdings[j].shares_held;
+          if (sharesHeld && sharesHeld > 0) {
+            if (holdingsCount.has(ticker)) {
+              let count = holdingsCount.get(ticker);
+              count++;
+              holdingsCount.set(ticker, count);
+            } else {
+              holdingsCount.set(ticker, 1);
+            }
+            // console.log("ticker:", ticker);
+            // console.log("count:", holdingsCount.get(ticker));
+          }
+        }
+      }
+    }
+    return holdingsCount;
+  }
 }
 
 export async function evaluateTop10() {
