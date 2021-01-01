@@ -680,14 +680,9 @@ export async function calculateHoldingPrice(holding) {
 }
 
 export async function getTitanSnapshot(id) {
-  let tickerList = [];
   let data = await getTitanHoldings(id);
   if (!data) {
     return null;
-  }
-  for (let i in data) {
-    let ticker = data[i].company.ticker;
-    tickerList.push(ticker);
   }
 
   let topPerf = await getTitanTopHolding(
@@ -712,42 +707,65 @@ export async function getTitanSnapshot(id) {
   // console.log("uncommon", uncommon);
   // console.log("largest", largest);
 
-  if (topPerf && common && uncommon) {
+  if (topPerf && common && uncommon && largest) {
     let topPerfPrice = await calculateHoldingPrice(topPerf);
     let commonPrice = await calculateHoldingPrice(common);
     let uncommonPrice = await calculateHoldingPrice(uncommon);
     let largestPrice = await calculateHoldingPrice(largest);
+    let topPerfSec = await securities.getSecurityByTicker(
+      topPerf.company.ticker
+    );
+    let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+    let uncommonSec = await securities.getSecurityByTicker(
+      uncommon.company.ticker
+    );
+    let largestSec = await securities.getSecurityByTicker(
+      largest.company.ticker
+    );
 
     // console.log("topPerfPrice", topPerfPrice);
     // console.log("commonPrice", commonPrice);
     // console.log("uncommonPrice", uncommonPrice);
     // console.log("largestPrice", largestPrice);
 
-    if (topPerfPrice && commonPrice && uncommonPrice && largestPrice) {
+    if (
+      topPerfPrice &&
+      commonPrice &&
+      uncommonPrice &&
+      largestPrice &&
+      topPerfSec &&
+      commonSec &&
+      uncommonSec &&
+      largestSec
+    ) {
       return {
         top_performing: {
           ticker: topPerf.company.ticker,
           name: topPerf.company.name,
           open_date: topPerf.as_of_date,
           open_price: topPerfPrice,
+          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
         },
         common: {
           ticker: common.company.ticker,
           name: common.company.name,
           open_date: common.as_of_date,
           open_price: commonPrice,
+          price_percent_change_1_year: commonSec.price_percent_change_1_year,
         },
         uncommon: {
           ticker: uncommon.company.ticker,
           name: uncommon.company.name,
           open_date: uncommon.as_of_date,
           open_price: uncommonPrice,
+          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
         },
         largest: {
           ticker: largest.company.ticker,
           name: largest.company.name,
           open_date: largest.as_of_date,
           open_price: largestPrice,
+          price_percent_change_1_year: largestSec.price_percent_change_1_year,
         },
       };
     }
