@@ -1068,7 +1068,7 @@ export async function getStrongBuys(list) {
 
 export async function getAggRatings() {
   let comps = [];
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_total&order_direction=desc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
   const body = {
     operator: "AND",
     clauses: [
@@ -1077,6 +1077,11 @@ export async function getAggRatings() {
         operator: "gt",
         value: "0",
       },
+      {
+        field: "zacks_analyst_rating_total",
+        operator: "gt",
+        value: "0"
+      }
     ],
   };
 

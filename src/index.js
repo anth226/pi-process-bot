@@ -173,6 +173,21 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
+// /process_snapshots_titans?token=XXX
+app.get("/process_snapshots_titans", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await titans.processTitansSnapshots();
+  res.send("ok");
+});
+
 // /billionaires/:id/generate_summary?token=XXX
 app.get("/billionaires/:id/generate_summary", async (req, res) => {
   if (process.env.DISABLE_CRON == "true") {
@@ -235,6 +250,23 @@ app.get("/fill_earnings_securities", async (req, res) => {
   }
   await earnings.fillEarnings();
   res.send("ok");
+});
+
+// /fill_holdings_count_securities?token=XXX
+app.get("/fill_holdings_count_securities", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await securities.fillHoldingsCountSecurities();
+  setTimeout(function () {
+    res.send("ok");
+  }, 30000);
 });
 
 /* Earnings */
@@ -554,4 +586,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_16.start();
   queue.consumer_17.start();
   queue.consumer_18.start();
+  queue.consumer_19.start();
 });
