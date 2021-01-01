@@ -252,6 +252,21 @@ app.get("/fill_earnings_securities", async (req, res) => {
   res.send("ok");
 });
 
+// /fill_holdings_count_securities?token=XXX
+app.get("/fill_holdings_count_securities", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await securities.fillHoldingsCountSecurities();
+  res.send("ok");
+});
+
 /* Earnings */
 
 // /update_eps_earnings?token=XXX
