@@ -5,6 +5,8 @@ import intrinioSDK from "intrinio-sdk";
 
 import * as companies from "./companies";
 import * as institutions from "./institutions";
+import * as quodd from "./quodd";
+import * as widgets from "./widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
 
 // init intrinio
@@ -227,7 +229,10 @@ export async function getSecurityPerformance(ticker) {
   let year = new Date(est);
   year.setDate(est.getDate() - 365);
   year = year.toISOString().slice(0, 10);
+  let estTimestamp = est.toISOString();
   est = est.toISOString().slice(0, 10);
+
+  let tPrice = await widgets.getPrice(ticker);
 
   let todayPrice = await getClosestPriceDate(est, dailyData);
   let weekPrice = await getClosestPriceDate(week, dailyData);
@@ -244,19 +249,28 @@ export async function getSecurityPerformance(ticker) {
     threemonthPrice
   ) {
     let latest = yearPrice ? yearPrice : data.daily.pop();
+    let earliest;
+
+    if (tPrice) {
+      earliest = {
+        date: estTimestamp,
+        value: tPrice,
+      };
+    } else {
+      earliest = todayPrice;
+    }
 
     let perf = {
-      price_percent_change_7_days:
-        (todayPrice.value / weekPrice.value - 1) * 100,
+      price_percent_change_7_days: (earliest.value / weekPrice.value - 1) * 100,
       price_percent_change_14_days:
-        (todayPrice.value / twoweekPrice.value - 1) * 100,
+        (earliest.value / twoweekPrice.value - 1) * 100,
       price_percent_change_30_days:
-        (todayPrice.value / monthPrice.value - 1) * 100,
+        (earliest.value / monthPrice.value - 1) * 100,
       price_percent_change_3_months:
-        (todayPrice.value / threemonthPrice.value - 1) * 100,
-      price_percent_change_1_year: (todayPrice.value / latest.value - 1) * 100,
+        (earliest.value / threemonthPrice.value - 1) * 100,
+      price_percent_change_1_year: (earliest.value / latest.value - 1) * 100,
       values: {
-        today: todayPrice,
+        today: earliest,
         week: weekPrice,
         twoweek: twoweekPrice,
         month: monthPrice,
@@ -264,6 +278,8 @@ export async function getSecurityPerformance(ticker) {
         year: latest,
       },
     };
+    // add to redis
+    await quodd.setPerfCache(ticker, perf);
     return perf;
   }
   return null;
