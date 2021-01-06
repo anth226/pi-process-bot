@@ -232,7 +232,7 @@ export async function getSecurityPerformance(ticker) {
   let estTimestamp = est.toISOString();
   est = est.toISOString().slice(0, 10);
 
-  let tPrice = await widgets.getPrice(ticker);
+  //let tPrice = await widgets.getPrice(ticker);
 
   let todayPrice = await getClosestPriceDate(est, dailyData);
   let weekPrice = await getClosestPriceDate(week, dailyData);
@@ -249,28 +249,29 @@ export async function getSecurityPerformance(ticker) {
     threemonthPrice
   ) {
     let latest = yearPrice ? yearPrice : data.daily.pop();
-    let earliest;
+    // let earliest;
 
-    if (tPrice) {
-      earliest = {
-        date: estTimestamp,
-        value: tPrice,
-      };
-    } else {
-      earliest = todayPrice;
-    }
+    // if (tPrice) {
+    //   earliest = {
+    //     date: estTimestamp,
+    //     value: tPrice,
+    //   };
+    // } else {
+    //   earliest = todayPrice;
+    // }
 
     let perf = {
-      price_percent_change_7_days: (earliest.value / weekPrice.value - 1) * 100,
+      price_percent_change_7_days:
+        (todayPrice.value / weekPrice.value - 1) * 100,
       price_percent_change_14_days:
-        (earliest.value / twoweekPrice.value - 1) * 100,
+        (todayPrice.value / twoweekPrice.value - 1) * 100,
       price_percent_change_30_days:
-        (earliest.value / monthPrice.value - 1) * 100,
+        (todayPrice.value / monthPrice.value - 1) * 100,
       price_percent_change_3_months:
-        (earliest.value / threemonthPrice.value - 1) * 100,
-      price_percent_change_1_year: (earliest.value / latest.value - 1) * 100,
+        (todayPrice.value / threemonthPrice.value - 1) * 100,
+      price_percent_change_1_year: (todayPrice.value / latest.value - 1) * 100,
       values: {
-        today: earliest,
+        today: todayPrice,
         week: weekPrice,
         twoweek: twoweekPrice,
         month: monthPrice,
