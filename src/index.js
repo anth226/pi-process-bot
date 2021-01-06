@@ -263,10 +263,12 @@ app.get("/fill_holdings_count_securities", async (req, res) => {
     res.send("fail");
     return;
   }
-  await securities.fillHoldingsCountSecurities();
-  setTimeout(function () {
-    res.send("ok");
-  }, 30000);
+  res.send("no");
+  //seperate it out to just do one at a time
+  // await securities.fillHoldingsCountSecurities();
+  // setTimeout(function () {
+  //   res.send("ok");
+  // }, 30000);
 });
 
 /* Earnings */
