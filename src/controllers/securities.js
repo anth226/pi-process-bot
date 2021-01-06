@@ -232,7 +232,7 @@ export async function getSecurityPerformance(ticker) {
   let estTimestamp = est.toISOString();
   est = est.toISOString().slice(0, 10);
 
-  //let tPrice = await widgets.getPrice(ticker);
+  let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
 
   let todayPrice = await getClosestPriceDate(est, dailyData);
   let weekPrice = await getClosestPriceDate(week, dailyData);
@@ -246,32 +246,33 @@ export async function getSecurityPerformance(ticker) {
     weekPrice &&
     twoweekPrice &&
     monthPrice &&
-    threemonthPrice
+    threemonthPrice &&
+    intrinioResponse
   ) {
+    let earliest;
     let latest = yearPrice ? yearPrice : data.daily.pop();
-    // let earliest;
+    let open_price = intrinioResponse.open_price;
 
-    // if (tPrice) {
-    //   earliest = {
-    //     date: estTimestamp,
-    //     value: tPrice,
-    //   };
-    // } else {
-    //   earliest = todayPrice;
-    // }
+    if (open_price) {
+      earliest = {
+        date: estTimestamp,
+        value: open_price,
+      };
+    } else {
+      earliest = todayPrice;
+    }
 
     let perf = {
-      price_percent_change_7_days:
-        (todayPrice.value / weekPrice.value - 1) * 100,
+      price_percent_change_7_days: (earliest.value / weekPrice.value - 1) * 100,
       price_percent_change_14_days:
-        (todayPrice.value / twoweekPrice.value - 1) * 100,
+        (earliest.value / twoweekPrice.value - 1) * 100,
       price_percent_change_30_days:
-        (todayPrice.value / monthPrice.value - 1) * 100,
+        (earliest.value / monthPrice.value - 1) * 100,
       price_percent_change_3_months:
-        (todayPrice.value / threemonthPrice.value - 1) * 100,
-      price_percent_change_1_year: (todayPrice.value / latest.value - 1) * 100,
+        (earliest.value / threemonthPrice.value - 1) * 100,
+      price_percent_change_1_year: (earliest.value / latest.value - 1) * 100,
       values: {
-        today: todayPrice,
+        today: earliest,
         week: weekPrice,
         twoweek: twoweekPrice,
         month: monthPrice,
