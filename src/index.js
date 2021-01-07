@@ -360,7 +360,6 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
-  console.log("in endpoint call");
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;
@@ -374,6 +373,8 @@ app.get("/widgets/:id/process_input", async (req, res) => {
   res.send("ok");
 });
 
+/* User Portfolios */
+
 // /update_user_portfolios?token=XXX
 app.get("/update_user_portfolios", async (req, res) => {
   if (process.env.DISABLE_CRON == "true") {
@@ -386,6 +387,21 @@ app.get("/update_user_portfolios", async (req, res) => {
     return;
   }
   await userPortfolios.fillUsersPortPerfs();
+  res.send("ok");
+});
+
+// /user_portfolios/:id/update?token=XXX
+app.get("/user_portfolios/:id/update", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await userPortfolios.fillUserPortPerf(req.params.id);
   res.send("ok");
 });
 
