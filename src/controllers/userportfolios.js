@@ -169,6 +169,10 @@ export async function fillUsersPortPerfs() {
   }
 }
 
+export async function fillUserPortPerf(portId) {
+  await queue.publish_ProcessPerformances_UserPortfolios(portId);
+}
+
 export async function getStocksHistorical(priceWidgets) {
   // dont forget missing records from sec table, need backfill during widget price pinning
   //
