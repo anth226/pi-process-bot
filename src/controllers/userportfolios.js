@@ -335,9 +335,6 @@ export async function insertUserPortPerf(
   stocks,
   titans
 ) {
-  if (!stocksHistorical || !stocks || !titans) {
-    return;
-  }
   //update
   let query = {
     text:
