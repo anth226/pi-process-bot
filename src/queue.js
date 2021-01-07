@@ -12,6 +12,7 @@ import * as widgets from "./controllers/widgets";
 import * as etfs from "./controllers/etfs";
 import * as nlp from "./controllers/nlp";
 import * as earnings from "./controllers/earnings";
+import * as userPortfolios from "./controllers/userportfolios";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -671,6 +672,36 @@ export function publish_ProcessSnapshot_Titans(id) {
   });
 }
 
+export function publish_ProcessPerformances_UserPortfolios(id) {
+  let queueUrl = process.env.AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "Number",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
@@ -1179,15 +1210,10 @@ export const consumer_19 = Consumer.create({
     console.log(sqsMessage);
 
     let strId = sqsMessage.id;
-    console.log("strId", strId);
 
     let id = parseInt(strId);
 
-    console.log("id", id);
-
     let snapshot = await titans.getTitanSnapshot(id);
-
-    console.log("snapshot", snapshot);
 
     if (snapshot) {
       let json = JSON.stringify(snapshot);
@@ -1201,5 +1227,44 @@ consumer_19.on("error", (err) => {
 });
 
 consumer_19.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES
+export const consumer_20 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let portId = sqsMessage.id;
+
+    let userPriceWidgets = await widgets.getLocalPriceWidgetsByPortId(portId);
+
+    let stocksHistorical = await userPortfolios.getStocksHistorical(
+      userPriceWidgets
+    );
+
+    let stocks = await userPortfolios.getStocks(portId);
+
+    let titans = await userPortfolios.getTitans(portId);
+
+    if (stocksHistorical && stocks && titans) {
+      await userPortfolios.insertUserPortPerf(
+        portId,
+        stocksHistorical,
+        stocks,
+        titans
+      );
+    }
+  },
+});
+
+consumer_20.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_20.on("processing_error", (err) => {
   console.error(err.message);
 });
