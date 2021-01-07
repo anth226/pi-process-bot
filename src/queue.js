@@ -1250,14 +1250,12 @@ export const consumer_20 = Consumer.create({
 
     let titans = await userPortfolios.getTitans(portId);
 
-    if (stocksHistorical && stocks && titans) {
-      await userPortfolios.insertUserPortPerf(
-        portId,
-        stocksHistorical,
-        stocks,
-        titans
-      );
-    }
+    await userPortfolios.insertUserPortPerf(
+      portId,
+      stocksHistorical,
+      stocks,
+      titans
+    );
   },
 });
 
