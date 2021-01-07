@@ -84,6 +84,18 @@ export async function getLocalPriceWidgets() {
   return result;
 }
 
+export async function getLocalPriceWidgetsByPortId(portId) {
+  let result = await db(`
+    SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
+    FROM widget_instances
+    JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
+    JOIN widgets ON widgets.id = widget_instances.widget_id
+    WHERE widget_instances.dashboard_id = ${portId} AND widgets.type in ('ETFPrice', 'MutualFundPrice', 'CompanyPrice')
+  `);
+
+  return result;
+}
+
 export async function getLocalPerfomanceWidgetForDashboard(dashboard_id) {
   let result = await db(`
   SELECT widget_instances.*, widget_data.*, widgets.*, widget_instances.id AS widget_instance_id
@@ -91,18 +103,6 @@ export async function getLocalPerfomanceWidgetForDashboard(dashboard_id) {
   JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
   JOIN widgets ON widgets.id = widget_instances.widget_id
   WHERE widget_instances.dashboard_id = ${dashboard_id} AND widgets.type = 'UsersPerformance'
-    `);
-
-  return result;
-}
-
-export async function getTitansFollowed(dashboard_id) {
-  let result = await db(`
-    SELECT bw.titan_id, d.id AS dashboard_id, b.uri
-    FROM billionaire_watchlists AS bw
-    JOIN dashboards AS d ON bw.user_id = d.user_id
-    JOIN billionaires AS b ON b.id = bw.titan_id
-    WHERE d.id = ${dashboard_id}
     `);
 
   return result;
@@ -125,27 +125,6 @@ export async function getWidget(widgetInstanceId) {
     JOIN widget_data ON widget_data.id = widget_instances.widget_data_id 
     JOIN widgets ON widgets.id = widget_instances.widget_id
     WHERE widget_instances.id = ${widgetInstanceId}
-  `);
-
-  return result;
-}
-
-export async function getPortfolioByDashboardID(dashbardId) {
-  let dashbard_id = parseInt(dashbardId);
-  let result = await db(`
-    SELECT *
-    FROM portfolios
-    WHERE dashboard_id = ${dashbard_id}
-  `);
-
-  return result[0];
-}
-
-export async function getPortfolioHistory(portfolioId) {
-  let result = await db(`
-    SELECT *
-    FROM portfolio_histories
-    WHERE portfolio_id = ${portfolioId}
   `);
 
   return result;
@@ -1080,8 +1059,8 @@ export async function getAggRatings() {
       {
         field: "zacks_analyst_rating_total",
         operator: "gt",
-        value: "0"
-      }
+        value: "0",
+      },
     ],
   };
 

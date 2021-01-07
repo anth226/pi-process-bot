@@ -17,6 +17,7 @@ import * as mutualfunds from "./controllers/mutualfunds";
 import * as etfs from "./controllers/etfs";
 import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
+import * as userPortfolios from "./controllers/userportfolios";
 
 import * as yahoo from "./controllers/yahoo";
 
@@ -384,7 +385,7 @@ app.get("/update_user_portfolios", async (req, res) => {
     res.send("fail");
     return;
   }
-  await widgets.processUsersPortPerf();
+  await userPortfolios.fillUsersPortPerfs();
   res.send("ok");
 });
 
@@ -589,4 +590,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_17.start();
   queue.consumer_18.start();
   queue.consumer_19.start();
+  queue.consumer_20.start();
 });
