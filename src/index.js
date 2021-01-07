@@ -392,6 +392,7 @@ app.get("/update_user_portfolios", async (req, res) => {
 
 // /user_portfolios/:id/update?token=XXX
 app.get("/user_portfolios/:id/update", async (req, res) => {
+  console.log("here");
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;

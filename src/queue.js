@@ -1241,6 +1241,7 @@ export const consumer_20 = Consumer.create({
     let portId = sqsMessage.id;
 
     let userPriceWidgets = await widgets.getLocalPriceWidgetsByPortId(portId);
+    console.log("userPriceWidgets", userPriceWidgets);
 
     let stocksHistorical = await userPortfolios.getStocksHistorical(
       userPriceWidgets
@@ -1249,6 +1250,9 @@ export const consumer_20 = Consumer.create({
     let stocks = await userPortfolios.getStocks(portId);
 
     let titans = await userPortfolios.getTitans(portId);
+    console.log("stocksHistorical", stocksHistorical);
+    console.log("stocks", stocks);
+    console.log("titans", titans);
 
     await userPortfolios.insertUserPortPerf(
       portId,
