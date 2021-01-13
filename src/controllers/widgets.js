@@ -194,14 +194,14 @@ export async function processInput(widgetInstanceId) {
     }
     /*          TITANS */
     //Trending Titans
-    else if (type == "TitansTrending") {
-      let data = await getTrendingTitans();
-      let json = JSON.stringify(data);
+    // else if (type == "TitansTrending") {
+    //   let data = await getTrendingTitans();
+    //   let json = JSON.stringify(data);
 
-      if (data) {
-        output = json;
-      }
-    }
+    //   if (data) {
+    //     output = json;
+    //   }
+    // }
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
@@ -462,10 +462,8 @@ export async function getETFHoldings(ticker, count) {
   let holdings = [];
   let result = await axios
     .get(
-      `${
-        process.env.INTRINIO_BASE_PATH
-      }/etfs/${ticker.toUpperCase()}/holdings?api_key=${
-        process.env.INTRINIO_API_KEY
+      `${process.env.INTRINIO_BASE_PATH
+      }/etfs/${ticker.toUpperCase()}/holdings?api_key=${process.env.INTRINIO_API_KEY
       }`
     )
     .then(function (res) {
