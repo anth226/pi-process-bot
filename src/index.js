@@ -22,7 +22,6 @@ import * as userPortfolios from "./controllers/userportfolios";
 import * as yahoo from "./controllers/yahoo";
 
 import * as queue from "./queue";
-import './schedule';
 //import * as queue2 from "./queue2";
 import redis from "./redis";
 

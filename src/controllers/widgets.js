@@ -194,14 +194,14 @@ export async function processInput(widgetInstanceId) {
     }
     /*          TITANS */
     //Trending Titans
-    // else if (type == "TitansTrending") {
-    //   let data = await getTrendingTitans();
-    //   let json = JSON.stringify(data);
+    else if (type == "TitansTrending") {
+      let data = await updateTrendingTitans();
+      let json = JSON.stringify(data);
 
-    //   if (data) {
-    //     output = json;
-    //   }
-    // }
+      if (data) {
+        output = json;
+      }
+    }
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
@@ -1561,4 +1561,43 @@ export async function processUsersPortPerf() {
       console.log("widget added and output updated");
     }
   });
+}
+
+const updateTrendingTitans = async () => {
+  const start = moment().startOf('day').format()
+  const end = moment().endOf('day').format()
+
+  const groupByTitans = await db1(`
+    SELECT titan_uri FROM titans t2 WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri
+  `);
+
+  let titans = []
+
+  for (const titan of groupByTitans) {
+    const { titan_uri } = titan
+    const titanCount = await db1(`
+      SELECT count(*) FROM titans t2 WHERE titan_uri = '${titan_uri}' and created_at BETWEEN '${start}' AND '${end}'
+    `);
+    const titanData = await db(`
+      SELECT * FROM billionaires WHERE uri = '${titan_uri}'
+    `);
+
+    if (titanData && titanData.length > 0) {
+      titans.push({
+        id: titanData[0].id,
+        name: titanData[0].name,
+        photo_url: titanData[0].photo_url,
+        uri: titanData[0].uri,
+        views: titanCount[0].count
+      })
+    }
+  }
+
+
+  titans = orderBy(titans, 'views', 'desc');
+  if (titans.length > 25) {
+    titans.length = 25
+  }
+
+  return titans;
 }
