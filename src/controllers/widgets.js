@@ -12,6 +12,8 @@ import * as securities from "./securities";
 import * as earnings from "./earnings";
 import * as quodd from "./quodd";
 
+import { orderBy } from "lodash";
+
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
   process.env.INTRINIO_API_KEY;
@@ -1045,19 +1047,19 @@ export async function getStrongBuys(list) {
 
 export async function getAggRatings() {
   let comps = [];
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_total&order_direction=desc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
   const body = {
     operator: "AND",
     clauses: [
       {
         field: "zacks_analyst_rating_mean",
         operator: "gt",
-        value: "0",
+        value: "2",
       },
       {
         field: "zacks_analyst_rating_total",
         operator: "gt",
-        value: "0",
+        value: "2",
       },
     ],
   };
@@ -1065,7 +1067,7 @@ export async function getAggRatings() {
   let res = axios
     .post(url, body)
     .then(function (data) {
-      //console.log(data);
+      // console.log(data);
       return data;
     })
     .catch(function (err) {
@@ -1074,6 +1076,9 @@ export async function getAggRatings() {
     });
 
   let data = await res.then((data) => data.data);
+
+  data = orderBy(data, ["data[0].number_value", "data[1].number_value"], ["asc", "desc"]);
+
   let rank = 0;
   for (let i in data) {
     rank += 1;
