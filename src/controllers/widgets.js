@@ -198,7 +198,9 @@ export async function processInput(widgetInstanceId) {
     //Trending Titans
     else if (type == "TitansTrending") {
       let data = await updateTrendingTitans();
+      console.log("data", data);
       let json = JSON.stringify(data);
+      console.log("json", json);
 
       if (data) {
         output = json;
@@ -426,6 +428,7 @@ export async function processInput(widgetInstanceId) {
     }
 
     if (output) {
+      console.log("here");
       let query = {
         text:
           "UPDATE widget_data SET output = $2, updated_at = now() WHERE id = $1",
@@ -464,8 +467,10 @@ export async function getETFHoldings(ticker, count) {
   let holdings = [];
   let result = await axios
     .get(
-      `${process.env.INTRINIO_BASE_PATH
-      }/etfs/${ticker.toUpperCase()}/holdings?api_key=${process.env.INTRINIO_API_KEY
+      `${
+        process.env.INTRINIO_BASE_PATH
+      }/etfs/${ticker.toUpperCase()}/holdings?api_key=${
+        process.env.INTRINIO_API_KEY
       }`
     )
     .then(function (res) {
@@ -1047,7 +1052,7 @@ export async function getStrongBuys(list) {
 
 export async function getAggRatings() {
   let comps = [];
-  let aMonthAgo = moment().subtract(1, 'months').format('YYYY-MM-DD');
+  let aMonthAgo = moment().subtract(1, "months").format("YYYY-MM-DD");
   const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
   const body = {
     operator: "AND",
@@ -1065,8 +1070,8 @@ export async function getAggRatings() {
       {
         field: "price_date",
         operator: "gt",
-        value: aMonthAgo
-      }
+        value: aMonthAgo,
+      },
     ],
   };
 
@@ -1083,7 +1088,11 @@ export async function getAggRatings() {
 
   let data = await res.then((data) => data.data);
 
-  data = orderBy(data, ["data[0].number_value", "data[1].number_value"], ["asc", "desc"]);
+  data = orderBy(
+    data,
+    ["data[0].number_value", "data[1].number_value"],
+    ["asc", "desc"]
+  );
 
   let rank = 0;
   for (let i in data) {
@@ -1575,17 +1584,17 @@ export async function processUsersPortPerf() {
 }
 
 const updateTrendingTitans = async () => {
-  const start = moment().startOf('day').format()
-  const end = moment().endOf('day').format()
+  const start = moment().startOf("day").format();
+  const end = moment().endOf("day").format();
 
   const groupByTitans = await db1(`
     SELECT titan_uri FROM titans t2 WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri
   `);
 
-  let titans = []
+  let titans = [];
 
   for (const titan of groupByTitans) {
-    const { titan_uri } = titan
+    const { titan_uri } = titan;
     const titanCount = await db1(`
       SELECT count(*) FROM titans t2 WHERE titan_uri = '${titan_uri}' and created_at BETWEEN '${start}' AND '${end}'
     `);
@@ -1599,16 +1608,15 @@ const updateTrendingTitans = async () => {
         name: titanData[0].name,
         photo_url: titanData[0].photo_url,
         uri: titanData[0].uri,
-        views: titanCount[0].count
-      })
+        views: titanCount[0].count,
+      });
     }
   }
 
-
-  titans = orderBy(titans, 'views', 'desc');
+  titans = orderBy(titans, "views", "desc");
   if (titans.length > 25) {
-    titans.length = 25
+    titans.length = 25;
   }
 
   return titans;
-}
+};
