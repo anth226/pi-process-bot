@@ -2,6 +2,7 @@ import db from "../db";
 import axios from "axios";
 import cheerio from "cheerio";
 import intrinioSDK from "intrinio-sdk";
+import moment from "moment";
 import * as getSecurityData from "./intrinio/get_security_data";
 import * as queue from "../queue";
 import * as companies from "./companies";
