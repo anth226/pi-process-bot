@@ -10,6 +10,8 @@ import { orderBy, find, sumBy } from "lodash";
 import redis, { KEY_FORBES_TITANS } from "../redis";
 import { nullFormatter } from "../components/common/Table/helpers";
 import * as performances from "./performances";
+import * as securities from "./securities";
+import * as institutions from "./institutions";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
@@ -592,6 +594,216 @@ export async function processHoldingsPerformanceAndSummary(id) {
           }
         }
       }
+    }
+  }
+}
+
+export async function getTitanLargestHolding(id) {
+  let holdingList = [];
+  let data = await getTitanHoldings(id);
+  let newestDate = data[0].as_of_date;
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    let openDate = data[i].as_of_date;
+    let marketValue = data[i].market_value;
+    if (ticker && openDate == newestDate && marketValue && marketValue > 0) {
+      holdingList.push(data[i]);
+    }
+  }
+  holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
+  let topStock = holdingList.pop();
+  if (topStock) {
+    return topStock;
+  }
+}
+
+export async function getTitanTopHolding(id, sort, direction) {
+  let tickerList = [];
+  let data = await getTitanHoldings(id);
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    tickerList.push(ticker);
+  }
+  let tickers = await tickerList.map((x) => "'" + x + "'").toString();
+  let secs = await securities.getSecuritiesByTickers(tickers);
+  if (direction == "asc") {
+    secs.sort((a, b) => a[sort] - b[sort]);
+  } else {
+    secs.sort((a, b) => b[sort] - a[sort]);
+  }
+  let topStock = secs.pop();
+  if (topStock) {
+    let topTicker = topStock.ticker;
+    for (let i in data) {
+      let ticker = data[i].company.ticker;
+      if (topTicker == ticker) {
+        return data[i];
+      }
+    }
+  }
+}
+
+export async function getTitanHoldings(titanId) {
+  let primaryCik;
+  console.log("titanId", titanId);
+  let titan = await getBillionaireCiks(titanId);
+  console.log("titan", titan);
+  if (titan.length > 0) {
+    let ciks = titan[0].ciks;
+    for (let i in ciks) {
+      let cik = ciks[i].cik;
+      let isPrimary = ciks[i].is_primary;
+      if (cik != "0000000000" && isPrimary) {
+        primaryCik = cik;
+      }
+    }
+  }
+  console.log("primaryCik", primaryCik);
+  if (primaryCik) {
+    //get holds from intrinio as backup
+    //https://api-v2.intrinio.com/zacks/institutional_holdings?api_key=OjljMjViZjQzNWU4NGExZWZlZTFmNTY4ZDU5ZmI5ZDI0&owner_cik=0001061165
+    //need to account for next page batches
+    let holds = await institutions.getInstitutionsHoldings(primaryCik);
+    console.log("holds", holds);
+    if (holds && holds.length > 0) {
+      return holds;
+    }
+  }
+}
+
+export async function calculateHoldingPrice(holding) {
+  let shares = holding.shares_held;
+  let marketValue = holding.market_value;
+  if (shares > 0 && marketValue > 0) {
+    return marketValue / shares;
+  }
+}
+
+export async function getTitanSnapshot(id) {
+  let data = await getTitanHoldings(id);
+  if (!data) {
+    return null;
+  }
+
+  let topPerf = await getTitanTopHolding(
+    id,
+    "price_percent_change_1_year",
+    "asc"
+  );
+  let common = await getTitanTopHolding(
+    id,
+    "institutional_holdings_count",
+    "asc"
+  );
+  let uncommon = await getTitanTopHolding(
+    id,
+    "institutional_holdings_count",
+    "desc"
+  );
+  let largest = await getTitanLargestHolding(id);
+
+  // console.log("topPerf", topPerf);
+  // console.log("common", common);
+  // console.log("uncommon", uncommon);
+  // console.log("largest", largest);
+
+  if (topPerf && common && uncommon && largest) {
+    let topPerfPrice = await calculateHoldingPrice(topPerf);
+    let commonPrice = await calculateHoldingPrice(common);
+    let uncommonPrice = await calculateHoldingPrice(uncommon);
+    let largestPrice = await calculateHoldingPrice(largest);
+    let topPerfSec = await securities.getSecurityByTicker(
+      topPerf.company.ticker
+    );
+    let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+    let uncommonSec = await securities.getSecurityByTicker(
+      uncommon.company.ticker
+    );
+    let largestSec = await securities.getSecurityByTicker(
+      largest.company.ticker
+    );
+
+    // console.log("topPerfPrice", topPerfPrice);
+    // console.log("commonPrice", commonPrice);
+    // console.log("uncommonPrice", uncommonPrice);
+    // console.log("largestPrice", largestPrice);
+
+    if (
+      topPerfPrice &&
+      commonPrice &&
+      uncommonPrice &&
+      largestPrice &&
+      topPerfSec &&
+      commonSec &&
+      uncommonSec &&
+      largestSec
+    ) {
+      return {
+        top_performing: {
+          ticker: topPerf.company.ticker,
+          name: topPerf.company.name,
+          open_date: topPerf.as_of_date,
+          open_price: topPerfPrice,
+          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
+        },
+        common: {
+          ticker: common.company.ticker,
+          name: common.company.name,
+          open_date: common.as_of_date,
+          open_price: commonPrice,
+          price_percent_change_1_year: commonSec.price_percent_change_1_year,
+        },
+        uncommon: {
+          ticker: uncommon.company.ticker,
+          name: uncommon.company.name,
+          open_date: uncommon.as_of_date,
+          open_price: uncommonPrice,
+          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+        },
+        largest: {
+          ticker: largest.company.ticker,
+          name: largest.company.name,
+          open_date: largest.as_of_date,
+          open_price: largestPrice,
+          price_percent_change_1_year: largestSec.price_percent_change_1_year,
+        },
+      };
+    }
+  }
+}
+
+export async function insertSnapshotTitan(id, snapshot) {
+  if (!id || !snapshot) {
+    return;
+  }
+
+  console.log("snapshot json insert", snapshot);
+
+  let query = {
+    text: "SELECT * FROM billionaires WHERE id = $1",
+    values: [id],
+  };
+  let result = await db(query);
+
+  console.log("result", result);
+
+  if (result.length > 0) {
+    console.log("in update");
+    let query = {
+      text: "UPDATE billionaires SET json_snapshot = $2 WHERE id = $1",
+      values: [id, snapshot],
+    };
+    await db(query);
+    console.log("updated");
+  }
+}
+
+export async function processTitansSnapshots() {
+  let result = await getBillionaires({ size: 5000 });
+  if (result.length > 0) {
+    for (let i in result) {
+      let id = result[i].id;
+      await queue.publish_ProcessSnapshot_Titans(id);
     }
   }
 }

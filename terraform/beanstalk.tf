@@ -10,6 +10,9 @@ resource "aws_elastic_beanstalk_environment" "process" {
   count = length(local.env)
 
   name                = format("%s-%s-%s", local.env[count.index], local.org, local.name)
+
+  cname_prefix        = format("%s-%s-%s", local.env[count.index], local.org, local.name)
+
   application         = aws_elastic_beanstalk_application.process.name
   tier                = "WebServer"
   solution_stack_name = "64bit Amazon Linux 2 v5.2.3 running Node.js 12"
@@ -40,7 +43,7 @@ resource "aws_elastic_beanstalk_environment" "process" {
   setting {
     namespace = "aws:ec2:instances"
     name      = "InstanceTypes"
-    value     = "t3.micro,t2.micro"
+    value     = "t3.small,t2.small"
   }
   # setting {
   #   namespace = "aws:ec2:instances"
@@ -71,6 +74,25 @@ resource "aws_elastic_beanstalk_environment" "process" {
   #   name      = "Application Healthcheck URL"
   #   value     = "/"
   # }
+
+
+  # loadbalancer
+  setting {
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "EnvironmentType"
+    value     = "LoadBalanced"
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "LoadBalancerType"
+    value     = "application"
+  }
+  setting {
+    namespace = "aws:elasticbeanstalk:environment"
+    name      = "LoadBalancerIsShared"
+    value     = false
+  }
+
 
   # Add environment variables if provided
   dynamic "setting" {

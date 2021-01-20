@@ -11,6 +11,11 @@ export let KEY_FORBES_TITANS = "KEY_FORBES_TITANS";
 
 export let KEY_CHART_DATA = "KEY_CHART_DATA";
 
+//sharedCache keys
+export let CACHED_SYMBOL = "CS";
+export let CACHED_PRICE_REALTIME = "C_R";
+export let CACHED_PRICE_15MIN = "C_15";
+
 function connectDatabase() {
   let credentials = {
     host: process.env.REDIS_HOST,
