@@ -1081,8 +1081,8 @@ export async function getStrongBuys(list) {
     // }
     let perf = await getSecurityPerformance(ticker);
     if (perf) {
-      let perf30Day = perf.price_percent_change_30_days.toFixed(2);
-      delta = perf30Day.toString() + "%";
+      let perf90Day = perf.price_percent_change_3_months.toFixed(2);
+      delta = perf90Day.toString() + "%";
     }
 
     buys.push({
