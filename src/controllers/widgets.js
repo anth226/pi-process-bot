@@ -10,6 +10,7 @@ import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
 import * as securities from "./securities";
 import * as earnings from "./earnings";
+import * as quodd from "./quodd";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
@@ -21,7 +22,7 @@ const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
 const indexAPI = new intrinioSDK.IndexApi();
 
-/* START Scraper */
+/* START API */
 
 const s3AllInsider = `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
@@ -34,54 +35,7 @@ async function getAllInsider() {
   }
 }
 
-export async function getSecurityLastPrice(symbol) {
-  let lastPrice = axios
-    .get(
-      `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=iex&api_key=${process.env.INTRINIO_API_KEY}`
-    )
-    .then(function (res) {
-      return res;
-    })
-    .catch(function (err) {
-      return err;
-    });
-
-  let price = await lastPrice.then((data) => data.data);
-
-  if (price) {
-    return price;
-  } else {
-    let backupLastPrice = axios
-      .get(
-        `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=bats_delayed&api_key=${process.env.INTRINIO_API_KEY}`
-      )
-      .then(function (res) {
-        return res;
-      })
-      .catch(function (err) {
-        return err;
-      });
-
-    return backupLastPrice.then((data) => data.data);
-  }
-}
-
-// export async function getSecurityNameFromIntrinio(ticker) {
-//   try {
-//     let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
-
-//     let res = await axios.get(url);
-
-//     if (res.security && res.security.name) {
-//       let name = res.security.name;
-//       return name;
-//     }
-//   } catch (e) {
-//     console.error(e);
-//   }
-// }
-
-/* END Scraper */
+/* END API */
 
 export async function getWidgets() {
   let result = await db(`
@@ -272,7 +226,6 @@ export async function processInput(widgetInstanceId) {
     /*          COMPANIES */
     //Strong Buys
     else if (type == "CompanyStrongBuys") {
-      console.log("in process type");
       if (params.tickers) {
         let data = await getStrongBuys(params.tickers);
         let json = JSON.stringify(data);
@@ -296,10 +249,11 @@ export async function processInput(widgetInstanceId) {
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
+        let price = await getPrice(ticker);
         let comp = await companies.getCompanyByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
-        let performance = await getSecurityPerformance(ticker);
+        //get perf from db instead
+        let performance = await securities.getSecurityPerformance(ticker);
 
         if (comp && comp.json && comp.json.name) {
           name = comp.json.name;
@@ -383,10 +337,11 @@ export async function processInput(widgetInstanceId) {
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
+        let price = await getPrice(ticker);
         let fund = await mutualfunds.getMutualFundByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
-        let performance = await getSecurityPerformance(ticker);
+        //get perf from db instead
+        let performance = await securities.getSecurityPerformance(ticker);
 
         if (fund && fund.json && fund.json.name) {
           name = fund.json.name;
@@ -414,10 +369,11 @@ export async function processInput(widgetInstanceId) {
       if (params.ticker) {
         let name;
         let ticker = params.ticker;
-        let price = await getCompanyPrice(ticker);
+        let price = await getPrice(ticker);
         let etf = await etfs.getETFByTicker(ticker);
         let metrics = await companies.getCompanyMetrics(ticker);
-        let performance = await getSecurityPerformance(ticker);
+        //get perf from db instead
+        let performance = await securities.getSecurityPerformance(ticker);
         let topHoldings = await getETFHoldings(ticker, 10);
 
         if (etf && etf.json && etf.json.name) {
@@ -850,8 +806,8 @@ export async function getInsidersNMovers(topNum) {
   return compsSorted;
 }
 
-export async function getCompanyPrice(ticker) {
-  let data = await getSecurityLastPrice(ticker);
+export async function getPrice(ticker) {
+  let data = await quodd.getLastPrice(ticker);
   if (data && data.last_price) {
     return data.last_price;
   }
@@ -1069,20 +1025,32 @@ export async function getStrongBuys(list) {
 
     if (company && company.json) {
       name = company.json.name;
+    } else {
+      let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+      if (sec) {
+        name = sec.name;
+        if (!compTicker) {
+          compTicker = sec.composite_ticker;
+        }
+      }
     }
     if (company && company.logo_url) {
       logo_url = company.logo_url;
     }
-    let price = await getCompanyPrice(ticker);
+    let price = await getPrice(ticker);
     // let metrics = await companies.getCompanyMetrics(ticker);
     // if (metrics) {
     //   //delta = metrics.Change;
     //   delta = metrics["Perf Month"];
     // }
-    let perf = await getSecurityPerformance(ticker);
+    //
+    //
+    //get perf from db instead
+    let perf = await securities.getSecurityPerformance(ticker);
     if (perf) {
       let perf90Day = perf.price_percent_change_3_months.toFixed(2);
-      delta = perf90Day.toString() + "%";
+      let perfString = perf90Day.toString();
+      delta = perfString + "%";
     }
 
     buys.push({
@@ -1100,7 +1068,7 @@ export async function getStrongBuys(list) {
 
 export async function getAggRatings() {
   let comps = [];
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_total&order_direction=desc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
   const body = {
     operator: "AND",
     clauses: [
@@ -1109,6 +1077,11 @@ export async function getAggRatings() {
         operator: "gt",
         value: "0",
       },
+      {
+        field: "zacks_analyst_rating_total",
+        operator: "gt",
+        value: "0"
+      }
     ],
   };
 
@@ -1227,7 +1200,7 @@ export async function getTopStocks() {
     let ticker = comps[i];
     let comp = await companies.getCompanyByTicker(ticker);
     let sec = await securities.getSecurityByTicker(ticker);
-    let price = await getCompanyPrice(ticker);
+    let price = await getPrice(ticker);
     let comp_metrics = await companies.getCompanyMetrics(ticker);
 
     if (
@@ -1293,88 +1266,6 @@ export async function getEarningsCalendar() {
     return aa < bb ? -1 : aa > bb ? 1 : 0;
   });
   return sorted;
-}
-
-export async function getClosestPriceDate(ticker, date) {
-  let data = await getSecurityData.getChartData(securityAPI, ticker);
-  let daily = data.daily;
-
-  for (let i in daily) {
-    let apiDate = daily[i].date.toString();
-    let pricedate = apiDate.slice(0, 10);
-    if (pricedate <= date && daily[i].value) {
-      return daily[i];
-    }
-  }
-}
-
-export async function getSecurityPerformance(ticker) {
-  let today = new Date();
-  let est = new Date(today);
-  est.setHours(est.getHours() - 5);
-  let week = new Date(est);
-  week.setDate(est.getDate() - 7);
-  week = week.toISOString().slice(0, 10);
-  let twoweek = new Date(est);
-  twoweek.setDate(est.getDate() - 14);
-  twoweek = twoweek.toISOString().slice(0, 10);
-  let month = new Date(est);
-  month.setDate(est.getDate() - 30);
-  month = month.toISOString().slice(0, 10);
-  let threemonth = new Date(est);
-  threemonth.setDate(est.getDate() - 90);
-  threemonth = threemonth.toISOString().slice(0, 10);
-  est = est.toISOString().slice(0, 10);
-
-  // console.log("est", est);
-  // console.log("week", week);
-  // console.log("twoweek", twoweek);
-  // console.log("month", month);
-  // console.log("threemonth", threemonth);
-
-  let todayPrice = await getClosestPriceDate(ticker, est);
-  let weekPrice = await getClosestPriceDate(ticker, week);
-  let twoweekPrice = await getClosestPriceDate(ticker, twoweek);
-  let monthPrice = await getClosestPriceDate(ticker, month);
-  let threemonthPrice = await getClosestPriceDate(ticker, threemonth);
-
-  // console.log("todayPrice", todayPrice);
-  // console.log("weekPrice", weekPrice);
-  // console.log("twoweekPrice", twoweekPrice);
-  // console.log("monthPrice", monthPrice);
-  // console.log("threemonthPrice", threemonthPrice);
-
-  if (
-    todayPrice &&
-    weekPrice &&
-    twoweekPrice &&
-    monthPrice &&
-    threemonthPrice
-  ) {
-    // let latest = data.daily[87] ? data.daily[87] : data.daily.pop();
-    // let latest_val = latest.value;
-    // let earliest = data.daily[0] ? data.daily[0] : data.daily[1];
-    // let earliest_val = earliest.value;
-    let perf = {
-      price_percent_change_7_days:
-        (todayPrice.value / weekPrice.value - 1) * 100,
-      price_percent_change_14_days:
-        (todayPrice.value / twoweekPrice.value - 1) * 100,
-      price_percent_change_30_days:
-        (todayPrice.value / monthPrice.value - 1) * 100,
-      price_percent_change_3_months:
-        (todayPrice.value / threemonthPrice.value - 1) * 100,
-      values: {
-        today: todayPrice,
-        week: weekPrice,
-        twoweek: twoweekPrice,
-        month: monthPrice,
-        threemonth: threemonthPrice,
-      },
-    };
-    return perf;
-  }
-  return null;
 }
 
 export async function getTitanPerformance(uri) {
@@ -1575,7 +1466,7 @@ export async function processUsersPortPerf() {
             priceChange = close_price - open_price;
             percentChange = (close_price / open_price - 1) * 100;
           } else {
-            let today_price = await getCompanyPrice(ticker);
+            let today_price = await getPrice(ticker);
             priceChange = today_price - open_price;
             percentChange = (today_price / open_price - 1) * 100;
           }
@@ -1596,7 +1487,7 @@ export async function processUsersPortPerf() {
             priceChange = close_price - open_price;
             percentChange = (close_price / open_price - 1) * 100;
           } else {
-            let today_price = await getCompanyPrice(ticker);
+            let today_price = await getPrice(ticker);
             priceChange = today_price - open_price;
             percentChange = (today_price / open_price - 1) * 100;
           }

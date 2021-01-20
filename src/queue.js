@@ -549,14 +549,11 @@ export function publish_ProcessInstitutionalPerformance(cik) {
   });
 }
 
-export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_METRICS;
+export function publish_ProcessPerformances_Securities(ticker) {
+  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES;
 
   let data = {
     ticker,
-    type,
-    cik,
-    name,
   };
 
   let params = {
@@ -564,18 +561,6 @@ export function publish_ProcessMetrics_Securities(ticker, type, cik, name) {
       ticker: {
         DataType: "String",
         StringValue: data.ticker,
-      },
-      type: {
-        DataType: "String",
-        StringValue: data.type,
-      },
-      cik: {
-        DataType: "String",
-        StringValue: data.cik,
-      },
-      name: {
-        DataType: "String",
-        StringValue: data.name,
       },
     },
     MessageBody: JSON.stringify(data),
@@ -642,6 +627,36 @@ export function publish_ProcessEarningsDate_Securities(
     },
     MessageBody: JSON.stringify(data),
     MessageDeduplicationId: `${ticker}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+export function publish_ProcessSnapshot_Titans(id) {
+  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "Number",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
     MessageGroupId: this.constructor.name,
     QueueUrl: queueUrl,
   };
@@ -1026,30 +1041,38 @@ consumer_16.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_SECURITIES_METRICS
+// AWS_SQS_URL_SECURITIES_PERFORMANCES
 export const consumer_17 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_SECURITIES_METRICS,
+  queueUrl: process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES,
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
     console.log(sqsMessage);
 
-    let cik;
-    let metrics = await securities.getMetrics(sqsMessage.ticker);
-
-    if (sqsMessage.cik == "?") {
-      cik = null;
-    } else {
-      cik = sqsMessage.cik;
-    }
-
-    await securities.insertSecurity(
-      metrics,
-      sqsMessage.ticker,
-      sqsMessage.type,
-      cik,
-      sqsMessage.name
+    let performance = await securities.getSecurityPerformance(
+      sqsMessage.ticker
     );
+
+    if (performance) {
+      let perf_7_days = performance.price_percent_change_7_days;
+      let perf_14_days = performance.price_percent_change_14_days;
+      let perf_30_days = performance.price_percent_change_30_days;
+      let perf_3_months = performance.price_percent_change_3_months;
+      let perf_1_year = performance.price_percent_change_1_year;
+      let perf_values = performance.values;
+
+      let jsonPerf = JSON.stringify(perf_values);
+
+      await securities.insertPerformanceSecurity(
+        sqsMessage.ticker,
+        perf_7_days,
+        perf_14_days,
+        perf_30_days,
+        perf_3_months,
+        perf_1_year,
+        jsonPerf
+      );
+    }
   },
 });
 
@@ -1144,5 +1167,39 @@ consumer_18.on("error", (err) => {
 });
 
 consumer_18.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS
+export const consumer_19 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS,
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log(sqsMessage);
+
+    let strId = sqsMessage.id;
+    console.log("strId", strId);
+
+    let id = parseInt(strId);
+
+    console.log("id", id);
+
+    let snapshot = await titans.getTitanSnapshot(id);
+
+    console.log("snapshot", snapshot);
+
+    if (snapshot) {
+      let json = JSON.stringify(snapshot);
+      await titans.insertSnapshotTitan(id, json);
+    }
+  },
+});
+
+consumer_19.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_19.on("processing_error", (err) => {
   console.error(err.message);
 });
