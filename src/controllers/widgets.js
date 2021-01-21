@@ -4,6 +4,8 @@ import axios from "axios";
 import cheerio from "cheerio";
 import intrinioSDK from "intrinio-sdk";
 import moment from "moment";
+import { orderBy } from "lodash";
+
 import * as getSecurityData from "./intrinio/get_security_data";
 import * as queue from "../queue";
 import * as companies from "./companies";
@@ -13,8 +15,6 @@ import * as etfs from "./etfs";
 import * as securities from "./securities";
 import * as earnings from "./earnings";
 import * as quodd from "./quodd";
-
-import { orderBy } from "lodash";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
@@ -200,6 +200,9 @@ export async function processInput(widgetInstanceId) {
     //Trending Titans
     else if (type == "TitansTrending") {
       let data = await updateTrendingTitans();
+      if (data && data.length === 0) {
+        return
+      }
       console.log("data", data);
       let json = JSON.stringify(data);
       console.log("json", json);
@@ -430,7 +433,6 @@ export async function processInput(widgetInstanceId) {
     }
 
     if (output) {
-      console.log("here");
       let query = {
         text:
           "UPDATE widget_data SET output = $2, updated_at = now() WHERE id = $1",
@@ -1586,20 +1588,18 @@ export async function processUsersPortPerf() {
 }
 
 const updateTrendingTitans = async () => {
-  const start = moment().startOf("day").format();
-  const end = moment().endOf("day").format();
+  const start = moment().subtract(7, 'd').format()
+  const end = moment().format()
 
   const groupByTitans = await db1(`
-    SELECT titan_uri FROM titans t2 WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri
+    SELECT titan_uri, count(titan_uri) FROM titans WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri order by COUNT DESC
   `);
 
   let titans = [];
 
   for (const titan of groupByTitans) {
-    const { titan_uri } = titan;
-    const titanCount = await db1(`
-      SELECT count(*) FROM titans t2 WHERE titan_uri = '${titan_uri}' and created_at BETWEEN '${start}' AND '${end}'
-    `);
+    const { titan_uri, count } = titan
+
     const titanData = await db(`
       SELECT * FROM billionaires WHERE uri = '${titan_uri}'
     `);
@@ -1610,12 +1610,11 @@ const updateTrendingTitans = async () => {
         name: titanData[0].name,
         photo_url: titanData[0].photo_url,
         uri: titanData[0].uri,
-        views: titanCount[0].count,
-      });
+        views: count
+      })
     }
   }
 
-  titans = orderBy(titans, "views", "desc");
   if (titans.length > 25) {
     titans.length = 25;
   }
