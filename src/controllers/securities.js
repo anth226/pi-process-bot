@@ -8,6 +8,8 @@ import * as institutions from "./institutions";
 import * as quodd from "./quodd";
 import * as widgets from "./widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
+import moment from "moment";
+import MTZ from "moment-timezone";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
@@ -206,31 +208,45 @@ export async function getClosestPriceDate(date, dailyData) {
 
 export async function getSecurityPerformance(ticker) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
+  
   if (!data || !data.daily || data.daily.length < 1) {
     return;
   }
+
   let dailyData = data.daily;
 
-  let today = new Date();
-  let est = new Date(today);
-  est.setHours(est.getHours() - 5);
-  let week = new Date(est);
-  week.setDate(est.getDate() - 7);
-  week = week.toISOString().slice(0, 10);
-  let twoweek = new Date(est);
-  twoweek.setDate(est.getDate() - 14);
-  twoweek = twoweek.toISOString().slice(0, 10);
-  let month = new Date(est);
-  month.setDate(est.getDate() - 30);
-  month = month.toISOString().slice(0, 10);
-  let threemonth = new Date(est);
-  threemonth.setDate(est.getDate() - 90);
-  threemonth = threemonth.toISOString().slice(0, 10);
-  let year = new Date(est);
-  year.setDate(est.getDate() - 365);
-  year = year.toISOString().slice(0, 10);
-  let estTimestamp = est.toISOString();
-  est = est.toISOString().slice(0, 10);
+  let est = moment
+    .tz("America/New_York")
+    .format("YYYY-MM-DD");
+
+  let week = moment
+    .tz("America/New_York")
+    .subtract(7, 'days')
+    .format("YYYY-MM-DD");
+
+  let twoweek = moment
+    .tz("America/New_York")
+    .subtract(14, 'days')
+    .format("YYYY-MM-DD");
+
+  let month = moment
+    .tz("America/New_York")
+    .subtract(1, 'months')
+    .format("YYYY-MM-DD");
+
+  let threemonth = moment
+    .tz("America/New_York")
+    .subtract(3, 'months')
+    .format("YYYY-MM-DD");
+
+  let year = moment
+    .tz("America/New_York")
+    .subtract(1, 'years')
+    .format("YYYY-MM-DD");
+
+  let estTimestamp = moment
+    .tz("America/New_York")
+    .format("YYYY-MM-DD");
 
   let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
 
