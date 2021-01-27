@@ -429,25 +429,39 @@ export async function getInstitutionSnapshot(id) {
     data
   );
 
+  let uncommon = await getSecuritiesBySort(
+    "institutional_holdings_count",
+    "desc",
+    data
+  );
+
   // console.log("topPerf", topPerf);
   // console.log("common", common);
 
-  if (topPerf && common) {
+  if (topPerf && common && uncommon) {
     let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
     let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
     let commonPrice = await titans.calculateHoldingPrice(common);
     let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+    let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
+    let uncommonSec = await securities.getSecurityByTicker(
+      uncommon.company.ticker
+    );
 
     // console.log("topPerfPrice", topPerfPrice);
     // console.log("topPerfSec", topPerfSec);
     // console.log("commonPrice", commonPrice);
     // console.log("commonSec", commonSec);
+    // console.log("uncommonPrice", uncommonPrice);
+    // console.log("uncommonSec", uncommonSec);
 
     if (
       topPerfPrice &&
       topPerfSec &&
       commonPrice &&
-      commonSec
+      commonSec &&
+      uncommonPrice &&
+      uncommonSec
     ) {
       return {
         top_performing: {
@@ -463,7 +477,14 @@ export async function getInstitutionSnapshot(id) {
           open_date: common.as_of_date,
           open_price: commonPrice,
           price_percent_change_1_year: commonSec.price_percent_change_1_year,
-        }
+        },
+        uncommon: {
+          ticker: uncommon.company.ticker,
+          name: uncommon.company.name,
+          open_date: uncommon.as_of_date,
+          open_price: uncommonPrice,
+          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+        },
       };
     }
   }
