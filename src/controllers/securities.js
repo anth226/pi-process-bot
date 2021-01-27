@@ -196,25 +196,18 @@ export async function getClosestPriceDate(date, dailyData) {
   let reverse = current;
   let checks = 0;
 
-  console.log("date", date);
-
   let itemIndex = dailyData.findIndex((dataPoint) => {
     let dpDate = dataPoint.date;
-    console.log("dpDate", dpDate);
 
     if (typeof dpDate === "string" || dpDate instanceof String) {
       dpDate = dpDate.slice(0, 10);
-      console.log("REDIS");
     } else {
       let strDate = dpDate.toISOString();
-      console.log("NOT REDIS");
       dpDate = strDate.slice(0, 10);
     }
 
     return dpDate === current;
   });
-
-  console.log("itemIndex", itemIndex);
 
   while (itemIndex < 0) {
     if (checks >= 0 && checks < 7) {
@@ -230,10 +223,8 @@ export async function getClosestPriceDate(date, dailyData) {
 
       if (typeof dpDate === "string" || dpDate instanceof String) {
         dpDate = dpDate.slice(0, 10);
-        console.log("REDISS");
       } else {
         let strDate = dpDate.toISOString();
-        console.log("NOT REDISS");
         dpDate = strDate.slice(0, 10);
       }
 
@@ -285,12 +276,12 @@ export async function getSecurityPerformance(ticker) {
     .subtract(1, "years")
     .format("YYYY-MM-DD");
 
-  console.log("est", est);
-  console.log("week", week);
-  console.log("twoweek", twoweek);
-  console.log("month", month);
-  console.log("threemonth", threemonth);
-  console.log("year", year);
+  // console.log("est", est);
+  // console.log("week", week);
+  // console.log("twoweek", twoweek);
+  // console.log("month", month);
+  // console.log("threemonth", threemonth);
+  // console.log("year", year);
 
   let estTimestamp = moment.tz("America/New_York").format("YYYY-MM-DD");
 
@@ -303,12 +294,12 @@ export async function getSecurityPerformance(ticker) {
   let threemonthPrice = await getClosestPriceDate(threemonth, dailyData);
   let yearPrice = await getClosestPriceDate(year, dailyData);
 
-  console.log("todayPrice", todayPrice);
-  console.log("weekPrice", weekPrice);
-  console.log("twoweekPrice", twoweekPrice);
-  console.log("monthPrice", monthPrice);
-  console.log("threemonthPrice", threemonthPrice);
-  console.log("yearPrice", yearPrice);
+  // console.log("todayPrice", todayPrice);
+  // console.log("weekPrice", weekPrice);
+  // console.log("twoweekPrice", twoweekPrice);
+  // console.log("monthPrice", monthPrice);
+  // console.log("threemonthPrice", threemonthPrice);
+  // console.log("yearPrice", yearPrice);
 
   if (
     todayPrice &&
@@ -351,7 +342,6 @@ export async function getSecurityPerformance(ticker) {
     };
     // add to redis
 
-    console.log("perf", perf);
     await quodd.setPerfCache(ticker, perf);
     return perf;
   }
