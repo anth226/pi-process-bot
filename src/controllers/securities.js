@@ -206,7 +206,7 @@ export async function getClosestPriceDate(date, dailyData) {
       dpDate = dpDate.slice(0, 10);
       console.log("REDIS");
     } else {
-      dpDate.toISOString();
+      let strDate = dpDate.toISOString();
       console.log("NOT REDIS");
       dpDate = strDate.slice(0, 10);
     }
@@ -232,7 +232,7 @@ export async function getClosestPriceDate(date, dailyData) {
         dpDate = dpDate.slice(0, 10);
         console.log("REDISS");
       } else {
-        dpDate.toISOString();
+        let strDate = dpDate.toISOString();
         console.log("NOT REDISS");
         dpDate = strDate.slice(0, 10);
       }
