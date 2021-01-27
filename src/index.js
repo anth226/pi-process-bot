@@ -485,6 +485,20 @@ app.get("/calculate_performances_institutions", async (req, res) => {
   res.send("ok");
 });
 
+app.get("/process_snapshots_institutions", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.processInstitutionsSnapshots();
+  res.send("ok");
+});
+
 /* S&P History */
 
 // /create_indices_candles_daily?token=XXX
@@ -608,4 +622,5 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_18.start();
   queue.consumer_19.start();
   queue.consumer_20.start();
+  queue.consumer_21.start();
 });
