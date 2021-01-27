@@ -293,10 +293,13 @@ export async function setPerfCache(ticker, perf) {
   if (!ticker || !perf) {
     return;
   }
+  console.log("here");
 
   connectSharedCache();
 
   let json = JSON.stringify(perf);
+
+  console.log("json", json);
 
   await sharedCache.set(`${KEY_SECURITY_PERFORMANCE}-${ticker}`, json);
 }
