@@ -191,19 +191,53 @@ export async function insertHoldingsCountSecurity(ticker, count) {
 }
 
 export async function getClosestPriceDate(date, dailyData) {
-  for (let i in dailyData) {
-    let priceDate;
-    let apiDate = dailyData[i].date;
-    if (typeof apiDate === "string" || apiDate instanceof String) {
-      priceDate = apiDate.slice(0, 10);
+  let current = date;
+  let forward = current;
+  let reverse = current;
+  let checks = 0;
+
+  let itemIndex = dailyData.findIndex((dataPoint) => {
+    let dpDate = dataPoint.date;
+
+    if (typeof dpDate === "string" || dpDate instanceof String) {
+      dpDate = dpDate.slice(0, 10);
     } else {
-      let strDate = apiDate.toISOString();
-      priceDate = strDate.slice(0, 10);
+      let dpDate = dpDate.toISOString();
+      dpDate = strDate.slice(0, 10);
     }
-    if (priceDate <= date && dailyData[i].value) {
-      return dailyData[i];
+
+    return dpDate === current;
+  });
+
+  while (itemIndex < 0) {
+    if (checks >= 0 && checks < 7) {
+      forward = moment(forward).add(1, "days").format("YYYY-MM-DD");
+      current = forward;
+    } else {
+      reverse = moment(reverse).subtract(1, "days").format("YYYY-MM-DD");
+      current = reverse;
+    }
+
+    itemIndex = dailyData.findIndex((dataPoint) => {
+      let dpDate = dataPoint.date;
+  
+      if (typeof dpDate === "string" || dpDate instanceof String) {
+        dpDate = dpDate.slice(0, 10);
+      } else {
+        let dpDate = dpDate.toISOString();
+        dpDate = strDate.slice(0, 10);
+      }
+  
+      return dpDate === current;
+    });
+
+    checks += 1;
+    if (checks === 14) {
+      checks = 0;
     }
   }
+
+  return dailyData[itemIndex];
 }
 
 export async function getSecurityPerformance(ticker) {
