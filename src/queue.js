@@ -672,6 +672,36 @@ export function publish_ProcessSnapshot_Titans(id) {
   });
 }
 
+export function publish_ProcessSnapshot_Institutions(id) {
+  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS;
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "Number",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 export function publish_ProcessPerformances_UserPortfolios(id) {
   let queueUrl = process.env.AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES;
 
@@ -1268,5 +1298,35 @@ consumer_20.on("error", (err) => {
 });
 
 consumer_20.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS
+export const consumer_21 = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS,
+  handleMessage: async (message) => {
+    console.log(message, typeof message)
+    let sqsMessage = JSON.parse(message.Body);
+
+    console.log("sqsMessage--", sqsMessage);
+
+    let strId = sqsMessage.id;
+
+    let id = parseInt(strId);
+
+    let snapshot = await institutions.getInstitutionSnapshot(id);
+
+    if (snapshot) {
+      let json = JSON.stringify(snapshot);
+      await institutions.insertSnapshotInstitution(id, json);
+    }
+  },
+});
+
+consumer_21.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_21.on("processing_error", (err) => {
   console.error(err.message);
 });
