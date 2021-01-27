@@ -401,3 +401,114 @@ const evaluateSectorCompositions = async (data) => {
 
   return sorted;
 };
+
+export async function getInstitutionSnapshot(id) {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+  `);
+
+  let data
+  if (result.length > 0) {
+    data = await getInstitutionsHoldings(result[0].cik);
+    if (!data) {
+      return null;
+    }
+  }
+
+
+  let topPerf = await getSecuritiesBySort(
+    "price_percent_change_1_year",
+    "asc",
+    data
+  );
+
+  // console.log("topPerf", topPerf);
+
+  if (topPerf) {
+    let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
+    let topPerfSec = await securities.getSecurityByTicker(
+      topPerf.company.ticker
+    );
+
+    // console.log("topPerfPrice", topPerfPrice);
+    // console.log("topPerfSec", topPerfSec);
+
+    if (
+      topPerfPrice &&
+      topPerfSec
+    ) {
+      return {
+        top_performing: {
+          ticker: topPerf.company.ticker,
+          name: topPerf.company.name,
+          open_date: topPerf.as_of_date,
+          open_price: topPerfPrice,
+          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
+        },
+      };
+    }
+  }
+}
+
+const getSecuritiesBySort = async (sort, direction, data) => {
+  let tickerList = [];
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    tickerList.push(ticker);
+  }
+
+  let tickers = await tickerList.map((x) => "'" + x + "'").toString();
+  let secs = await securities.getSecuritiesByTickers(tickers);
+  if (direction == "asc") {
+    secs.sort((a, b) => a[sort] - b[sort]);
+  } else {
+    secs.sort((a, b) => b[sort] - a[sort]);
+  }
+
+  let topStock = secs.pop();
+  if (topStock) {
+    let topTicker = topStock.ticker;
+    for (let i in data) {
+      let ticker = data[i].company.ticker;
+      if (topTicker == ticker) {
+        return data[i];
+      }
+    }
+  }
+}
+
+export async function insertSnapshotInstitution(id, snapshot) {
+  if (!id || !snapshot) {
+    return;
+  }
+
+  console.log("snapshot json insert", snapshot);
+
+  let query = {
+    text: "SELECT * FROM institutions WHERE id = $1",
+    values: [id],
+  };
+  let result = await db(query);
+
+  if (result.length > 0) {
+    console.log("in update");
+    let query = {
+      text: "UPDATE institutions SET json_stock_snapshot = $2 WHERE id = $1",
+      values: [id, snapshot],
+    };
+    await db(query);
+    console.log("updated");
+  }
+}
+
+export async function processInstitutionsSnapshots() {
+  let result = await getInstitutions({ size: 5000 });
+  if (result.length > 0) {
+    for (let i in result) {
+      let id = result[i].id;
+      await queue.publish_ProcessSnapshot_Institutions(id);
+    }
+  }
+}
