@@ -220,14 +220,14 @@ export async function getClosestPriceDate(date, dailyData) {
 
     itemIndex = dailyData.findIndex((dataPoint) => {
       let dpDate = dataPoint.date;
-  
+
       if (typeof dpDate === "string" || dpDate instanceof String) {
         dpDate = dpDate.slice(0, 10);
       } else {
         let dpDate = dpDate.toISOString();
         dpDate = strDate.slice(0, 10);
       }
-  
+
       return dpDate === current;
     });
 
@@ -242,45 +242,41 @@ export async function getClosestPriceDate(date, dailyData) {
 
 export async function getSecurityPerformance(ticker) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
-  
+
   if (!data || !data.daily || data.daily.length < 1) {
     return;
   }
 
   let dailyData = data.daily;
 
-  let est = moment
-    .tz("America/New_York")
-    .format("YYYY-MM-DD");
+  let est = moment.tz("America/New_York").format("YYYY-MM-DD");
 
   let week = moment
     .tz("America/New_York")
-    .subtract(7, 'days')
+    .subtract(7, "days")
     .format("YYYY-MM-DD");
 
   let twoweek = moment
     .tz("America/New_York")
-    .subtract(14, 'days')
+    .subtract(14, "days")
     .format("YYYY-MM-DD");
 
   let month = moment
     .tz("America/New_York")
-    .subtract(1, 'months')
+    .subtract(1, "months")
     .format("YYYY-MM-DD");
 
   let threemonth = moment
     .tz("America/New_York")
-    .subtract(3, 'months')
+    .subtract(3, "months")
     .format("YYYY-MM-DD");
 
   let year = moment
     .tz("America/New_York")
-    .subtract(1, 'years')
+    .subtract(1, "years")
     .format("YYYY-MM-DD");
 
-  let estTimestamp = moment
-    .tz("America/New_York")
-    .format("YYYY-MM-DD");
+  let estTimestamp = moment.tz("America/New_York").format("YYYY-MM-DD");
 
   let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
 
@@ -290,6 +286,13 @@ export async function getSecurityPerformance(ticker) {
   let monthPrice = await getClosestPriceDate(month, dailyData);
   let threemonthPrice = await getClosestPriceDate(threemonth, dailyData);
   let yearPrice = await getClosestPriceDate(year, dailyData);
+
+  console.log("todayPrice", todayPrice);
+  console.log("weekPrice", weekPrice);
+  console.log("twoweekPrice", twoweekPrice);
+  console.log("monthPrice", monthPrice);
+  console.log("threemonthPrice", threemonthPrice);
+  console.log("yearPrice", yearPrice);
 
   if (
     todayPrice &&
@@ -331,6 +334,8 @@ export async function getSecurityPerformance(ticker) {
       },
     };
     // add to redis
+
+    console.log("perf", perf);
     await quodd.setPerfCache(ticker, perf);
     return perf;
   }
