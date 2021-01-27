@@ -204,8 +204,10 @@ export async function getClosestPriceDate(date, dailyData) {
 
     if (typeof dpDate === "string" || dpDate instanceof String) {
       dpDate = dpDate.slice(0, 10);
+      console.log("REDIS");
     } else {
-      let dpDate = dpDate.toISOString();
+      dpDate.toISOString();
+      console.log("NOT REDIS");
       dpDate = strDate.slice(0, 10);
     }
 
@@ -228,8 +230,10 @@ export async function getClosestPriceDate(date, dailyData) {
 
       if (typeof dpDate === "string" || dpDate instanceof String) {
         dpDate = dpDate.slice(0, 10);
+        console.log("REDISS");
       } else {
-        let dpDate = dpDate.toISOString();
+        dpDate.toISOString();
+        console.log("NOT REDISS");
         dpDate = strDate.slice(0, 10);
       }
 
