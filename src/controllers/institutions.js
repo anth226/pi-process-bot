@@ -435,6 +435,8 @@ export async function getInstitutionSnapshot(id) {
     data
   );
 
+  let largest = await getInstitutionLargestHolding(data);
+
   // console.log("topPerf", topPerf);
   // console.log("common", common);
 
@@ -444,9 +446,9 @@ export async function getInstitutionSnapshot(id) {
     let commonPrice = await titans.calculateHoldingPrice(common);
     let commonSec = await securities.getSecurityByTicker(common.company.ticker);
     let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
-    let uncommonSec = await securities.getSecurityByTicker(
-      uncommon.company.ticker
-    );
+    let uncommonSec = await securities.getSecurityByTicker(uncommon.company.ticker);
+    let largestPrice = await titans.calculateHoldingPrice(largest);
+    let largestSec = await securities.getSecurityByTicker(largest.company.ticker);
 
     // console.log("topPerfPrice", topPerfPrice);
     // console.log("topPerfSec", topPerfSec);
@@ -454,14 +456,14 @@ export async function getInstitutionSnapshot(id) {
     // console.log("commonSec", commonSec);
     // console.log("uncommonPrice", uncommonPrice);
     // console.log("uncommonSec", uncommonSec);
+    // console.log("largestPrice", largestPrice);
+    // console.log("largestSec", largestSec);
 
     if (
-      topPerfPrice &&
-      topPerfSec &&
-      commonPrice &&
-      commonSec &&
-      uncommonPrice &&
-      uncommonSec
+      topPerfPrice && topPerfSec &&
+      commonPrice && commonSec &&
+      uncommonPrice && uncommonSec &&
+      largestPrice && largestSec
     ) {
       return {
         top_performing: {
@@ -484,6 +486,13 @@ export async function getInstitutionSnapshot(id) {
           open_date: uncommon.as_of_date,
           open_price: uncommonPrice,
           price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+        },
+        largest: {
+          ticker: largest.company.ticker,
+          name: largest.company.name,
+          open_date: largest.as_of_date,
+          open_price: largestPrice,
+          price_percent_change_1_year: largestSec.price_percent_change_1_year,
         },
       };
     }
@@ -538,6 +547,24 @@ export async function insertSnapshotInstitution(id, snapshot) {
     };
     await db(query);
     console.log("updated");
+  }
+}
+
+export async function getInstitutionLargestHolding(data) {
+  let holdingList = [];
+  let newestDate = data[0].as_of_date;
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    let openDate = data[i].as_of_date;
+    let marketValue = data[i].market_value;
+    if (ticker && openDate == newestDate && marketValue && marketValue > 0) {
+      holdingList.push(data[i]);
+    }
+  }
+  holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
+  let topStock = holdingList.pop();
+  if (topStock) {
+    return topStock;
   }
 }
 
