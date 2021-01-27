@@ -196,8 +196,11 @@ export async function getClosestPriceDate(date, dailyData) {
   let reverse = current;
   let checks = 0;
 
+  console.log("date", date);
+
   let itemIndex = dailyData.findIndex((dataPoint) => {
     let dpDate = dataPoint.date;
+    console.log("dpDate", dpDate);
 
     if (typeof dpDate === "string" || dpDate instanceof String) {
       dpDate = dpDate.slice(0, 10);
@@ -208,6 +211,8 @@ export async function getClosestPriceDate(date, dailyData) {
 
     return dpDate === current;
   });
+
+  console.log("itemIndex", itemIndex);
 
   while (itemIndex < 0) {
     if (checks >= 0 && checks < 7) {
@@ -275,6 +280,13 @@ export async function getSecurityPerformance(ticker) {
     .tz("America/New_York")
     .subtract(1, "years")
     .format("YYYY-MM-DD");
+
+  console.log("est", est);
+  console.log("week", week);
+  console.log("twoweek", twoweek);
+  console.log("month", month);
+  console.log("threemonth", threemonth);
+  console.log("year", year);
 
   let estTimestamp = moment.tz("America/New_York").format("YYYY-MM-DD");
 
