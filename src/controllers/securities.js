@@ -8,6 +8,8 @@ import * as institutions from "./institutions";
 import * as quodd from "./quodd";
 import * as widgets from "./widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
+import moment from "moment";
+import MTZ from "moment-timezone";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
@@ -189,48 +191,96 @@ export async function insertHoldingsCountSecurity(ticker, count) {
 }
 
 export async function getClosestPriceDate(date, dailyData) {
-  for (let i in dailyData) {
-    let priceDate;
-    let apiDate = dailyData[i].date;
-    if (typeof apiDate === "string" || apiDate instanceof String) {
-      priceDate = apiDate.slice(0, 10);
+  let current = date;
+  let forward = current;
+  let reverse = current;
+  let checks = 0;
+
+  let itemIndex = dailyData.findIndex((dataPoint) => {
+    let dpDate = dataPoint.date;
+
+    if (typeof dpDate === "string" || dpDate instanceof String) {
+      dpDate = dpDate.slice(0, 10);
     } else {
-      let strDate = apiDate.toISOString();
-      priceDate = strDate.slice(0, 10);
+      let dpDate = dpDate.toISOString();
+      dpDate = strDate.slice(0, 10);
     }
-    if (priceDate <= date && dailyData[i].value) {
-      return dailyData[i];
+
+    return dpDate === current;
+  });
+
+  while (itemIndex < 0) {
+    if (checks >= 0 && checks < 7) {
+      forward = moment(forward).add(1, "days").format("YYYY-MM-DD");
+      current = forward;
+    } else {
+      reverse = moment(reverse).subtract(1, "days").format("YYYY-MM-DD");
+      current = reverse;
+    }
+
+    itemIndex = dailyData.findIndex((dataPoint) => {
+      let dpDate = dataPoint.date;
+  
+      if (typeof dpDate === "string" || dpDate instanceof String) {
+        dpDate = dpDate.slice(0, 10);
+      } else {
+        let dpDate = dpDate.toISOString();
+        dpDate = strDate.slice(0, 10);
+      }
+  
+      return dpDate === current;
+    });
+
+    checks += 1;
+    if (checks === 14) {
+      checks = 0;
     }
   }
+
+  return dailyData[itemIndex];
 }
 
 export async function getSecurityPerformance(ticker) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
+  
   if (!data || !data.daily || data.daily.length < 1) {
     return;
   }
+
   let dailyData = data.daily;
 
-  let today = new Date();
-  let est = new Date(today);
-  est.setHours(est.getHours() - 5);
-  let week = new Date(est);
-  week.setDate(est.getDate() - 7);
-  week = week.toISOString().slice(0, 10);
-  let twoweek = new Date(est);
-  twoweek.setDate(est.getDate() - 14);
-  twoweek = twoweek.toISOString().slice(0, 10);
-  let month = new Date(est);
-  month.setDate(est.getDate() - 30);
-  month = month.toISOString().slice(0, 10);
-  let threemonth = new Date(est);
-  threemonth.setDate(est.getDate() - 90);
-  threemonth = threemonth.toISOString().slice(0, 10);
-  let year = new Date(est);
-  year.setDate(est.getDate() - 365);
-  year = year.toISOString().slice(0, 10);
-  let estTimestamp = est.toISOString();
-  est = est.toISOString().slice(0, 10);
+  let est = moment
+    .tz("America/New_York")
+    .format("YYYY-MM-DD");
+
+  let week = moment
+    .tz("America/New_York")
+    .subtract(7, 'days')
+    .format("YYYY-MM-DD");
+
+  let twoweek = moment
+    .tz("America/New_York")
+    .subtract(14, 'days')
+    .format("YYYY-MM-DD");
+
+  let month = moment
+    .tz("America/New_York")
+    .subtract(1, 'months')
+    .format("YYYY-MM-DD");
+
+  let threemonth = moment
+    .tz("America/New_York")
+    .subtract(3, 'months')
+    .format("YYYY-MM-DD");
+
+  let year = moment
+    .tz("America/New_York")
+    .subtract(1, 'years')
+    .format("YYYY-MM-DD");
+
+  let estTimestamp = moment
+    .tz("America/New_York")
+    .format("YYYY-MM-DD");
 
   let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
 
