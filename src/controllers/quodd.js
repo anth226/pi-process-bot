@@ -18,6 +18,7 @@ import {
   AWS_POSTGRES_DB_PASSWORD,
   CACHED_PRICE_REALTIME,
   CACHED_PRICE_15MIN,
+  KEY_SECURITY_PERFORMANCE,
 } from "../redis";
 
 let dbs = {};
@@ -287,3 +288,22 @@ export async function getLastPrice(ticker) {
   }
   return prices;
 }
+
+export async function setPerfCache(ticker, perf) {
+  if (!ticker || !perf) {
+    return;
+  }
+
+  connectSharedCache();
+
+  let json = JSON.stringify(perf);
+
+  await sharedCache.set(`${KEY_SECURITY_PERFORMANCE}-${ticker}`, json);
+}
+
+// export async function testCache() {
+//   connectSharedCache();
+
+//   let data = await sharedCache.get(`${KEY_SECURITY_PERFORMANCE}-TSLA`);
+//   return data;
+// }

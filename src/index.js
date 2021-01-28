@@ -17,6 +17,7 @@ import * as mutualfunds from "./controllers/mutualfunds";
 import * as etfs from "./controllers/etfs";
 import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
+import * as userPortfolios from "./controllers/userportfolios";
 
 import * as yahoo from "./controllers/yahoo";
 
@@ -263,10 +264,12 @@ app.get("/fill_holdings_count_securities", async (req, res) => {
     res.send("fail");
     return;
   }
-  await securities.fillHoldingsCountSecurities();
-  setTimeout(function () {
-    res.send("ok");
-  }, 30000);
+  res.send("no");
+  //seperate it out to just do one at a time
+  // await securities.fillHoldingsCountSecurities();
+  // setTimeout(function () {
+  //   res.send("ok");
+  // }, 30000);
 });
 
 /* Earnings */
@@ -357,7 +360,6 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
-  console.log("in endpoint call");
   if (process.env.DISABLE_CRON == "true") {
     res.send("disabled");
     return;
@@ -371,6 +373,8 @@ app.get("/widgets/:id/process_input", async (req, res) => {
   res.send("ok");
 });
 
+/* User Portfolios */
+
 // /update_user_portfolios?token=XXX
 app.get("/update_user_portfolios", async (req, res) => {
   if (process.env.DISABLE_CRON == "true") {
@@ -382,7 +386,23 @@ app.get("/update_user_portfolios", async (req, res) => {
     res.send("fail");
     return;
   }
-  await widgets.processUsersPortPerf();
+  await userPortfolios.fillUsersPortPerfs();
+  res.send("ok");
+});
+
+// /user_portfolios/:id/update?token=XXX
+app.get("/user_portfolios/:id/update", async (req, res) => {
+  console.log("here");
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await userPortfolios.fillUserPortPerf(req.params.id);
   res.send("ok");
 });
 
@@ -462,6 +482,20 @@ app.get("/calculate_performances_institutions", async (req, res) => {
     return;
   }
   //await institutions.calculatePerformances();
+  res.send("ok");
+});
+
+app.get("/process_snapshots_institutions", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.processInstitutionsSnapshots();
   res.send("ok");
 });
 
@@ -587,4 +621,6 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_17.start();
   queue.consumer_18.start();
   queue.consumer_19.start();
+  queue.consumer_20.start();
+  queue.consumer_21.start();
 });
