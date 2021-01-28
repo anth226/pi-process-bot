@@ -1315,6 +1315,7 @@ export const consumer_21 = Consumer.create({
     let id = parseInt(strId);
 
     let snapshot = await institutions.getInstitutionSnapshot(id);
+    console.log("snapshot data")
 
     if (snapshot) {
       let json = JSON.stringify(snapshot);

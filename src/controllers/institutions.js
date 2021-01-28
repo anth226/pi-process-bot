@@ -412,7 +412,7 @@ export async function getInstitutionSnapshot(id) {
   let data
   if (result.length > 0) {
     data = await getInstitutionsHoldings(result[0].cik);
-    if (!data) {
+    if (!data || data.length === 0) {
       return null;
     }
   }
