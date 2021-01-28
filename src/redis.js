@@ -15,6 +15,7 @@ export let KEY_CHART_DATA = "KEY_CHART_DATA";
 export let CACHED_SYMBOL = "CS";
 export let CACHED_PRICE_REALTIME = "C_R";
 export let CACHED_PRICE_15MIN = "C_15";
+export let KEY_SECURITY_PERFORMANCE = "KEY_SEC_PERF";
 
 function connectDatabase() {
   let credentials = {

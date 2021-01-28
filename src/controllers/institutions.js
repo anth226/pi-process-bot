@@ -401,3 +401,179 @@ const evaluateSectorCompositions = async (data) => {
 
   return sorted;
 };
+
+export async function getInstitutionSnapshot(id) {
+  let result = await db(`
+    SELECT *
+    FROM institutions
+    WHERE id = ${id}
+  `);
+
+  let data
+  if (result.length > 0) {
+    data = await getInstitutionsHoldings(result[0].cik);
+    if (!data) {
+      return null;
+    }
+  }
+
+  let topPerf = await getSecuritiesBySort(
+    "price_percent_change_1_year",
+    "asc",
+    data
+  );
+
+  let common = await getSecuritiesBySort(
+    "institutional_holdings_count",
+    "asc",
+    data
+  );
+
+  let uncommon = await getSecuritiesBySort(
+    "institutional_holdings_count",
+    "desc",
+    data
+  );
+
+  let largest = await getInstitutionLargestHolding(data);
+
+  // console.log("topPerf", topPerf);
+  // console.log("common", common);
+
+  if (topPerf && common && uncommon) {
+    let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
+    let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
+    let commonPrice = await titans.calculateHoldingPrice(common);
+    let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+    let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
+    let uncommonSec = await securities.getSecurityByTicker(uncommon.company.ticker);
+    let largestPrice = await titans.calculateHoldingPrice(largest);
+    let largestSec = await securities.getSecurityByTicker(largest.company.ticker);
+
+    // console.log("topPerfPrice", topPerfPrice);
+    // console.log("topPerfSec", topPerfSec);
+    // console.log("commonPrice", commonPrice);
+    // console.log("commonSec", commonSec);
+    // console.log("uncommonPrice", uncommonPrice);
+    // console.log("uncommonSec", uncommonSec);
+    // console.log("largestPrice", largestPrice);
+    // console.log("largestSec", largestSec);
+
+    if (
+      topPerfPrice && topPerfSec &&
+      commonPrice && commonSec &&
+      uncommonPrice && uncommonSec &&
+      largestPrice && largestSec
+    ) {
+      return {
+        top_performing: {
+          ticker: topPerf.company.ticker,
+          name: topPerf.company.name,
+          open_date: topPerf.as_of_date,
+          open_price: topPerfPrice,
+          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
+        },
+        common: {
+          ticker: common.company.ticker,
+          name: common.company.name,
+          open_date: common.as_of_date,
+          open_price: commonPrice,
+          price_percent_change_1_year: commonSec.price_percent_change_1_year,
+        },
+        uncommon: {
+          ticker: uncommon.company.ticker,
+          name: uncommon.company.name,
+          open_date: uncommon.as_of_date,
+          open_price: uncommonPrice,
+          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+        },
+        largest: {
+          ticker: largest.company.ticker,
+          name: largest.company.name,
+          open_date: largest.as_of_date,
+          open_price: largestPrice,
+          price_percent_change_1_year: largestSec.price_percent_change_1_year,
+        },
+      };
+    }
+  }
+}
+
+const getSecuritiesBySort = async (sort, direction, data) => {
+  let tickerList = [];
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    tickerList.push(ticker);
+  }
+
+  let tickers = await tickerList.map((x) => "'" + x + "'").toString();
+  let secs = await securities.getSecuritiesByTickers(tickers);
+  if (direction == "asc") {
+    secs.sort((a, b) => a[sort] - b[sort]);
+  } else {
+    secs.sort((a, b) => b[sort] - a[sort]);
+  }
+
+  let topStock = secs.pop();
+  if (topStock) {
+    let topTicker = topStock.ticker;
+    for (let i in data) {
+      let ticker = data[i].company.ticker;
+      if (topTicker == ticker) {
+        return data[i];
+      }
+    }
+  }
+}
+
+export async function insertSnapshotInstitution(id, snapshot) {
+  if (!id || !snapshot) {
+    return;
+  }
+
+  console.log("snapshot json insert", snapshot);
+
+  let query = {
+    text: "SELECT * FROM institutions WHERE id = $1",
+    values: [id],
+  };
+  let result = await db(query);
+
+  if (result.length > 0) {
+    console.log("in update");
+    let query = {
+      text: "UPDATE institutions SET json_stock_snapshot = $2 WHERE id = $1",
+      values: [id, snapshot],
+    };
+    await db(query);
+    console.log("updated");
+  }
+}
+
+export async function getInstitutionLargestHolding(data) {
+  let holdingList = [];
+  let newestDate = data[0].as_of_date;
+  for (let i in data) {
+    let ticker = data[i].company.ticker;
+    let openDate = data[i].as_of_date;
+    let marketValue = data[i].market_value;
+    if (ticker && openDate == newestDate && marketValue && marketValue > 0) {
+      holdingList.push(data[i]);
+    }
+  }
+  holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
+  let topStock = holdingList.pop();
+  if (topStock) {
+    return topStock;
+  }
+}
+
+export async function processInstitutionsSnapshots() {
+  let result = await getInstitutions({ size: 5000 });
+  if (result.length > 0) {
+    for (let i in result) {
+      let id = result[i].id;
+      await queue.publish_ProcessSnapshot_Institutions(id);
+    }
+  }
+}
