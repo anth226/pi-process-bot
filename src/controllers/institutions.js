@@ -508,19 +508,21 @@ const getSecuritiesBySort = async (sort, direction, data) => {
 
   let tickers = await tickerList.map((x) => "'" + x + "'").toString();
   let secs = await securities.getSecuritiesByTickers(tickers);
-  if (direction == "asc") {
-    secs.sort((a, b) => a[sort] - b[sort]);
-  } else {
-    secs.sort((a, b) => b[sort] - a[sort]);
-  }
+  if (secs) {
+    if (direction == "asc") {
+      secs.sort((a, b) => a[sort] - b[sort]);
+    } else {
+      secs.sort((a, b) => b[sort] - a[sort]);
+    }
 
-  let topStock = secs.pop();
-  if (topStock) {
-    let topTicker = topStock.ticker;
-    for (let i in data) {
-      let ticker = data[i].company.ticker;
-      if (topTicker == ticker) {
-        return data[i];
+    let topStock = secs.pop();
+    if (topStock) {
+      let topTicker = topStock.ticker;
+      for (let i in data) {
+        let ticker = data[i].company.ticker;
+        if (topTicker == ticker) {
+          return data[i];
+        }
       }
     }
   }
