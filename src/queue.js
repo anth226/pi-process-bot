@@ -1305,7 +1305,6 @@ consumer_20.on("processing_error", (err) => {
 export const consumer_21 = Consumer.create({
   queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS,
   handleMessage: async (message) => {
-    console.log(message, typeof message)
     let sqsMessage = JSON.parse(message.Body);
 
     console.log("sqsMessage--", sqsMessage);
