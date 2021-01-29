@@ -148,6 +148,7 @@ export async function getInstitutionsHoldings(cik) {
   if (result && result.length > 0) {
     let { json_holdings } = result[0];
     if (!json_holdings) {
+      console.log("No json holdings for this institution: ", cik);
       return null;
     }
     let filtered = json_holdings.filter((o) => {
@@ -155,6 +156,7 @@ export async function getInstitutionsHoldings(cik) {
     });
     return filtered;
   }
+  console.log("Found no results from query (getInstitutionsHoldings)");
   return null;
 }
 
@@ -403,39 +405,65 @@ const evaluateSectorCompositions = async (data) => {
 };
 
 export async function getInstitutionSnapshot(id) {
+
+  console.log("Get institution id: ", id);
+
   let result = await db(`
     SELECT *
     FROM institutions
     WHERE id = ${id}
   `);
+  console.log("--------------------start------------------------");
 
   let data
   if (result.length > 0) {
+    console.log("Found the institution: ", result[0].id);
     data = await getInstitutionsHoldings(result[0].cik);
     if (!data || data.length === 0) {
+      console.log("Found no holdings data for this institution: ", id)
+      console.log("Failed: ", id);
+      console.log("--------------------end------------------------");
       return null;
     }
+  } else {
+    console.log("Did not find this institution: ", id);
+    console.log("Failed: ", id);
+    console.log("--------------------end------------------------");
   }
 
+  console.log("Top perf started");
   let topPerf = await getSecuritiesBySort(
     "price_percent_change_1_year",
     "asc",
     data
   );
+  console.log(topPerf);
+  console.log("Top perf ended");
 
+  console.log("common started");
   let common = await getSecuritiesBySort(
     "institutional_holdings_count",
     "asc",
     data
   );
+  console.log(common);
+  console.log("common ended");
 
+
+  console.log("uncommon started");
   let uncommon = await getSecuritiesBySort(
     "institutional_holdings_count",
     "desc",
     data
   );
+  console.log(uncommon);
+  console.log("uncommon ended");
 
+
+  console.log("largest started");
   let largest = await getInstitutionLargestHolding(data);
+  console.log(largest);
+  console.log("largest ended");
 
   // console.log("topPerf", topPerf);
   // console.log("common", common);
@@ -465,6 +493,9 @@ export async function getInstitutionSnapshot(id) {
       uncommonPrice && uncommonSec &&
       largestPrice && largestSec
     ) {
+
+      console.log("success: ", id);
+      console.log("--------------------end------------------------");
       return {
         top_performing: {
           ticker: topPerf.company.ticker,
@@ -495,7 +526,29 @@ export async function getInstitutionSnapshot(id) {
           price_percent_change_1_year: largestSec.price_percent_change_1_year,
         },
       };
+    } else {
+      console.log("topPerfPrice: ", topPerfPrice);
+      console.log("topPerfSec: ", topPerfSec);
+
+      console.log("commonPrice: ", commonPrice);
+      console.log("commonSec: ", commonSec);
+
+      console.log("uncommonPrice: ", uncommonPrice);
+      console.log("uncommonSec: ", uncommonSec);
+
+      console.log("largestPrice: ", largestPrice);
+      console.log("largestSec: ", largestSec);
+      console.log("Did not find perf and security: ", id);
+      console.log("Failed: ", id);
+      console.log("--------------------end------------------------");
     }
+  } else {
+    console.log("topPerf: ", topPerf);
+    console.log("common: ", common);
+    console.log("uncommon: ", uncommon);
+    console.log("Did not find topPerf && common && uncommon: ", id);
+    console.log("Failed: ", id);
+    console.log("--------------------end------------------------");
   }
 }
 
