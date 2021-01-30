@@ -676,6 +676,12 @@ export async function calculateHoldingPrice(holding) {
   let marketValue = holding.market_value;
   if (shares > 0 && marketValue > 0) {
     return marketValue / shares;
+  } else {
+    console.log("Calculate holding price failed... printing values");
+    console.log("holding: ", holding);
+    console.log("shares: ", shares);
+    console.log("marketValue: ", marketValue);
+    console.log("shares: ", shares);
   }
 }
 

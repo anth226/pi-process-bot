@@ -420,6 +420,7 @@ export async function getInstitutionSnapshot(id) {
     console.log("Found the institution: ", result[0].id);
     data = await getInstitutionsHoldings(result[0].cik);
     if (!data || data.length === 0) {
+      console.log("data: ", data);
       console.log("Found no holdings data for this institution: ", id)
       console.log("Failed: ", id);
       console.log("--------------------end------------------------");
@@ -553,14 +554,21 @@ export async function getInstitutionSnapshot(id) {
 }
 
 const getSecuritiesBySort = async (sort, direction, data) => {
+  console.log("starting securities by sort");
   let tickerList = [];
   for (let i in data) {
     let ticker = data[i].company.ticker;
     tickerList.push(ticker);
   }
 
+  console.log("Got tickers: ", tickerList.length);
+
   let tickers = await tickerList.map((x) => "'" + x + "'").toString();
+
+  console.log("Tickers string: ", tickers.length);
+
   let secs = await securities.getSecuritiesByTickers(tickers);
+
   if (secs) {
     if (direction == "asc") {
       secs.sort((a, b) => a[sort] - b[sort]);
@@ -576,8 +584,15 @@ const getSecuritiesBySort = async (sort, direction, data) => {
         if (topTicker == ticker) {
           return data[i];
         }
+        if (i >= (data.length - 1)) {
+          console.log("Could not find the company")
+        }
       }
+    } else {
+      console.log("There is no last item");
     }
+  } else {
+    console.log("There are no securities");
   }
 }
 
@@ -607,6 +622,7 @@ export async function insertSnapshotInstitution(id, snapshot) {
 
 export async function getInstitutionLargestHolding(data) {
   let holdingList = [];
+  let hList = [];
   let newestDate = data[0].as_of_date;
   for (let i in data) {
     let ticker = data[i].company.ticker;
@@ -614,12 +630,35 @@ export async function getInstitutionLargestHolding(data) {
     let marketValue = data[i].market_value;
     if (ticker && openDate == newestDate && marketValue && marketValue > 0) {
       holdingList.push(data[i]);
+    } else if (ticker && marketValue && marketValue > 0) {
+      hList.push(data[i]);
+    }
+    if (i >= (data.length -1) && holdingList.length === 0) {
+        console.log("Could not find a largest new holding");
     }
   }
   holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
+
   let topStock = holdingList.pop();
   if (topStock) {
     return topStock;
+  } else {
+    console.log("Could not find last value");
+  }
+
+  hList = orderBy(
+      hList,
+      ["hList[0].as_of_date", "hList[1].market_value"],
+      ["desc", "desc"]
+  );
+
+  console.log("Failed: attempting backup option");
+
+  let topStockTwo = hList.pop();
+  if (topStockTwo) {
+    return topStockTwo;
+  } else {
+    console.log("Could not find last value of hList either");
   }
 }
 

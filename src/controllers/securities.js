@@ -30,6 +30,8 @@ export async function getSecurityByTicker(ticker) {
 
   if (result && result.length > 0) {
     return result[0];
+  } else {
+    console.log("Could not find security for ticker: ", ticker);
   }
 }
 
