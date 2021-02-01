@@ -297,12 +297,6 @@ export async function getOpenPrice(ticker) {
 
   connectSharedCache();
 
-  const tradeDate = sharedCache.get(`${CACHED_TRADE_DATE}${ticker}`);
-
-  if (!tradeDate) {
-    return null;
-  }
-
   return sharedCache.get(`${CACHED_PRICE_OPEN}${ticker}`);
 }
 
