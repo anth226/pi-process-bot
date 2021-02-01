@@ -19,7 +19,6 @@ import {
   CACHED_PRICE_REALTIME,
   CACHED_PRICE_15MIN,
   CACHED_PRICE_OPEN,
-  CACHED_TRADE_DATE,
   KEY_SECURITY_PERFORMANCE,
 } from "../redis";
 
@@ -304,7 +303,7 @@ export async function getOpenPrice(ticker) {
     return null;
   }
 
-  return sharedCache.get(`${CACHED_PRICE_OPEN}${ticker}${tradeDate}`);
+  return sharedCache.get(`${CACHED_PRICE_OPEN}${ticker}`);
 }
 
 export async function setPerfCache(ticker, perf) {
