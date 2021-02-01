@@ -313,7 +313,7 @@ export async function getSecurityPerformance(ticker) {
   ) {
     let earliest;
     let latest = yearPrice ? yearPrice : data.daily.pop();
-    let open_price = intrinioResponse.open_price;
+    let open_price = quodd.getOpenPrice(ticker) || intrinioResponse.open_price;
 
     if (open_price) {
       earliest = {
