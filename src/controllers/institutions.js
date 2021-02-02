@@ -488,68 +488,36 @@ export async function getInstitutionSnapshot(id) {
     // console.log("largestPrice", largestPrice);
     // console.log("largestSec", largestSec);
 
-    if (
-      topPerfPrice && topPerfSec &&
-      commonPrice && commonSec &&
-      uncommonPrice && uncommonSec &&
-      largestPrice && largestSec
-    ) {
-
-      console.log("success: ", id);
-      console.log("--------------------end------------------------");
-      return {
-        top_performing: {
-          ticker: topPerf.company.ticker,
-          name: topPerf.company.name,
-          open_date: topPerf.as_of_date,
-          open_price: topPerfPrice,
-          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
-        },
-        common: {
-          ticker: common.company.ticker,
-          name: common.company.name,
-          open_date: common.as_of_date,
-          open_price: commonPrice,
-          price_percent_change_1_year: commonSec.price_percent_change_1_year,
-        },
-        uncommon: {
-          ticker: uncommon.company.ticker,
-          name: uncommon.company.name,
-          open_date: uncommon.as_of_date,
-          open_price: uncommonPrice,
-          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
-        },
-        largest: {
-          ticker: largest.company.ticker,
-          name: largest.company.name,
-          open_date: largest.as_of_date,
-          open_price: largestPrice,
-          price_percent_change_1_year: largestSec.price_percent_change_1_year,
-        },
-      };
-    } else {
-      console.log("topPerfPrice: ", topPerfPrice);
-      console.log("topPerfSec: ", topPerfSec);
-
-      console.log("commonPrice: ", commonPrice);
-      console.log("commonSec: ", commonSec);
-
-      console.log("uncommonPrice: ", uncommonPrice);
-      console.log("uncommonSec: ", uncommonSec);
-
-      console.log("largestPrice: ", largestPrice);
-      console.log("largestSec: ", largestSec);
-      console.log("Did not find perf and security: ", id);
-      console.log("Failed: ", id);
-      console.log("--------------------end------------------------");
-    }
-  } else {
-    console.log("topPerf: ", topPerf);
-    console.log("common: ", common);
-    console.log("uncommon: ", uncommon);
-    console.log("Did not find topPerf && common && uncommon: ", id);
-    console.log("Failed: ", id);
-    console.log("--------------------end------------------------");
+    return {
+      top_performing: {
+        ticker: topPerf.company.ticker,
+        name: topPerf.company.name,
+        open_date: topPerf.as_of_date,
+        open_price: topPerfPrice,
+        price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
+      },
+      common: {
+        ticker: common.company.ticker,
+        name: common.company.name,
+        open_date: common.as_of_date,
+        open_price: commonPrice,
+        price_percent_change_1_year: commonSec.price_percent_change_1_year,
+      },
+      uncommon: {
+        ticker: uncommon.company.ticker,
+        name: uncommon.company.name,
+        open_date: uncommon.as_of_date,
+        open_price: uncommonPrice,
+        price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+      },
+      largest: {
+        ticker: largest.company.ticker,
+        name: largest.company.name,
+        open_date: largest.as_of_date,
+        open_price: largestPrice,
+        price_percent_change_1_year: largestSec.price_percent_change_1_year,
+      },
+    };
   }
 }
 
@@ -633,8 +601,8 @@ export async function getInstitutionLargestHolding(data) {
     } else if (ticker && marketValue && marketValue > 0) {
       hList.push(data[i]);
     }
-    if (i >= (data.length -1) && holdingList.length === 0) {
-        console.log("Could not find a largest new holding");
+    if (i >= (data.length - 1) && holdingList.length === 0) {
+      console.log("Could not find a largest new holding");
     }
   }
   holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
@@ -647,9 +615,9 @@ export async function getInstitutionLargestHolding(data) {
   }
 
   hList = orderBy(
-      hList,
-      ["hList[0].as_of_date", "hList[1].market_value"],
-      ["desc", "desc"]
+    hList,
+    ["hList[0].as_of_date", "hList[1].market_value"],
+    ["desc", "desc"]
   );
 
   console.log("Failed: attempting backup option");
