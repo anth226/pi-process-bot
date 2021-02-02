@@ -297,9 +297,9 @@ export async function getOpenPrice(ticker) {
 
   connectSharedCache();
 
-  let open = await sharedCache.get(`${CACHED_PRICE_OPEN}${ticker}`);
+  let open = await sharedCache.get(`${CACHED_PRICE_OPEN}e${ticker}`);
 
-  return open
+  return open;
 }
 
 export async function setPerfCache(ticker, perf) {
