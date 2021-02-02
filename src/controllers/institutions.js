@@ -6,7 +6,7 @@ import * as queue from "../queue";
 
 import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
 
-import { orderBy, find, sumBy } from "lodash";
+import { orderBy, sumBy, get } from "lodash";
 
 export async function getInstitutions({
   sort = [],
@@ -468,56 +468,60 @@ export async function getInstitutionSnapshot(id) {
 
   // console.log("topPerf", topPerf);
   // console.log("common", common);
+  try {
+    if (topPerf && common && uncommon) {
+      let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
+      let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
+      let commonPrice = await titans.calculateHoldingPrice(common);
+      let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+      let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
+      let uncommonSec = await securities.getSecurityByTicker(uncommon.company.ticker);
+      let largestPrice = await titans.calculateHoldingPrice(largest);
+      let largestSec = await securities.getSecurityByTicker(largest.company.ticker);
 
-  if (topPerf && common && uncommon) {
-    let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
-    let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
-    let commonPrice = await titans.calculateHoldingPrice(common);
-    let commonSec = await securities.getSecurityByTicker(common.company.ticker);
-    let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
-    let uncommonSec = await securities.getSecurityByTicker(uncommon.company.ticker);
-    let largestPrice = await titans.calculateHoldingPrice(largest);
-    let largestSec = await securities.getSecurityByTicker(largest.company.ticker);
+      // console.log("topPerfPrice", topPerfPrice);
+      // console.log("topPerfSec", topPerfSec);
+      // console.log("commonPrice", commonPrice);
+      // console.log("commonSec", commonSec);
+      // console.log("uncommonPrice", uncommonPrice);
+      // console.log("uncommonSec", uncommonSec);
+      // console.log("largestPrice", largestPrice);
+      // console.log("largestSec", largestSec);
 
-    // console.log("topPerfPrice", topPerfPrice);
-    // console.log("topPerfSec", topPerfSec);
-    // console.log("commonPrice", commonPrice);
-    // console.log("commonSec", commonSec);
-    // console.log("uncommonPrice", uncommonPrice);
-    // console.log("uncommonSec", uncommonSec);
-    // console.log("largestPrice", largestPrice);
-    // console.log("largestSec", largestSec);
-
-    return {
-      top_performing: {
-        ticker: topPerf.company.ticker,
-        name: topPerf.company.name,
-        open_date: topPerf.as_of_date,
-        open_price: topPerfPrice,
-        price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
-      },
-      common: {
-        ticker: common.company.ticker,
-        name: common.company.name,
-        open_date: common.as_of_date,
-        open_price: commonPrice,
-        price_percent_change_1_year: commonSec.price_percent_change_1_year,
-      },
-      uncommon: {
-        ticker: uncommon.company.ticker,
-        name: uncommon.company.name,
-        open_date: uncommon.as_of_date,
-        open_price: uncommonPrice,
-        price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
-      },
-      largest: {
-        ticker: largest.company.ticker,
-        name: largest.company.name,
-        open_date: largest.as_of_date,
-        open_price: largestPrice,
-        price_percent_change_1_year: largestSec.price_percent_change_1_year,
-      },
-    };
+      return {
+        top_performing: {
+          ticker: get(topPerf, "company.ticker") ? topPerf.company.ticker : null,
+          name: get(topPerf, "company.name") ? topPerf.company.name : null,
+          open_date: get(topPerf, "as_of_date") ? topPerf.as_of_date : null,
+          open_price: topPerfPrice ? topPerfPrice : null,
+          price_percent_change_1_year: get(topPerfSec, "price_percent_change_1_year") ? topPerfSec.price_percent_change_1_year : null,
+        },
+        common: {
+          ticker: get(common, "company.ticker") ? common.company.ticker : null,
+          name: get(common, "company.name") ? common.company.name : null,
+          open_date: get(common, "as_of_date") ? common.as_of_date : null,
+          open_price: commonPrice ? commonPrice : null,
+          price_percent_change_1_year: get(commonSec, "price_percent_change_1_year") ? commonSec.price_percent_change_1_year : null,
+        },
+        uncommon: {
+          ticker: get(uncommon, "company.ticker") ? uncommon.company.ticker : null,
+          name: get(uncommon, "company.name") ? uncommon.company.name : null,
+          open_date: get(uncommon, "as_of_date") ? uncommon.as_of_date : null,
+          open_price: uncommonPrice ? uncommonPrice : null,
+          price_percent_change_1_year: get(uncommonSec, "price_percent_change_1_year") ? uncommonSec.price_percent_change_1_year : null,
+        },
+        largest: {
+          ticker: get(largest, "company.ticker") ? largest.company.ticker : null,
+          name: get(largest, "company.name") ? largest.company.name : null,
+          open_date: get(largest, "as_of_date") ? largest.as_of_date : null,
+          open_price: largestPrice ? largestPrice : null,
+          price_percent_change_1_year: get(largestSec, "price_percent_change_1_year") ? largestSec.price_percent_change_1_year : null,
+        },
+      };
+    }
+  } catch (error) {
+    console.log("--------------------Error------------------------");
+    console.error(error)
   }
 }
 
