@@ -322,8 +322,11 @@ export async function getSecurityPerformance(ticker) {
 
     let cachedOpen = await quodd.getOpenPrice(ticker);
 
-    console.log("cached open: ", cachedOpen)
-    console.log("cached open / 100: ", cachedOpen/100)
+    if (cachedOpen) {
+      cachedOpen = cachedOpen / 100;
+    }
+    
+    console.log("cached open: ", cachedOpen);
 
     let open_price = cachedOpen || intrinioResponse.open_price;
 
