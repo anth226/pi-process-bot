@@ -469,7 +469,7 @@ export async function getInstitutionSnapshot(id) {
   // console.log("topPerf", topPerf);
   // console.log("common", common);
   try {
-    if (topPerf && common && uncommon) {
+    if (topPerf && common && uncommon && largest) {
       let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
       let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
       let commonPrice = await titans.calculateHoldingPrice(common);
@@ -520,7 +520,7 @@ export async function getInstitutionSnapshot(id) {
       };
     }
   } catch (error) {
-    console.log("--------------------Error------------------------");
+    console.log("--------------------Institution Snapshot Error------------------------");
     console.error(error)
   }
 }
