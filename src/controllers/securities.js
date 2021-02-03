@@ -243,6 +243,10 @@ export async function getClosestPriceDate(date, dailyData) {
 }
 
 export async function getSecurityPerformance(ticker) {
+
+  console.log("----------------Start Performance----------------");
+  console.log("Ticker: ", ticker);
+
   let data = await getSecurityData.getChartData(securityAPI, ticker);
 
   if (!data || !data.daily || data.daily.length < 1) {
@@ -313,11 +317,16 @@ export async function getSecurityPerformance(ticker) {
   ) {
     let earliest;
     let latest = yearPrice ? yearPrice : data.daily.pop();
+
+    console.log("Fetch the open price");
+
     let cachedOpen = await quodd.getOpenPrice(ticker);
 
     if (cachedOpen) {
       cachedOpen = cachedOpen / 100;
     }
+    
+    console.log("cached open: ", cachedOpen);
 
     let open_price = cachedOpen || intrinioResponse.open_price;
 
@@ -353,5 +362,7 @@ export async function getSecurityPerformance(ticker) {
     await quodd.setPerfCache(ticker, perf);
     return perf;
   }
+  console.log("Failed to getSecurityPerformance for ticker: ", ticker);
+  console.log("----------------End Performance----------------");
   return null;
 }
