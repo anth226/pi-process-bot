@@ -6,7 +6,7 @@ import * as queue from "../queue";
 
 import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutional_holdings";
 
-import { orderBy, find, sumBy } from "lodash";
+import { orderBy, sumBy, get } from "lodash";
 
 export async function getInstitutions({
   sort = [],
@@ -148,6 +148,7 @@ export async function getInstitutionsHoldings(cik) {
   if (result && result.length > 0) {
     let { json_holdings } = result[0];
     if (!json_holdings) {
+      console.log("No json holdings for this institution: ", cik);
       return null;
     }
     let filtered = json_holdings.filter((o) => {
@@ -155,6 +156,7 @@ export async function getInstitutionsHoldings(cik) {
     });
     return filtered;
   }
+  console.log("Found no results from query (getInstitutionsHoldings)");
   return null;
 }
 
@@ -403,126 +405,166 @@ const evaluateSectorCompositions = async (data) => {
 };
 
 export async function getInstitutionSnapshot(id) {
+
+  console.log("Get institution id: ", id);
+
   let result = await db(`
     SELECT *
     FROM institutions
     WHERE id = ${id}
   `);
+  console.log("--------------------start------------------------");
 
   let data
   if (result.length > 0) {
+    console.log("Found the institution: ", result[0].id);
     data = await getInstitutionsHoldings(result[0].cik);
-    if (!data) {
+    if (!data || data.length === 0) {
+      console.log("data: ", data);
+      console.log("Found no holdings data for this institution: ", id)
+      console.log("Failed: ", id);
+      console.log("--------------------end------------------------");
       return null;
     }
+  } else {
+    console.log("Did not find this institution: ", id);
+    console.log("Failed: ", id);
+    console.log("--------------------end------------------------");
   }
 
+  console.log("Top perf started");
   let topPerf = await getSecuritiesBySort(
     "price_percent_change_1_year",
     "asc",
     data
   );
+  console.log(topPerf);
+  console.log("Top perf ended");
 
+  console.log("common started");
   let common = await getSecuritiesBySort(
     "institutional_holdings_count",
     "asc",
     data
   );
+  console.log(common);
+  console.log("common ended");
 
+
+  console.log("uncommon started");
   let uncommon = await getSecuritiesBySort(
     "institutional_holdings_count",
     "desc",
     data
   );
+  console.log(uncommon);
+  console.log("uncommon ended");
 
+
+  console.log("largest started");
   let largest = await getInstitutionLargestHolding(data);
+  console.log(largest);
+  console.log("largest ended");
 
   // console.log("topPerf", topPerf);
   // console.log("common", common);
+  try {
+    if (topPerf && common && uncommon && largest) {
+      let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
+      let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
+      let commonPrice = await titans.calculateHoldingPrice(common);
+      let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+      let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
+      let uncommonSec = await securities.getSecurityByTicker(uncommon.company.ticker);
+      let largestPrice = await titans.calculateHoldingPrice(largest);
+      let largestSec = await securities.getSecurityByTicker(largest.company.ticker);
 
-  if (topPerf && common && uncommon) {
-    let topPerfPrice = await titans.calculateHoldingPrice(topPerf);
-    let topPerfSec = await securities.getSecurityByTicker(topPerf.company.ticker);
-    let commonPrice = await titans.calculateHoldingPrice(common);
-    let commonSec = await securities.getSecurityByTicker(common.company.ticker);
-    let uncommonPrice = await titans.calculateHoldingPrice(uncommon);
-    let uncommonSec = await securities.getSecurityByTicker(uncommon.company.ticker);
-    let largestPrice = await titans.calculateHoldingPrice(largest);
-    let largestSec = await securities.getSecurityByTicker(largest.company.ticker);
+      // console.log("topPerfPrice", topPerfPrice);
+      // console.log("topPerfSec", topPerfSec);
+      // console.log("commonPrice", commonPrice);
+      // console.log("commonSec", commonSec);
+      // console.log("uncommonPrice", uncommonPrice);
+      // console.log("uncommonSec", uncommonSec);
+      // console.log("largestPrice", largestPrice);
+      // console.log("largestSec", largestSec);
 
-    // console.log("topPerfPrice", topPerfPrice);
-    // console.log("topPerfSec", topPerfSec);
-    // console.log("commonPrice", commonPrice);
-    // console.log("commonSec", commonSec);
-    // console.log("uncommonPrice", uncommonPrice);
-    // console.log("uncommonSec", uncommonSec);
-    // console.log("largestPrice", largestPrice);
-    // console.log("largestSec", largestSec);
-
-    if (
-      topPerfPrice && topPerfSec &&
-      commonPrice && commonSec &&
-      uncommonPrice && uncommonSec &&
-      largestPrice && largestSec
-    ) {
       return {
         top_performing: {
-          ticker: topPerf.company.ticker,
-          name: topPerf.company.name,
-          open_date: topPerf.as_of_date,
-          open_price: topPerfPrice,
-          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
+          ticker: get(topPerf, "company.ticker") ? topPerf.company.ticker : null,
+          name: get(topPerf, "company.name") ? topPerf.company.name : null,
+          open_date: get(topPerf, "as_of_date") ? topPerf.as_of_date : null,
+          open_price: topPerfPrice ? topPerfPrice : null,
+          price_percent_change_1_year: get(topPerfSec, "price_percent_change_1_year") ? topPerfSec.price_percent_change_1_year : null,
         },
         common: {
-          ticker: common.company.ticker,
-          name: common.company.name,
-          open_date: common.as_of_date,
-          open_price: commonPrice,
-          price_percent_change_1_year: commonSec.price_percent_change_1_year,
+          ticker: get(common, "company.ticker") ? common.company.ticker : null,
+          name: get(common, "company.name") ? common.company.name : null,
+          open_date: get(common, "as_of_date") ? common.as_of_date : null,
+          open_price: commonPrice ? commonPrice : null,
+          price_percent_change_1_year: get(commonSec, "price_percent_change_1_year") ? commonSec.price_percent_change_1_year : null,
         },
         uncommon: {
-          ticker: uncommon.company.ticker,
-          name: uncommon.company.name,
-          open_date: uncommon.as_of_date,
-          open_price: uncommonPrice,
-          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+          ticker: get(uncommon, "company.ticker") ? uncommon.company.ticker : null,
+          name: get(uncommon, "company.name") ? uncommon.company.name : null,
+          open_date: get(uncommon, "as_of_date") ? uncommon.as_of_date : null,
+          open_price: uncommonPrice ? uncommonPrice : null,
+          price_percent_change_1_year: get(uncommonSec, "price_percent_change_1_year") ? uncommonSec.price_percent_change_1_year : null,
         },
         largest: {
-          ticker: largest.company.ticker,
-          name: largest.company.name,
-          open_date: largest.as_of_date,
-          open_price: largestPrice,
-          price_percent_change_1_year: largestSec.price_percent_change_1_year,
+          ticker: get(largest, "company.ticker") ? largest.company.ticker : null,
+          name: get(largest, "company.name") ? largest.company.name : null,
+          open_date: get(largest, "as_of_date") ? largest.as_of_date : null,
+          open_price: largestPrice ? largestPrice : null,
+          price_percent_change_1_year: get(largestSec, "price_percent_change_1_year") ? largestSec.price_percent_change_1_year : null,
         },
       };
     }
+  } catch (error) {
+    console.log("--------------------Institution Snapshot Error------------------------");
+    console.error(error)
   }
 }
 
 const getSecuritiesBySort = async (sort, direction, data) => {
+  console.log("starting securities by sort");
   let tickerList = [];
   for (let i in data) {
     let ticker = data[i].company.ticker;
     tickerList.push(ticker);
   }
 
-  let tickers = await tickerList.map((x) => "'" + x + "'").toString();
-  let secs = await securities.getSecuritiesByTickers(tickers);
-  if (direction == "asc") {
-    secs.sort((a, b) => a[sort] - b[sort]);
-  } else {
-    secs.sort((a, b) => b[sort] - a[sort]);
-  }
+  console.log("Got tickers: ", tickerList.length);
 
-  let topStock = secs.pop();
-  if (topStock) {
-    let topTicker = topStock.ticker;
-    for (let i in data) {
-      let ticker = data[i].company.ticker;
-      if (topTicker == ticker) {
-        return data[i];
-      }
+  let tickers = await tickerList.map((x) => "'" + x + "'").toString();
+
+  console.log("Tickers string: ", tickers.length);
+
+  let secs = await securities.getSecuritiesByTickers(tickers);
+
+  if (secs) {
+    if (direction == "asc") {
+      secs.sort((a, b) => a[sort] - b[sort]);
+    } else {
+      secs.sort((a, b) => b[sort] - a[sort]);
     }
+
+    let topStock = secs.pop();
+    if (topStock) {
+      let topTicker = topStock.ticker;
+      for (let i in data) {
+        let ticker = data[i].company.ticker;
+        if (topTicker == ticker) {
+          return data[i];
+        }
+        if (i >= (data.length - 1)) {
+          console.log("Could not find the company")
+        }
+      }
+    } else {
+      console.log("There is no last item");
+    }
+  } else {
+    console.log("There are no securities");
   }
 }
 
@@ -552,6 +594,7 @@ export async function insertSnapshotInstitution(id, snapshot) {
 
 export async function getInstitutionLargestHolding(data) {
   let holdingList = [];
+  let hList = [];
   let newestDate = data[0].as_of_date;
   for (let i in data) {
     let ticker = data[i].company.ticker;
@@ -559,12 +602,35 @@ export async function getInstitutionLargestHolding(data) {
     let marketValue = data[i].market_value;
     if (ticker && openDate == newestDate && marketValue && marketValue > 0) {
       holdingList.push(data[i]);
+    } else if (ticker && marketValue && marketValue > 0) {
+      hList.push(data[i]);
+    }
+    if (i >= (data.length - 1) && holdingList.length === 0) {
+      console.log("Could not find a largest new holding");
     }
   }
   holdingList.sort((a, b) => a["market_value"] - b["market_value"]);
+
   let topStock = holdingList.pop();
   if (topStock) {
     return topStock;
+  } else {
+    console.log("Could not find last value");
+  }
+
+  hList = orderBy(
+    hList,
+    ["hList[0].as_of_date", "hList[1].market_value"],
+    ["desc", "desc"]
+  );
+
+  console.log("Failed: attempting backup option");
+
+  let topStockTwo = hList.pop();
+  if (topStockTwo) {
+    return topStockTwo;
+  } else {
+    console.log("Could not find last value of hList either");
   }
 }
 

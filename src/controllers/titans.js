@@ -5,10 +5,10 @@ import * as queue from "../queue";
 
 import * as holdings from "./holdings";
 
-import { orderBy, find, sumBy } from "lodash";
+import { orderBy, find, sumBy, get } from "lodash";
 
 import redis, { KEY_FORBES_TITANS } from "../redis";
-import { nullFormatter } from "../components/common/Table/helpers";
+// import { nullFormatter } from "../components/common/Table/helpers";
 import * as performances from "./performances";
 import * as securities from "./securities";
 import * as institutions from "./institutions";
@@ -162,7 +162,7 @@ export async function cacheCompanies_Portfolio(cik) {
         queue.publish_ProcessCompanyLookup(ticker);
         queue.publish_ProcessSecurityPrices(ticker);
       });
-    } catch {}
+    } catch { }
   }
 }
 
@@ -676,6 +676,12 @@ export async function calculateHoldingPrice(holding) {
   let marketValue = holding.market_value;
   if (shares > 0 && marketValue > 0) {
     return marketValue / shares;
+  } else {
+    console.log("Calculate holding price failed... printing values");
+    console.log("holding: ", holding);
+    console.log("shares: ", shares);
+    console.log("marketValue: ", marketValue);
+    console.log("shares: ", shares);
   }
 }
 
@@ -707,68 +713,62 @@ export async function getTitanSnapshot(id) {
   // console.log("uncommon", uncommon);
   // console.log("largest", largest);
 
-  if (topPerf && common && uncommon && largest) {
-    let topPerfPrice = await calculateHoldingPrice(topPerf);
-    let commonPrice = await calculateHoldingPrice(common);
-    let uncommonPrice = await calculateHoldingPrice(uncommon);
-    let largestPrice = await calculateHoldingPrice(largest);
-    let topPerfSec = await securities.getSecurityByTicker(
-      topPerf.company.ticker
-    );
-    let commonSec = await securities.getSecurityByTicker(common.company.ticker);
-    let uncommonSec = await securities.getSecurityByTicker(
-      uncommon.company.ticker
-    );
-    let largestSec = await securities.getSecurityByTicker(
-      largest.company.ticker
-    );
+  try {
+    if (topPerf && common && uncommon && largest) {
+      let topPerfPrice = await calculateHoldingPrice(topPerf);
+      let commonPrice = await calculateHoldingPrice(common);
+      let uncommonPrice = await calculateHoldingPrice(uncommon);
+      let largestPrice = await calculateHoldingPrice(largest);
+      let topPerfSec = await securities.getSecurityByTicker(
+        topPerf.company.ticker
+      );
+      let commonSec = await securities.getSecurityByTicker(common.company.ticker);
+      let uncommonSec = await securities.getSecurityByTicker(
+        uncommon.company.ticker
+      );
+      let largestSec = await securities.getSecurityByTicker(
+        largest.company.ticker
+      );
 
-    // console.log("topPerfPrice", topPerfPrice);
-    // console.log("commonPrice", commonPrice);
-    // console.log("uncommonPrice", uncommonPrice);
-    // console.log("largestPrice", largestPrice);
+      // console.log("topPerfPrice", topPerfPrice);
+      // console.log("commonPrice", commonPrice);
+      // console.log("uncommonPrice", uncommonPrice);
+      // console.log("largestPrice", largestPrice);
 
-    if (
-      topPerfPrice &&
-      commonPrice &&
-      uncommonPrice &&
-      largestPrice &&
-      topPerfSec &&
-      commonSec &&
-      uncommonSec &&
-      largestSec
-    ) {
       return {
         top_performing: {
-          ticker: topPerf.company.ticker,
-          name: topPerf.company.name,
-          open_date: topPerf.as_of_date,
-          open_price: topPerfPrice,
-          price_percent_change_1_year: topPerfSec.price_percent_change_1_year,
+          ticker: get(topPerf, "company.ticker") ? topPerf.company.ticker : null,
+          name: get(topPerf, "company.name") ? topPerf.company.name : null,
+          open_date: get(topPerf, "as_of_date") ? topPerf.as_of_date : null,
+          open_price: topPerfPrice ? topPerfPrice : null,
+          price_percent_change_1_year: get(topPerfSec, "price_percent_change_1_year") ? topPerfSec.price_percent_change_1_year : null,
         },
         common: {
-          ticker: common.company.ticker,
-          name: common.company.name,
-          open_date: common.as_of_date,
-          open_price: commonPrice,
-          price_percent_change_1_year: commonSec.price_percent_change_1_year,
+          ticker: get(common, "company.ticker") ? common.company.ticker : null,
+          name: get(common, "company.name") ? common.company.name : null,
+          open_date: get(common, "as_of_date") ? common.as_of_date : null,
+          open_price: commonPrice ? commonPrice : null,
+          price_percent_change_1_year: get(commonSec, "price_percent_change_1_year") ? commonSec.price_percent_change_1_year : null,
         },
         uncommon: {
-          ticker: uncommon.company.ticker,
-          name: uncommon.company.name,
-          open_date: uncommon.as_of_date,
-          open_price: uncommonPrice,
-          price_percent_change_1_year: uncommonSec.price_percent_change_1_year,
+          ticker: get(uncommon, "company.ticker") ? uncommon.company.ticker : null,
+          name: get(uncommon, "company.name") ? uncommon.company.name : null,
+          open_date: get(uncommon, "as_of_date") ? uncommon.as_of_date : null,
+          open_price: uncommonPrice ? uncommonPrice : null,
+          price_percent_change_1_year: get(uncommonSec, "price_percent_change_1_year") ? uncommonSec.price_percent_change_1_year : null,
         },
         largest: {
-          ticker: largest.company.ticker,
-          name: largest.company.name,
-          open_date: largest.as_of_date,
-          open_price: largestPrice,
-          price_percent_change_1_year: largestSec.price_percent_change_1_year,
+          ticker: get(largest, "company.ticker") ? largest.company.ticker : null,
+          name: get(largest, "company.name") ? largest.company.name : null,
+          open_date: get(largest, "as_of_date") ? largest.as_of_date : null,
+          open_price: largestPrice ? largestPrice : null,
+          price_percent_change_1_year: get(largestSec, "price_percent_change_1_year") ? largestSec.price_percent_change_1_year : null,
         },
       };
     }
+  } catch (error) {
+    console.log("--------------------Titan Snaphot Error------------------------");
+    console.error(error)
   }
 }
 
