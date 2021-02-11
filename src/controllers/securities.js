@@ -11,12 +11,15 @@ import * as getSecurityData from "./intrinio/get_security_data";
 import moment from "moment";
 import MTZ from "moment-timezone";
 
+import { CACHED_SECURITY } from "../redis";
+
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
   process.env.INTRINIO_API_KEY;
 
 intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
 
+let sharedCache;
 const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
 const indexAPI = new intrinioSDK.IndexApi();
@@ -365,4 +368,128 @@ export async function getSecurityPerformance(ticker) {
   console.log("Failed to getSecurityPerformance for ticker: ", ticker);
   console.log("----------------End Performance----------------");
   return null;
+}
+
+export async function processNewTicker(ticker) {
+  const sharedCache = connectSharedCache();
+  const alreadyProcessed = await securityExists({
+    sharedCache,
+    ticker
+  });
+
+  if (alreadyProcessed) {
+    return true;
+  }
+
+  const securityDetails = await fetchSecurityDetails(ticker);
+
+  if (!securityDetails.type) {
+    console.log(`unknown-type-detected-${ticker}`);
+
+    return false;
+  }
+
+  await createNewSecurityEntry(securityDetails);
+  await createTypeSpecificEntry(securityDetails);
+  await markTickerAsProcessed(ticker);
+
+  console.log(`new-ticker-${ticker}-added`);
+
+  return true;
+}
+
+const connectSharedCache = () => {
+  let credentials = {
+    host: process.env.REDIS_HOST_SHARED_CACHE,
+    port: process.env.REDIS_PORT_SHARED_CACHE,
+  };
+
+  if (!sharedCache) {
+    const client = redis.createClient(credentials);
+
+    client.on("error", function (error) {
+      //   reportError(error);
+    });
+
+    sharedCache = asyncRedis.decorate(client);
+  }
+
+  return sharedCache;
+};
+
+const securityExists = async ({sharedCache, ticker}) => {
+  let exists = await sharedCache.get(`${CACHED_SECURITY}-e${ticker}`);
+
+  if (exists) {
+    return true;
+  }
+
+  return false;
+}
+
+const markTickerAsProcessed = ({sharedCache, ticker}) => {
+  return sharedCache.set(`${CACHED_SECURITY}-e${ticker}`, true);
+}
+
+const fetchSecurityDetails = async (ticker) => {
+  const codesMap = {
+    EQS: 'common_stock',
+    ETF: 'etf',
+    CEF: 'mutual_fund',
+  };
+
+  const intrinioResponse = await axios.get(
+    `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}?api_key=${process.env.INTRINIO_API_KEY}`
+  );
+
+  const securityDetails = intrinioResponse.data;
+
+  return {
+    ticker,
+    type: codesMap[securityDetails.code],
+    cik: securityDetails.cik || null,
+    name: intrinioResponse.name || null
+  };
+}
+
+const createNewSecurityEntry = (security) => {
+  return db({
+    text:
+      "INSERT INTO securities (ticker, type, cik, name) VALUES ( $1, $2, $3, $4 ) RETURNING *",
+    values: [security.ticker, ticker.type, ticker.cik, ticker.name],
+  });
+}
+
+const createTypeSpecificEntry = async (security) => {
+  switch (security.type) {
+    case 'common_stock': 
+      await createCompanyEntry(security);
+      break;
+    case 'etf': 
+      await createETFEntry(security);
+      break;
+    case 'mutual_fund': 
+      await createMutualFundEntry(security);
+      break;
+  }
+
+  return true;
+}
+
+const createCompanyEntry = async (security) => {
+  /**
+   * TODO:
+   */
+}
+
+const createETFEntry = async (security) => {
+  /**
+   * TODO:
+   */
+}
+
+const createMutualFundEntry = async (security) => {
+  /**
+   * TODO:
+   */
 }
