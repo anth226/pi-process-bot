@@ -10,6 +10,8 @@ import * as widgets from "./widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
 import moment from "moment";
 import MTZ from "moment-timezone";
+import asyncRedis from "async-redis";
+import redis from "redis";
 
 import { CACHED_SECURITY } from "../redis";
 
@@ -378,6 +380,8 @@ export async function processNewTicker(ticker) {
   });
 
   if (alreadyProcessed) {
+    console.log(`Security ${ticker} already exists`);
+
     return true;
   }
 
@@ -389,9 +393,31 @@ export async function processNewTicker(ticker) {
     return false;
   }
 
-  await createNewSecurityEntry(securityDetails);
-  await createTypeSpecificEntry(securityDetails);
-  await markTickerAsProcessed(ticker);
+  await createNewSecurity(securityDetails);
+
+  try {
+    switch (securityDetails.type) {
+      case 'common_stock': 
+        await createCompany(securityDetails);
+        break;
+      case 'etf': 
+        await createETF(securityDetails);
+        break;
+      case 'mutual_fund': 
+        await createMutualFund(securityDetails);
+        break;
+      default: 
+        console.log(`Stock type ${securityDetails.type} not supported`);
+        break;
+    }
+  } catch (e) {
+    console.log('Failed to create type specific record', e);
+  }
+
+  await markTickerAsProcessed({
+    sharedCache, 
+    ticker
+  });
 
   console.log(`new-ticker-${ticker}-added`);
 
@@ -448,48 +474,99 @@ const fetchSecurityDetails = async (ticker) => {
     ticker,
     type: codesMap[securityDetails.code],
     cik: securityDetails.cik || null,
-    name: intrinioResponse.name || null
+    name: securityDetails.name || null
   };
 }
 
-const createNewSecurityEntry = (security) => {
+const createNewSecurity = (security) => {
   return db({
     text:
       "INSERT INTO securities (ticker, type, cik, name) VALUES ( $1, $2, $3, $4 ) RETURNING *",
-    values: [security.ticker, ticker.type, ticker.cik, ticker.name],
+    values: [security.ticker, security.type, security.cik, security.name],
   });
 }
 
-const createTypeSpecificEntry = async (security) => {
-  switch (security.type) {
-    case 'common_stock': 
-      await createCompanyEntry(security);
-      break;
-    case 'etf': 
-      await createETFEntry(security);
-      break;
-    case 'mutual_fund': 
-      await createMutualFundEntry(security);
-      break;
+const createCompany = async (security) => {
+  let companyDetails = null;
+  let logoDetails = {};
+
+  try {
+    const intrinioResponse = await axios.get(
+      `${process.env.INTRINIO_BASE_PATH}/companies/${security.ticker}?api_key=${process.env.INTRINIO_API_KEY}`
+    );
+
+    companyDetails = intrinioResponse.data;
+
+    try {
+      const brandFetchResponse = await axios.post(process.env.BRAND_FETCH_BASE_PATH, {
+        domain: companyDetails.company_url
+      }, {
+        headers: {
+          'x-api-key': process.env.BRAND_FETCH_API_KEY,
+          'Content-Type': 'application/json'
+        }
+      });
+  
+      logoDetails = brandFetchResponse.data;
+    } catch (e) {
+      console.log(`Logo not found ${security.ticker}`);
+    }
+  } catch (e) {
+    throw new Error(`Company Details Not Found`);
   }
 
-  return true;
+  const logo = (
+    (logoDetails.response && logoDetails.response.logo && logoDetails.response.logo.image) ||
+    (logoDetails.response && logoDetails.response.icon && logoDetails.response.icon.image)
+  );
+
+  const logoSource = logo ? 'brandfetch' : null;
+
+  console.log(logo);
+
+  return db({
+    text:
+      `INSERT INTO companies 
+        (json, ticker, updated_at, json_metrics, json_calculations, cik, json_clearbit, json_brandfetch, logo_url, logo_source) 
+        VALUES ( $1, $2, now(), null, null, $3, null, $4, $5, $6 ) 
+        RETURNING *
+      `,
+    values: [companyDetails, security.ticker, security.cik, logoDetails, (logo || null), logoSource],
+  });
 }
 
-const createCompanyEntry = async (security) => {
-  /**
-   * TODO:
-   */
+const createETF = async (security) => {
+  let etfDetails = null;
+  
+  try {
+    const intrinioResponse = await axios.get(
+      `${process.env.INTRINIO_BASE_PATH}/etfs/${security.ticker}?api_key=${process.env.INTRINIO_API_KEY}`
+    );
+
+    etfDetails = intrinioResponse.data;
+  } catch (e) {
+    throw new Error(`ETF Details Not Found`);
+  }
+
+  return db({
+    text:
+      `INSERT INTO companies 
+        (json, ticker, updated_at, json_stats, json_analytics) 
+        VALUES ( $1, $2, now(), null, null ) 
+        RETURNING *
+      `,
+    values: [etfDetails, security.ticker],
+  });
 }
 
-const createETFEntry = async (security) => {
-  /**
-   * TODO:
-   */
-}
-
-const createMutualFundEntry = async (security) => {
-  /**
-   * TODO:
-   */
+const createMutualFund = async (security) => {
+  return db({
+    text:
+      `INSERT INTO mutual_funds 
+        (json, updated_at, ticker, json_summary, json_performance) 
+        VALUES ( null, now(), $1, null, null ) 
+        RETURNING *
+      `,
+    values: [security.ticker],
+  });
 }

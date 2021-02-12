@@ -15,6 +15,7 @@ import * as etfs from "./etfs";
 import * as securities from "./securities";
 import * as earnings from "./earnings";
 import * as quodd from "./quodd";
+import { getPortfolioByDashboardID } from "./userportfolios";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =

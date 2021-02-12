@@ -18,6 +18,7 @@ import * as etfs from "./controllers/etfs";
 import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
 import * as userPortfolios from "./controllers/userportfolios";
+import * as ncds from "./controllers/ncds";
 
 import * as yahoo from "./controllers/yahoo";
 
@@ -562,6 +563,21 @@ app.get("/categorize_securities", async (req, res) => {
     return;
   }
   await nlp.categorizeTickers();
+  res.send("ok");
+});
+
+/* NCDS */
+app.get("/ncds_consolidate", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await ncds.consolidate();
   res.send("ok");
 });
 
