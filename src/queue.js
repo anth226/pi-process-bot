@@ -1350,7 +1350,7 @@ export const newTickersConsumer = Consumer.create({
       try {
         await securities.processNewTicker(ticker);
       } catch (e) {
-        console.log(`Failed to add new ticker ${ticker}`)
+        console.log(`Failed to add new ticker ${ticker}`, e);
       }
     }
   },
