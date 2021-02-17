@@ -1330,3 +1330,36 @@ consumer_21.on("error", (err) => {
 consumer_21.on("processing_error", (err) => {
   console.error(err.message);
 });
+
+export const newTickersConsumer = Consumer.create({
+  queueUrl: process.env.AWS_SQS_URL_PROCESS_NEW_SECURITY,
+  handleMessage: async (message) => {
+    let tickers = JSON.parse(message.Body);
+
+    console.log("sqs-new-tickers-received");
+
+    if (!Array.isArray(tickers)) {
+      return;
+    }
+
+    for(let index = 0; index < tickers.length; index++) {
+      const ticker = tickers[index].substring(1);
+
+      console.log("sqs-new-ticker-", ticker);
+
+      try {
+        await securities.processNewTicker(ticker);
+      } catch (e) {
+        console.log(`Failed to add new ticker ${ticker}`, e);
+      }
+    }
+  },
+});
+
+newTickersConsumer.on("error", (err) => {
+  console.error(err.message);
+});
+
+newTickersConsumer.on("processing_error", (err) => {
+  console.error(err.message);
+});
