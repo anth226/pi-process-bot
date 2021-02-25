@@ -107,6 +107,7 @@ export async function fillPerformancesSecurities() {
 
 export async function insertPerformanceSecurity(
   ticker,
+  perf_today,
   perf_7_days,
   perf_14_days,
   perf_30_days,
@@ -126,8 +127,17 @@ export async function insertPerformanceSecurity(
 
   if (result.length > 0) {
     let query = {
-      text:
-        "UPDATE securities SET price_percent_change_7_days = $2, price_percent_change_14_days = $3, price_percent_change_30_days = $4, price_percent_change_3_months = $5, price_percent_change_1_year = $6, perf_values = $7  WHERE ticker = $1",
+      text: `
+        UPDATE securities 
+        SET price_percent_change_7_days = $2, 
+        price_percent_change_14_days = $3, 
+        price_percent_change_30_days = $4, 
+        price_percent_change_3_months = $5, 
+        price_percent_change_1_year = $6, 
+        perf_values = $7,  
+        today_performance = $8
+        WHERE ticker = $1
+      `,
       values: [
         ticker,
         perf_7_days,
@@ -136,6 +146,7 @@ export async function insertPerformanceSecurity(
         perf_3_months,
         perf_1_year,
         perf_values,
+        (Math.round(perf_today * 100) / 100)
       ],
     };
     await db(query);
@@ -213,7 +224,7 @@ export async function getClosestPriceDate(date, dailyData) {
       dpDate = strDate.slice(0, 10);
     }
 
-    return dpDate === current;
+    return (dpDate === current && dataPoint.value);
   });
 
   while (itemIndex < 0) {
@@ -235,7 +246,7 @@ export async function getClosestPriceDate(date, dailyData) {
         dpDate = strDate.slice(0, 10);
       }
 
-      return dpDate === current;
+      return (dpDate === current && dataPoint.value);
     });
 
     checks += 1;
@@ -248,7 +259,6 @@ export async function getClosestPriceDate(date, dailyData) {
 }
 
 export async function getSecurityPerformance(ticker) {
-
   console.log("----------------Start Performance----------------");
   console.log("Ticker: ", ticker);
 
@@ -259,6 +269,10 @@ export async function getSecurityPerformance(ticker) {
   }
 
   let dailyData = data.daily;
+
+  if (dailyData.length === 1 && !dailyData[0].value) {
+    return;
+  }
 
   let est = moment.tz("America/New_York").format("YYYY-MM-DD");
 
@@ -287,13 +301,6 @@ export async function getSecurityPerformance(ticker) {
     .subtract(1, "years")
     .format("YYYY-MM-DD");
 
-  // console.log("est", est);
-  // console.log("week", week);
-  // console.log("twoweek", twoweek);
-  // console.log("month", month);
-  // console.log("threemonth", threemonth);
-  // console.log("year", year);
-
   let estTimestamp = moment.tz("America/New_York").format("YYYY-MM-DD");
 
   let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
@@ -304,13 +311,6 @@ export async function getSecurityPerformance(ticker) {
   let monthPrice = await getClosestPriceDate(month, dailyData);
   let threemonthPrice = await getClosestPriceDate(threemonth, dailyData);
   let yearPrice = await getClosestPriceDate(year, dailyData);
-
-  // console.log("todayPrice", todayPrice);
-  // console.log("weekPrice", weekPrice);
-  // console.log("twoweekPrice", twoweekPrice);
-  // console.log("monthPrice", monthPrice);
-  // console.log("threemonthPrice", threemonthPrice);
-  // console.log("yearPrice", yearPrice);
 
   if (
     todayPrice &&
@@ -326,6 +326,7 @@ export async function getSecurityPerformance(ticker) {
     console.log("Fetch the open price");
 
     let cachedOpen = await quodd.getOpenPrice(ticker);
+    let lastPrice = await quodd.getLastPrice(ticker);
 
     if (cachedOpen) {
       cachedOpen = cachedOpen / 100;
@@ -334,6 +335,8 @@ export async function getSecurityPerformance(ticker) {
     console.log("cached open: ", cachedOpen);
 
     let open_price = cachedOpen || intrinioResponse.open_price;
+
+    console.log("open_price: ", open_price);
 
     if (open_price) {
       earliest = {
@@ -344,7 +347,20 @@ export async function getSecurityPerformance(ticker) {
       earliest = todayPrice;
     }
 
+    var todayperf = null;
+    if (earliest.value) {
+      todayperf = ((lastPrice.last_price || earliest.value) / earliest.value - 1) * 100;
+    }
+
+    // console.log("today: ", todayperf);
+    // console.log("week: ", (earliest.value / weekPrice.value - 1) * 100);
+    // console.log("2week: ", (earliest.value / twoweekPrice.value - 1) * 100);
+    // console.log("1month: ", (earliest.value / monthPrice.value - 1) * 100);
+    // console.log("3month: ", (earliest.value / threemonthPrice.value - 1) * 100);
+    // console.log("1year: ", (earliest.value / latest.value - 1) * 100);
+
     let perf = {
+      price_percent_change_today: todayperf,
       price_percent_change_7_days: (earliest.value / weekPrice.value - 1) * 100,
       price_percent_change_14_days:
         (earliest.value / twoweekPrice.value - 1) * 100,

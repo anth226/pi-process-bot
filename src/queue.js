@@ -13,6 +13,7 @@ import * as etfs from "./controllers/etfs";
 import * as nlp from "./controllers/nlp";
 import * as earnings from "./controllers/earnings";
 import * as userPortfolios from "./controllers/userportfolios";
+import db from "./db";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -1115,6 +1116,7 @@ export const consumer_17 = Consumer.create({
     );
 
     if (performance) {
+      let perf_today = performance.price_percent_change_today;
       let perf_7_days = performance.price_percent_change_7_days;
       let perf_14_days = performance.price_percent_change_14_days;
       let perf_30_days = performance.price_percent_change_30_days;
@@ -1126,6 +1128,7 @@ export const consumer_17 = Consumer.create({
 
       await securities.insertPerformanceSecurity(
         sqsMessage.ticker,
+        perf_today,
         perf_7_days,
         perf_14_days,
         perf_30_days,
@@ -1270,11 +1273,13 @@ export const consumer_20 = Consumer.create({
 
     let portId = sqsMessage.id;
 
-    let userPriceWidgets = await widgets.getLocalPriceWidgetsByPortId(portId);
-    console.log("userPriceWidgets", userPriceWidgets);
+    const portfoliosHistories = await db(`
+      SELECT * from portfolio_histories
+      WHERE portfolio_histories.portfolio_id = ${portId} AND close_date is null AND type in ('common_stock', 'etf');
+    `);
 
     let stocksHistorical = await userPortfolios.getStocksHistorical(
-      userPriceWidgets
+      portfoliosHistories
     );
 
     let stocks = await userPortfolios.getStocks(portId);
@@ -1288,7 +1293,7 @@ export const consumer_20 = Consumer.create({
       portId,
       stocksHistorical,
       stocks,
-      titans
+      titans ? titans : null
     );
   },
 });

@@ -202,7 +202,7 @@ export async function processInput(widgetInstanceId) {
     else if (type == "TitansTrending") {
       let data = await updateTrendingTitans();
       if (data && data.length === 0) {
-        return
+        return;
       }
       console.log("data", data);
       let json = JSON.stringify(data);
@@ -509,29 +509,31 @@ export async function getMutualFundsTopNDiscountOrPremium(topNum, isDiscount) {
   if (result.length > 0) {
     for (let i in result) {
       let fund = result[i];
-      let fundCategory = fund.json.fundCategory;
+      if (fund.json && fund.json.fundCategory) {
+        let fundCategory = fund.json.fundCategory;
 
-      if (fund["json"]) {
-        if (fund["json"]["nav"] && fund["json"]["mktPrice"]) {
-          let difference = (
-            (fund.json.mktPrice / fund.json.nav - 1) *
-            100
-          ).toFixed(2);
-          if (fundCategory[0] == "E") {
-            eFunds.push({
-              fund: fund,
-              diff: difference,
-            });
-          } else if (fundCategory[0] == "F") {
-            fFunds.push({
-              fund: fund,
-              diff: difference,
-            });
-          } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
-            oFunds.push({
-              fund: fund,
-              diff: difference,
-            });
+        if (fund["json"]) {
+          if (fund["json"]["nav"] && fund["json"]["mktPrice"]) {
+            let difference = (
+              (fund.json.mktPrice / fund.json.nav - 1) *
+              100
+            ).toFixed(2);
+            if (fundCategory[0] == "E") {
+              eFunds.push({
+                fund: fund,
+                diff: difference,
+              });
+            } else if (fundCategory[0] == "F") {
+              fFunds.push({
+                fund: fund,
+                diff: difference,
+              });
+            } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+              oFunds.push({
+                fund: fund,
+                diff: difference,
+              });
+            }
           }
         }
       }
@@ -587,15 +589,17 @@ export async function getMutualFundsTopNYield(topNum) {
   if (result.length > 0) {
     for (let i in result) {
       let fund = result[i];
-      let fundCategory = fund.json.fundCategory;
+      if (fund.json && fund.json.fundCategory) {
+        let fundCategory = fund.json.fundCategory;
 
-      if (fund.json.yield > 0) {
-        if (fundCategory[0] == "E") {
-          eFunds.push(fund);
-        } else if (fundCategory[0] == "F") {
-          fFunds.push(fund);
-        } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
-          oFunds.push(fund);
+        if (fund.json.yield > 0) {
+          if (fundCategory[0] == "E") {
+            eFunds.push(fund);
+          } else if (fundCategory[0] == "F") {
+            fFunds.push(fund);
+          } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+            oFunds.push(fund);
+          }
         }
       }
     }
@@ -637,15 +641,17 @@ export async function getMutualFundsTopNNetAssets(topNum) {
   if (result.length > 0) {
     for (let i in result) {
       let fund = result[i];
-      let fundCategory = fund.json.fundCategory;
+      if (fund.json && fund.json.fundCategory) {
+        let fundCategory = fund.json.fundCategory;
 
-      if (fund.json_summary && fund.json_summary.netAssets > 0) {
-        if (fundCategory[0] == "E") {
-          eFunds.push(fund);
-        } else if (fundCategory[0] == "F") {
-          fFunds.push(fund);
-        } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
-          oFunds.push(fund);
+        if (fund.json_summary && fund.json_summary.netAssets > 0) {
+          if (fundCategory[0] == "E") {
+            eFunds.push(fund);
+          } else if (fundCategory[0] == "F") {
+            fFunds.push(fund);
+          } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+            oFunds.push(fund);
+          }
         }
       }
     }
@@ -687,15 +693,17 @@ export async function getMutualFundsTopNPerformance(topNum, freq) {
   if (result.length > 0) {
     for (let i in result) {
       let fund = result[i];
-      let fundCategory = fund.json.fundCategory;
+      if (fund.json && fund.json.fundCategory) {
+        let fundCategory = fund.json.fundCategory;
 
-      if (fund.json_performance && fund.json_performance[freq]) {
-        if (fundCategory[0] == "E") {
-          eFunds.push(fund);
-        } else if (fundCategory[0] == "F") {
-          fFunds.push(fund);
-        } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
-          oFunds.push(fund);
+        if (fund.json_performance && fund.json_performance[freq]) {
+          if (fundCategory[0] == "E") {
+            eFunds.push(fund);
+          } else if (fundCategory[0] == "F") {
+            fFunds.push(fund);
+          } else if (fundCategory[0] == "H" || fundCategory[0] == "C") {
+            oFunds.push(fund);
+          }
         }
       }
     }
@@ -1589,8 +1597,8 @@ export async function processUsersPortPerf() {
 }
 
 const updateTrendingTitans = async () => {
-  const start = moment().subtract(7, 'd').format()
-  const end = moment().format()
+  const start = moment().subtract(7, "d").format();
+  const end = moment().format();
 
   const groupByTitans = await db1(`
     SELECT titan_uri, count(titan_uri) FROM titans WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri order by COUNT DESC
@@ -1599,7 +1607,7 @@ const updateTrendingTitans = async () => {
   let titans = [];
 
   for (const titan of groupByTitans) {
-    const { titan_uri, count } = titan
+    const { titan_uri, count } = titan;
 
     const titanData = await db(`
       SELECT * FROM billionaires WHERE uri = '${titan_uri}'
@@ -1611,8 +1619,8 @@ const updateTrendingTitans = async () => {
         name: titanData[0].name,
         photo_url: titanData[0].photo_url,
         uri: titanData[0].uri,
-        views: count
-      })
+        views: count,
+      });
     }
   }
 
@@ -1622,3 +1630,5 @@ const updateTrendingTitans = async () => {
 
   return titans;
 };
+
+//test

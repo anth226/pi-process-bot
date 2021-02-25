@@ -1,5 +1,6 @@
 import db from "../db";
 import * as queue from "../queue";
+import size from "lodash/size";
 
 import * as widgets from "./widgets";
 import * as institutions from "./institutions";
@@ -149,17 +150,25 @@ export async function getIfStocksPinned(portId, priceWidgets) {
   return false;
 }
 
+export const getPinnedPortfolios = async () => {
+  const result = await db(`
+    SELECT portfolios.id
+    from portfolios
+    JOIN portfolio_histories ON portfolios.id = portfolio_histories.portfolio_id 
+    WHERE close_date is null and type in ('common_stock', 'etf') GROUP BY portfolios.id
+  `);
+  return result
+}
+
 export async function fillUsersPortPerfs() {
   let ports = [];
   // get portfolios
-  let result = await getPortfolios();
-  let priceWidgets = await widgets.getLocalPriceWidgets();
+  let result = await getPinnedPortfolios();
 
   if (result && result.length > 0) {
     for (let i in result) {
       let portId = result[i].id;
-      let areStocksPinned = await getIfStocksPinned(portId, priceWidgets);
-      if (areStocksPinned && !ports.includes(portId)) {
+      if (!ports.includes(portId)) {
         ports.push(portId);
       }
     }
@@ -187,7 +196,7 @@ export async function getStocksHistorical(priceWidgets) {
     year: 0,
   };
   for (let i in priceWidgets) {
-    let ticker = priceWidgets[i].output.ticker;
+    let ticker = priceWidgets[i].ticker;
     // can also get security perf directly instead of db
     let sec = await securities.getSecurityByTicker(ticker);
     if (sec && sec.perf_values) {
@@ -339,15 +348,41 @@ export async function insertUserPortPerf(
   stocks,
   titans
 ) {
-  //update
-  let query = {
-    text:
-      "UPDATE portfolios SET stocks_historical = $2, stocks = $3, titans = $4 WHERE id = $1",
-    values: [portId, stocksHistorical, stocks, titans],
-  };
+  try {
+    //update
+    let query = {
+      text:
+        "UPDATE portfolios SET stocks_historical = $2, stocks = $3, titans = $4 WHERE id = $1",
+      values: [portId, stocksHistorical, stocks, titans],
+    };
 
-  await db(query);
-  console.log("portfolio updated");
+    const performanceData = await db(`
+      SELECT * FROM portfolio_performances WHERE portfolio_id = ${portId}
+    `)
+
+    if (size(performanceData) !== 0) {
+      const updateQuery = {
+        text:
+          "UPDATE portfolio_performances SET price_percent_change_7_days = $2, price_percent_change_14_days = $3, price_percent_change_30_days = $4, price_percent_change_3_months = $5 WHERE id = $1",
+        values: [portId, stocksHistorical.price_percent_change_7_days, stocksHistorical.price_percent_change_14_days, stocksHistorical.price_percent_change_30_days, stocksHistorical.price_percent_change_3_months],
+      }
+
+      await db(updateQuery);
+    } else {
+      const insertQuery = {
+        text:
+          "INSERT INTO portfolio_performances (portfolio_id, price_percent_change_7_days, price_percent_change_14_days , price_percent_change_30_days, price_percent_change_3_months) VALUES ($1, $2, $3, $4, $5)",
+        values: [portId, stocksHistorical.price_percent_change_7_days, stocksHistorical.price_percent_change_14_days, stocksHistorical.price_percent_change_30_days, stocksHistorical.price_percent_change_3_months],
+      }
+
+      await db(insertQuery);
+    }
+
+    await db(query);
+    console.log("portfolio updated");
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 // export async function processUsersPortPerf() {
