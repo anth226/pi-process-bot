@@ -1,6 +1,7 @@
 import axios from "axios";
 import db from "../db";
 import * as queue from "../queue";
+import {getEnv} from "../env";
 //import * as queue from "../queue2";
 
 const chalk = require("chalk");
@@ -40,7 +41,7 @@ const chalk = require("chalk");
 // }
 
 async function fetch(identifier, frequency) {
-  let url = `${process.env.INTRINIO_BASE_PATH}/securities/${identifier}/historical_data/adj_close_price?frequency=${frequency}&api_key=${process.env.INTRINIO_API_KEY}`;
+  let url = `${getEnv("INTRINIO_BASE_PATH")}/securities/${identifier}/historical_data/adj_close_price?frequency=${frequency}&api_key=${getEnv("INTRINIO_API_KEY")}`;
 
   let next_page = null;
   let historical_data = [];
@@ -61,7 +62,7 @@ async function fetch(identifier, frequency) {
       console.log(chalk.bgGreen("next_page =>"), next_page);
 
       if (next_page) {
-        url = `${process.env.INTRINIO_BASE_PATH}/securities/${identifier}/historical_data/adj_close_price?frequency=${frequency}&next_page=${next_page}&api_key=${process.env.INTRINIO_API_KEY}`;
+        url = `${getEnv("INTRINIO_BASE_PATH")}/securities/${identifier}/historical_data/adj_close_price?frequency=${frequency}&next_page=${next_page}&api_key=${getEnv("INTRINIO_API_KEY")}`;
       }
     } while (next_page);
 

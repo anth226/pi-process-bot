@@ -8,13 +8,14 @@ import * as titans from "./titans";
 import * as getSecurityData from "./intrinio/get_security_data";
 
 import * as queue from "../queue";
+import {getEnv} from "../env";
 // import * as queue from "../queue2";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
-  process.env.INTRINIO_API_KEY;
+  getEnv("INTRINIO_API_KEY");
 
-intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+intrinioSDK.ApiClient.instance.basePath = `${getEnv("INTRINIO_BASE_PATH")}`;
 
 const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
@@ -36,7 +37,7 @@ export async function getJsonMutualFunds() {
   let funds = [];
 
   try {
-    let url = `https://fds1.cannonvalleyresearch.com/api/v1/report/dailySummary.json?apiKey=${process.env.CANNON_API_KEY}`;
+    let url = `https://fds1.cannonvalleyresearch.com/api/v1/report/dailySummary.json?apiKey=${getEnv("CANNON_API_KEY")}`;
     const result = await axios.get(url);
     funds = result.data;
   } catch (e) {
@@ -50,7 +51,7 @@ export async function getJsonSumMutualFund(fundId) {
   let fundSum;
 
   try {
-    let url = `https://fds1.cannonvalleyresearch.com/api/v1/portSummary/${fundId}/?apiKey=${process.env.CANNON_API_KEY}`;
+    let url = `https://fds1.cannonvalleyresearch.com/api/v1/portSummary/${fundId}/?apiKey=${getEnv("CANNON_API_KEY")}`;
     const result = await axios.get(url);
     fundSums = result.data;
     fundSum = fundSums[fundSums.length - 1];

@@ -1,3 +1,5 @@
+import {getEnv} from "../env";
+
 const csv = require("csv-parser");
 const fs = require("fs");
 const path = require("path");
@@ -25,8 +27,8 @@ const AWS = require("aws-sdk");
 require("dotenv").config();
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
+  secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
 });
 
 // ALTER SEQUENCE billionaires_id_seq RESTART WITH 1;
@@ -163,7 +165,7 @@ async function fetch_Billionaire_Photos() {
 
         let path = `photos/${id}.jpg`;
 
-        put_from_url(srcAttribute, process.env.AWS_BUCKET_RI, path, function (
+        put_from_url(srcAttribute, getEnv("AWS_BUCKET_RI"), path, function (
           err,
           res
         ) {
@@ -178,7 +180,7 @@ async function fetch_Billionaire_Photos() {
           text:
             "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
           values: [
-            `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`,
+            `https://${getEnv("AWS_BUCKET_RI")}.s3.amazonaws.com/photos/${id}.jpg`,
             id,
           ],
         };
@@ -213,7 +215,7 @@ async function fetch_Billionaire_Photos_Pending() {
 
         let path = `photos/${id}.jpg`;
 
-        put_from_url(url, process.env.AWS_BUCKET_RI, path, function (err, res) {
+        put_from_url(url, getEnv("AWS_BUCKET_RI"), path, function (err, res) {
           if (err) throw err;
 
           console.log(chalk.bgGreen("uploaded"), photo_source, id);
@@ -223,7 +225,7 @@ async function fetch_Billionaire_Photos_Pending() {
           text:
             "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
           values: [
-            `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${id}.jpg`,
+            `https://${getEnv("AWS_BUCKET_RI")}.s3.amazonaws.com/photos/${id}.jpg`,
             id,
           ],
         };
@@ -310,7 +312,7 @@ async function fetch_Photos() {
 
               put_from_url(
                 srcAttribute,
-                process.env.AWS_BUCKET_RI,
+                getEnv("AWS_BUCKET_RI"),
                 path,
                 function (err, res) {
                   if (err) throw err;
@@ -324,7 +326,7 @@ async function fetch_Photos() {
                 text:
                   "UPDATE billionaires SET photo_url=($1) WHERE id=($2) RETURNING *",
                 values: [
-                  `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/photos/${cik}.jpg`,
+                  `https://${getEnv("AWS_BUCKET_RI")}.s3.amazonaws.com/photos/${cik}.jpg`,
                   billionaire["id"],
                 ],
               };

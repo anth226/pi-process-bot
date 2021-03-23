@@ -21,10 +21,11 @@ import {
   CACHED_PRICE_OPEN,
   KEY_SECURITY_PERFORMANCE,
 } from "../redis";
+import {getEnv} from "../env";
 
 let dbs = {};
 let sharedCache;
-const isDev = process.env.IS_DEV;
+const isDev = getEnv("IS_DEV");
 
 // const connectDatabase = (credentials) => {
 //   if (!dbs[credentials.host]) {
@@ -73,8 +74,8 @@ const isDev = process.env.IS_DEV;
 
 const connectSharedCache = () => {
   let credentials = {
-    host: process.env.REDIS_HOST_SHARED_CACHE,
-    port: process.env.REDIS_PORT_SHARED_CACHE,
+    host: getEnv("REDIS_HOST_SHARED_CACHE"),
+    port: getEnv("REDIS_PORT_SHARED_CACHE"),
   };
 
   if (!sharedCache) {

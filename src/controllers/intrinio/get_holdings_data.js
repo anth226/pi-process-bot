@@ -1,12 +1,13 @@
 import axios from "axios";
+import {getEnv} from "../../env";
 
 export function getETFHoldings(ticker) {
   let holdings = axios
     .get(
       `${
-        process.env.INTRINIO_BASE_PATH
+        getEnv("INTRINIO_BASE_PATH")
       }/zacks/etf_holdings?etf_ticker=${ticker.toUpperCase()}&api_key=${
-        process.env.INTRINIO_API_KEY
+        getEnv("INTRINIO_API_KEY")
       }`
     )
     .then(function (res) {

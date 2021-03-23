@@ -9,12 +9,13 @@ import * as institutions from "./institutions";
 import * as mutualfunds from "./mutualfunds";
 import * as etfs from "./etfs";
 import * as securities from "./securities";
+import {getEnv} from "../env";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
-  process.env.INTRINIO_API_KEY;
+  getEnv("INTRINIO_API_KEY");
 
-intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+intrinioSDK.ApiClient.instance.basePath = getEnv("INTRINIO_BASE_PATH");
 
 const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
@@ -27,7 +28,7 @@ export async function getDailyEarnings() {
     est.setHours(est.getHours() - 5);
     est.toISOString().slice(0, 10);
 
-    let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_surprises?start_date=${est}&end_date=${est}&api_key=${process.env.INTRINIO_API_KEY}`;
+    let url = `${getEnv("INTRINIO_BASE_PATH")}/zacks/eps_surprises?start_date=${est}&end_date=${est}&api_key=${getEnv("INTRINIO_API_KEY")}`;
 
     let response = await axios.get(url);
     let data = response.data;
@@ -57,7 +58,7 @@ export async function getFutureEarningsDates() {
   let yesterday = new Date(est);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  let url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=next_earnings_date&order_direction=asc&page_size=10000&api_key=${process.env.INTRINIO_API_KEY}`;
+  let url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=next_earnings_date&order_direction=asc&page_size=10000&api_key=${getEnv("INTRINIO_API_KEY")}`;
   const body = {
     operator: "AND",
     clauses: [
@@ -103,7 +104,7 @@ export async function getPastEarningsDates() {
   let est = new Date(today);
   est.setHours(est.getHours() - 5);
 
-  let url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=next_earnings_date&order_direction=desc&page_size=10000&api_key=${process.env.INTRINIO_API_KEY}`;
+  let url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=next_earnings_date&order_direction=desc&page_size=10000&api_key=${getEnv("INTRINIO_API_KEY")}`;
   const body = {
     operator: "AND",
     clauses: [

@@ -25,13 +25,14 @@ import * as yahoo from "./controllers/yahoo";
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
 import redis from "./redis";
+import {getEnv} from "./env";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
 
 var bugsnagClient = bugsnag({
-  apiKey: process.env.BUGSNAG_KEY,
-  otherOption: process.env.RELEASE_STAGE,
+  apiKey: getEnv("BUGSNAG_KEY"),
+  otherOption: getEnv("RELEASE_STAGE"),
 });
 
 bugsnagClient.use(bugsnagExpress);
@@ -117,7 +118,7 @@ app.get("/redis/flush", async (req, res) => {
 
 // /cache_holdings_titans?token=XXX
 app.get("/cache_holdings_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -132,7 +133,7 @@ app.get("/cache_holdings_titans", async (req, res) => {
 
 // /cache_performances_titans?token=XXX
 app.get("/cache_performances_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -147,7 +148,7 @@ app.get("/cache_performances_titans", async (req, res) => {
 
 // /generate_summaries_titans?token=XXX
 app.get("/generate_summaries_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -160,9 +161,25 @@ app.get("/generate_summaries_titans", async (req, res) => {
   res.send("ok");
 });
 
+app.get("/get_env", async (req, res) => {
+  let { query } = req;
+
+  if (query.env && query.env.length > 0) {
+    //console.log(query.env);
+  } else {
+    res.send("failed, no env");
+    return;
+  }
+
+  let env = query.env;
+  let result = getEnv(env);
+
+  res.send({result: result});
+});
+
 // /update_networth_titans?token=XXX
 app.get("/update_networth_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -175,9 +192,11 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
+// TODO: Remove titans snapshots sqs, lambda, and functions
+// deprecated
 // /process_snapshots_titans?token=XXX
 app.get("/process_snapshots_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -192,7 +211,7 @@ app.get("/process_snapshots_titans", async (req, res) => {
 
 // /billionaires/:id/generate_summary?token=XXX
 app.get("/billionaires/:id/generate_summary", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -210,7 +229,7 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 //    FETCH BOT
 // /update_metrics_securities?token=XXX
 // app.get("/update_metrics_securities", async (req, res) => {
-//   if (process.env.DISABLE_CRON == "true") {
+//   if (getEnv("DISABLE_CRON") == "true") {
 //     res.send("disabled");
 //     return;
 //   }
@@ -226,7 +245,7 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 
 // /update_performances_securities?token=XXX
 app.get("/update_performances_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -241,7 +260,7 @@ app.get("/update_performances_securities", async (req, res) => {
 
 // /fill_earnings_securities?token=XXX
 app.get("/fill_earnings_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -256,7 +275,7 @@ app.get("/fill_earnings_securities", async (req, res) => {
 
 // /fill_holdings_count_securities?token=XXX
 app.get("/fill_holdings_count_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -277,7 +296,7 @@ app.get("/fill_holdings_count_securities", async (req, res) => {
 
 // /update_eps_earnings?token=XXX
 app.get("/update_eps_earnings", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -297,7 +316,7 @@ app.get("/update_eps_earnings", async (req, res) => {
 
 // /update_json_mutualfunds?token=XXX
 app.get("/update_json_mutualfunds", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -314,7 +333,7 @@ app.get("/update_json_mutualfunds", async (req, res) => {
 
 // /update_metrics_companies?token=XXX
 app.get("/update_metrics_companies", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -332,7 +351,7 @@ app.get("/update_metrics_companies", async (req, res) => {
 
 // /update_global_widgets?token=XXX
 app.get("/update_global_widgets", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -347,7 +366,7 @@ app.get("/update_global_widgets", async (req, res) => {
 
 // /update_local_widgets?token=XXX
 app.get("/update_local_widgets", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -361,7 +380,7 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -378,7 +397,7 @@ app.get("/widgets/:id/process_input", async (req, res) => {
 
 // /update_user_portfolios?token=XXX
 app.get("/update_user_portfolios", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -387,6 +406,7 @@ app.get("/update_user_portfolios", async (req, res) => {
     res.send("fail");
     return;
   }
+
   await userPortfolios.fillUsersPortPerfs();
   res.send("ok");
 });
@@ -394,7 +414,7 @@ app.get("/update_user_portfolios", async (req, res) => {
 // /user_portfolios/:id/update?token=XXX
 app.get("/user_portfolios/:id/update", async (req, res) => {
   console.log("here");
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -411,7 +431,7 @@ app.get("/user_portfolios/:id/update", async (req, res) => {
 
 // /update_etfs?token=XXX
 app.get("/update_etfs", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -428,7 +448,7 @@ app.get("/update_etfs", async (req, res) => {
 
 // /fetch_institutional_holdings?token=XXX
 app.get("/fetch_institutional_holdings", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -443,7 +463,7 @@ app.get("/fetch_institutional_holdings", async (req, res) => {
 
 // /evaluate_top_10_institutions?token=XXX
 app.get("/evaluate_top_10_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -458,7 +478,7 @@ app.get("/evaluate_top_10_institutions", async (req, res) => {
 
 // /evaluate_allocations_institutions?token=XXX
 app.get("/evaluate_allocations_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -473,7 +493,7 @@ app.get("/evaluate_allocations_institutions", async (req, res) => {
 
 // /calculate_performances_institutions?token=XXX
 app.get("/calculate_performances_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -486,8 +506,8 @@ app.get("/calculate_performances_institutions", async (req, res) => {
   res.send("ok");
 });
 
-app.get("/process_snapshots_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+app.get("/process_snapshots_ciks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -496,7 +516,21 @@ app.get("/process_snapshots_institutions", async (req, res) => {
     res.send("fail");
     return;
   }
-  await institutions.processInstitutionsSnapshots();
+  await institutions.processCiks("snapshots");
+  res.send("ok");
+});
+
+app.get("/process_top10_and_allocations_ciks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.processCiks("top10andallocations");
   res.send("ok");
 });
 
@@ -504,7 +538,7 @@ app.get("/process_snapshots_institutions", async (req, res) => {
 
 // /create_indices_candles_daily?token=XXX
 app.get("/create_indices_candles_daily", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -521,7 +555,7 @@ app.get("/create_indices_candles_daily", async (req, res) => {
 
 // /generate_pages_portfolios?token=XXX
 app.get("/generate_pages_portfolios", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -536,7 +570,7 @@ app.get("/generate_pages_portfolios", async (req, res) => {
 
 // /generate_pages_titans?token=XXX
 app.get("/generate_pages_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -553,7 +587,7 @@ app.get("/generate_pages_titans", async (req, res) => {
 
 // /categorize_securities?token=XXX
 app.get("/categorize_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -568,7 +602,7 @@ app.get("/categorize_securities", async (req, res) => {
 
 /* NCDS */
 app.get("/ncds_consolidate", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -611,6 +645,21 @@ app.get("/bot/widgets/", async (req, res) => {
   }
 });
 
+// Fetch all Ciks
+app.get("/fetch_ciks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.fetchAllCiks();
+  res.send("ok");
+});
+
 // Start Server
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);
@@ -639,7 +688,10 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_19.start();
   queue.consumer_20.start();
   queue.consumer_21.start();
-  if (process.env.RELEASE_STAGE == "production") {
+  queue.consumer_22.start();
+  queue.cikConsumer.start();
+  if (getEnv("RELEASE_STAGE") == "production") {
     queue.newTickersConsumer.start();
   }
 });
+// debug

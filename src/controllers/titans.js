@@ -12,6 +12,9 @@ import redis, { KEY_FORBES_TITANS } from "../redis";
 import * as performances from "./performances";
 import * as securities from "./securities";
 import * as institutions from "./institutions";
+import {getEnv} from "../env";
+import {getInstitutionsHoldings} from "./institutions";
+import {getInstitutionLargestNewHolding} from "./institutions";
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
@@ -319,7 +322,7 @@ const evaluateSectorCompositions = async (data) => {
 };
 
 const evaluateFundPerformace = async (cik) => {
-  let data_url = `https://${process.env.AWS_BUCKET_INTRINIO_ZAKS}.s3.amazonaws.com/marketcaps/${cik}.json`;
+  let data_url = `https://${getEnv("AWS_BUCKET_INTRINIO_ZAKS")}.s3.amazonaws.com/marketcaps/${cik}.json`;
 
   try {
     let result = await axios.get(data_url, {
@@ -672,8 +675,8 @@ export async function getTitanHoldings(titanId) {
 }
 
 export async function calculateHoldingPrice(holding) {
-  let shares = holding.shares_held;
-  let marketValue = holding.market_value;
+  let shares = holding.amount;
+  let marketValue = holding.value;
   if (shares > 0 && marketValue > 0) {
     return marketValue / shares;
   } else {

@@ -16,12 +16,13 @@ import * as securities from "./securities";
 import * as earnings from "./earnings";
 import * as quodd from "./quodd";
 import { getPortfolioByDashboardID } from "./userportfolios";
+import {getEnv} from "../env";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
-  process.env.INTRINIO_API_KEY;
+  getEnv("INTRINIO_API_KEY");
 
-intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+intrinioSDK.ApiClient.instance.basePath = `${getEnv("INTRINIO_BASE_PATH")}`;
 
 const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
@@ -29,7 +30,7 @@ const indexAPI = new intrinioSDK.IndexApi();
 
 /* START API */
 
-const s3AllInsider = `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
+const s3AllInsider = `https://${getEnv("AWS_BUCKET_TERMINAL_SCRAPE")}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
 async function getAllInsider() {
   try {
@@ -464,18 +465,18 @@ export async function processInput(widgetInstanceId) {
 export async function getETFHoldings(ticker, count) {
   // .get(
   //   `${
-  //     process.env.INTRINIO_BASE_PATH
+  //     getEnv("INTRINIO_BASE_PATH")
   //   }/zacks/etf_holdings?etf_ticker=${ticker.toUpperCase()}&api_key=${
-  //     process.env.INTRINIO_API_KEY
+  //     getEnv("INTRINIO_API_KEY")
   //   }`
   // )
   let holdings = [];
   let result = await axios
     .get(
       `${
-        process.env.INTRINIO_BASE_PATH
+        getEnv("INTRINIO_BASE_PATH")
       }/etfs/${ticker.toUpperCase()}/holdings?api_key=${
-        process.env.INTRINIO_API_KEY
+        getEnv("INTRINIO_API_KEY")
       }`
     )
     .then(function (res) {
@@ -970,7 +971,7 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 export async function getStrongBuys(list) {
   let buys = [];
   //    INTRINIO SCREENER
-  // const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
+  // const url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${getEnv("INTRINIO_API_KEY")}`;
   // const body = {
   //   operator: "AND",
   //   clauses: [
@@ -1002,7 +1003,7 @@ export async function getStrongBuys(list) {
     let ticker = data[i];
 
     try {
-      let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+      let url = `${getEnv("INTRINIO_BASE_PATH")}/securities/${ticker}/zacks/analyst_ratings?api_key=${getEnv("INTRINIO_API_KEY")}`;
 
       let res = await axios.get(url);
 
@@ -1066,7 +1067,7 @@ export async function getStrongBuys(list) {
 export async function getAggRatings() {
   let comps = [];
   let aMonthAgo = moment().subtract(1, "months").format("YYYY-MM-DD");
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${getEnv("INTRINIO_API_KEY")}`;
   const body = {
     operator: "AND",
     clauses: [
@@ -1128,7 +1129,7 @@ export async function getAggRatings() {
 export async function getTrendingTitans() {
   let titans = [];
   const response = await axios.get(
-    `https://${process.env.PROD_API_URL}/billionaires/list`
+    `https://${getEnv("PROD_API_URL")}/billionaires/list`
   );
 
   const formatted = response.data.map((item) => {

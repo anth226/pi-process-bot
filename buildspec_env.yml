@@ -1,0 +1,12 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Downloading env
+      - echo `pwd`
+      - aws s3 cp s3://$AWS_ENV_BUCKET/$ENV.json ./$ENV.json
+
+artifacts:
+  files:
+    - dist/**/*

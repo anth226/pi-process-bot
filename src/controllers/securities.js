@@ -10,18 +10,14 @@ import * as widgets from "./widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
 import moment from "moment";
 import MTZ from "moment-timezone";
-import asyncRedis from "async-redis";
-import redis from "redis";
 
-import { CACHED_SECURITY } from "../redis";
+import {getEnv} from "../env";
 
 // init intrinio
-intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
-  process.env.INTRINIO_API_KEY;
+intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey = getEnv("INTRINIO_API_KEY");
 
-intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+intrinioSDK.ApiClient.instance.basePath = getEnv("INTRINIO_BASE_PATH");
 
-let sharedCache;
 const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
 const indexAPI = new intrinioSDK.IndexApi();
@@ -128,13 +124,13 @@ export async function insertPerformanceSecurity(
   if (result.length > 0) {
     let query = {
       text: `
-        UPDATE securities 
-        SET price_percent_change_7_days = $2, 
-        price_percent_change_14_days = $3, 
-        price_percent_change_30_days = $4, 
-        price_percent_change_3_months = $5, 
-        price_percent_change_1_year = $6, 
-        perf_values = $7,  
+        UPDATE securities
+        SET price_percent_change_7_days = $2,
+        price_percent_change_14_days = $3,
+        price_percent_change_30_days = $4,
+        price_percent_change_3_months = $5,
+        price_percent_change_1_year = $6,
+        perf_values = $7,
         today_performance = $8
         WHERE ticker = $1
       `,
@@ -331,7 +327,7 @@ export async function getSecurityPerformance(ticker) {
     if (cachedOpen) {
       cachedOpen = cachedOpen / 100;
     }
-    
+
     console.log("cached open: ", cachedOpen);
 
     let open_price = cachedOpen || intrinioResponse.open_price;
@@ -389,18 +385,6 @@ export async function getSecurityPerformance(ticker) {
 }
 
 export async function processNewTicker(ticker) {
-  const sharedCache = connectSharedCache();
-  const alreadyProcessed = await securityExists({
-    sharedCache,
-    ticker
-  });
-
-  if (alreadyProcessed) {
-    console.log(`Security ${ticker} already exists`);
-
-    return true;
-  }
-
   const securityDetails = await fetchSecurityDetails(ticker);
 
   if (!securityDetails.type) {
@@ -409,20 +393,26 @@ export async function processNewTicker(ticker) {
     return false;
   }
 
-  await createNewSecurity(securityDetails);
+  const created = await createNewSecurity(securityDetails);
+
+  if (!created) {
+    console.log(`Security entry for ${ticker} already exists`);
+
+    return false;
+  }
 
   try {
     switch (securityDetails.type) {
-      case 'common_stock': 
+      case 'common_stock':
         await createCompany(securityDetails);
         break;
-      case 'etf': 
+      case 'etf':
         await createETF(securityDetails);
         break;
-      case 'mutual_fund': 
+      case 'mutual_fund':
         await createMutualFund(securityDetails);
         break;
-      default: 
+      default:
         console.log(`Stock type ${securityDetails.type} not supported`);
         break;
     }
@@ -430,47 +420,9 @@ export async function processNewTicker(ticker) {
     console.log('Failed to create type specific record', e);
   }
 
-  await markTickerAsProcessed({
-    sharedCache, 
-    ticker
-  });
-
   console.log(`new-ticker-${ticker}-added`);
 
   return true;
-}
-
-const connectSharedCache = () => {
-  let credentials = {
-    host: process.env.REDIS_HOST_SHARED_CACHE,
-    port: process.env.REDIS_PORT_SHARED_CACHE,
-  };
-
-  if (!sharedCache) {
-    const client = redis.createClient(credentials);
-
-    client.on("error", function (error) {
-      //   reportError(error);
-    });
-
-    sharedCache = asyncRedis.decorate(client);
-  }
-
-  return sharedCache;
-};
-
-const securityExists = async ({sharedCache, ticker}) => {
-  let exists = await sharedCache.get(`${CACHED_SECURITY}-e${ticker}`);
-
-  if (exists) {
-    return true;
-  }
-
-  return false;
-}
-
-const markTickerAsProcessed = ({sharedCache, ticker}) => {
-  return sharedCache.set(`${CACHED_SECURITY}-e${ticker}`, true);
 }
 
 const fetchSecurityDetails = async (ticker) => {
@@ -481,7 +433,7 @@ const fetchSecurityDetails = async (ticker) => {
   };
 
   const intrinioResponse = await axios.get(
-    `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}?api_key=${process.env.INTRINIO_API_KEY}`
+    `${getEnv("INTRINIO_BASE_PATH")}/securities/${ticker}?api_key=${getEnv("INTRINIO_API_KEY")}`
   );
 
   const securityDetails = intrinioResponse.data;
@@ -494,7 +446,16 @@ const fetchSecurityDetails = async (ticker) => {
   };
 }
 
-const createNewSecurity = (security) => {
+const createNewSecurity = async (security) => {
+  let result = await db({
+    text: "SELECT * FROM securities WHERE ticker = $1",
+    values: [security.ticker],
+  });
+
+  if (result && result.length > 0) {
+    return false;
+  }
+
   return db({
     text:
       "INSERT INTO securities (ticker, type, cik, name) VALUES ( $1, $2, $3, $4 ) RETURNING *",
@@ -508,21 +469,21 @@ const createCompany = async (security) => {
 
   try {
     const intrinioResponse = await axios.get(
-      `${process.env.INTRINIO_BASE_PATH}/companies/${security.ticker}?api_key=${process.env.INTRINIO_API_KEY}`
+      `${getEnv("INTRINIO_BASE_PATH")}/companies/${security.ticker}?api_key=${getEnv("INTRINIO_API_KEY")}`
     );
 
     companyDetails = intrinioResponse.data;
 
     try {
-      const brandFetchResponse = await axios.post(process.env.BRAND_FETCH_BASE_PATH, {
+      const brandFetchResponse = await axios.post(getEnv("BRAND_FETCH_BASE_PATH"), {
         domain: companyDetails.company_url
       }, {
         headers: {
-          'x-api-key': process.env.BRAND_FETCH_API_KEY,
+          'x-api-key': getEnv("BRAND_FETCH_API_KEY"),
           'Content-Type': 'application/json'
         }
       });
-  
+
       logoDetails = brandFetchResponse.data;
     } catch (e) {
       console.log(`Logo not found ${security.ticker}`);
@@ -538,13 +499,19 @@ const createCompany = async (security) => {
 
   const logoSource = logo ? 'brandfetch' : null;
 
-  console.log(logo);
+  if (!security.name && companyDetails.name) {
+    await db({
+      text:
+        "UPDATE securities SET name = $1 WHERE ticker = $2",
+      values: [companyDetails.name, security.ticker],
+    });
+  }
 
   return db({
     text:
-      `INSERT INTO companies 
-        (json, ticker, updated_at, json_metrics, json_calculations, cik, json_clearbit, json_brandfetch, logo_url, logo_source) 
-        VALUES ( $1, $2, now(), null, null, $3, null, $4, $5, $6 ) 
+      `INSERT INTO companies
+        (json, ticker, updated_at, json_metrics, json_calculations, cik, json_clearbit, json_brandfetch, logo_url, logo_source)
+        VALUES ( $1, $2, now(), null, null, $3, null, $4, $5, $6 )
         RETURNING *
       `,
     values: [companyDetails, security.ticker, security.cik, logoDetails, (logo || null), logoSource],
@@ -553,10 +520,10 @@ const createCompany = async (security) => {
 
 const createETF = async (security) => {
   let etfDetails = null;
-  
+
   try {
     const intrinioResponse = await axios.get(
-      `${process.env.INTRINIO_BASE_PATH}/etfs/${security.ticker}?api_key=${process.env.INTRINIO_API_KEY}`
+      `${getEnv("INTRINIO_BASE_PATH")}/etfs/${security.ticker}?api_key=${getEnv("INTRINIO_API_KEY")}`
     );
 
     etfDetails = intrinioResponse.data;
@@ -566,9 +533,9 @@ const createETF = async (security) => {
 
   return db({
     text:
-      `INSERT INTO companies 
-        (json, ticker, updated_at, json_stats, json_analytics) 
-        VALUES ( $1, $2, now(), null, null ) 
+      `INSERT INTO companies
+        (json, ticker, updated_at, json_stats, json_analytics)
+        VALUES ( $1, $2, now(), null, null )
         RETURNING *
       `,
     values: [etfDetails, security.ticker],
@@ -578,9 +545,9 @@ const createETF = async (security) => {
 const createMutualFund = async (security) => {
   return db({
     text:
-      `INSERT INTO mutual_funds 
-        (json, updated_at, ticker, json_summary, json_performance) 
-        VALUES ( null, now(), $1, null, null ) 
+      `INSERT INTO mutual_funds
+        (json, updated_at, ticker, json_summary, json_performance)
+        VALUES ( null, now(), $1, null, null )
         RETURNING *
       `,
     values: [security.ticker],

@@ -1,3 +1,5 @@
+import {getEnv} from "../env";
+
 const fs = require("fs");
 const path = require("path");
 const chalk = require("chalk");
@@ -6,8 +8,8 @@ const AWS = require("aws-sdk");
 require("dotenv").config();
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
+  secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
 });
 
 const dir = "/pages";

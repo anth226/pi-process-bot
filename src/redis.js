@@ -1,5 +1,6 @@
 import asyncRedis from "async-redis";
 import redis from "redis";
+import {getEnv} from "./env";
 
 // import { reportError } from "./reporting";
 
@@ -21,8 +22,8 @@ export let KEY_SECURITY_PERFORMANCE = "KEY_SEC_PERF";
 
 function connectDatabase() {
   let credentials = {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
+    host: getEnv("REDIS_HOST"),
+    port: getEnv("REDIS_PORT"),
   };
 
   if (!db) {

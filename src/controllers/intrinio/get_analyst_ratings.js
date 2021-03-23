@@ -1,12 +1,13 @@
 import axios from "axios";
+import {getEnv} from "../../env";
 
 export function analystSnapshot(ticker) {
   let lastPrice = axios
     .get(
       `${
-        process.env.INTRINIO_BASE_PATH
+        getEnv("INTRINIO_BASE_PATH")
       }/securities/${ticker.toUpperCase()}/zacks/analyst_ratings/snapshot?source=iex&api_key=${
-        process.env.INTRINIO_API_KEY
+        getEnv("INTRINIO_API_KEY")
       }`
     )
     .then(function (res) {

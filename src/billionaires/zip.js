@@ -3,6 +3,7 @@
 import * as performances from "../controllers/performances";
 import * as titans from "../controllers/titans";
 import axios from "axios";
+import {getEnv} from "../env";
 
 const AWS = require("aws-sdk");
 require("dotenv").config();
@@ -10,8 +11,8 @@ require("dotenv").config();
 const chalk = require("chalk");
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
+  secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
 });
 
 import { find, map, sortBy } from "lodash";
@@ -95,7 +96,7 @@ export async function zipPerformances_Billionaires() {
 
   let path = `results/billionaires.json`;
   let params = {
-    Bucket: process.env.AWS_BUCKET_RI,
+    Bucket: getEnv("AWS_BUCKET_RI"),
     Key: path,
     ACL: "public-read",
   };

@@ -102,9 +102,11 @@ export async function consolidate() {
             optContract,
           ],
         };
+        console.log("hello");
         await db2(query);
         console.log("smart option trade added");
       }
     });
   }
 }
+//useless comment for commit

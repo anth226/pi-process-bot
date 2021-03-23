@@ -1,8 +1,9 @@
 import intrinioSDK from "intrinio-sdk";
 import axios from "axios";
+import {getEnv} from "../../env";
 
 export async function screen(intrinioApi, params) {
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=marketcap&order_direction=asc&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=marketcap&order_direction=asc&api_key=${getEnv("INTRINIO_API_KEY")}`;
   // const body = {
   //   "operator": "AND",
   //   "clauses": [
@@ -40,7 +41,7 @@ export async function screen(intrinioApi, params) {
 /*
 export async function highestYields(intrinioApi) {
 
-  const url = `https://api-v2.intrinio.com/securities/screen?order_column=trailing_dividend_yield&order_direction=desc&page_size=50&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `https://api-v2.intrinio.com/securities/screen?order_column=trailing_dividend_yield&order_direction=desc&page_size=50&api_key=${getEnv("INTRINIO_API_KEY")}`;
   const body = {
   "operator": "AND",
   "clauses": [
@@ -84,7 +85,7 @@ export async function similarCompanies(ticker, intrinioApi) {
   const sector = res[0].replace(/['"]+/g, "");
   const industryCategory = res[1].replace(/['"]+/g, "").replace("\\u0026", "&");
 
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=marketcap&order_direction=desc&page_size=50&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=marketcap&order_direction=desc&page_size=50&api_key=${getEnv("INTRINIO_API_KEY")}`;
   const body = {
     operator: "AND",
     clauses: [

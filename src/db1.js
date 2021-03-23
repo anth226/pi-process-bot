@@ -1,3 +1,5 @@
+import {getEnv} from "./env";
+
 const { Client } = require("pg");
 const types = require("pg").types;
 
@@ -12,11 +14,11 @@ types.setTypeParser(TIMESTAMP_OID, function (value) {
 function connectDatabase() {
   if (!db) {
     const client = new Client({
-      database: process.env.DATABASE_NAME_TRACKDATA,
-      host: process.env.DATABASE_HOST,
-      port: process.env.DATABASE_PORT,
-      user: process.env.DATABASE_USER,
-      password: process.env.DATABASE_PASSWORD
+      database: getEnv("DATABASE_NAME_TRACKDATA"),
+      host: getEnv("DATABASE_HOST"),
+      port: getEnv("DATABASE_PORT"),
+      user: getEnv("DATABASE_USER"),
+      password: getEnv("DATABASE_PASSWORD")
     });
 
     client.connect();
