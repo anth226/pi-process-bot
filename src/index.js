@@ -95,7 +95,6 @@ function checkAuth(req, res, next) {
   }
 }
 
-var cronJob = require('cron').CronJob;
 const client = require('twilio')(
   getEnv("TWILIO_ACCOUNT_SID"),
   getEnv("TWILIO_AUTH_TOKEN")
