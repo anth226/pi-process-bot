@@ -1,26 +1,32 @@
-import db from "../db";
 import axios from "axios";
+
+import db from "../db";
+
 import * as queue from "../queue";
 import intrinioSDK from "intrinio-sdk";
-
-import * as companies from "./companies";
 import * as institutions from "./institutions";
 import * as quodd from "./quodd";
-import * as widgets from "./widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
 import moment from "moment";
-import MTZ from "moment-timezone";
+import asyncRedis from "async-redis";
+import redis from "redis";
 
-import {getEnv} from "../env";
+import { getEnv } from "../env";
+import { 
+  CACHED_SECURITY,
+  CACHED_PRICE_15MIN,
+  CACHED_PRICE_OPEN,
+  CACHED_SYMBOL,
+  CACHED_PRICE_REALTIME,
+  KEY_SECURITY_PERFORMANCE
+} from '../redis';
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey = getEnv("INTRINIO_API_KEY");
 
 intrinioSDK.ApiClient.instance.basePath = getEnv("INTRINIO_BASE_PATH");
 
-const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
-const indexAPI = new intrinioSDK.IndexApi();
 
 export async function getSecurityByTicker(ticker) {
   let result = await db(`
@@ -384,6 +390,95 @@ export async function getSecurityPerformance(ticker) {
   return null;
 }
 
+export async function updateSecuritiesDelistStatus() {
+  try {
+    console.log(`Starting Delist Check!!!`);
+
+    const securities = (await db(`
+      SELECT ticker, delisted
+      FROM securities
+    `)).reduce((securities, security) => {
+      securities[security.ticker] = security.delisted;
+
+      return securities;
+    }, {});
+
+    const sharedCache = connectSharedCache();
+    const todaysDate = moment().format('YYYY-MM-DD');
+    const keys = await sharedCache.keys(`${CACHED_SECURITY}-*`);
+    let activatedSecurities = [];
+    let delistedSecurities = [];
+
+    console.log(`${keys.length} securities to be checked for delist status`);
+    
+    for await (let cachedKey of keys) {
+      const ticker = cachedKey.split('-').pop().substring(1);
+      const lastSpinDate = await sharedCache.get(cachedKey);
+      let delisted = false;
+
+      if (lastSpinDate && lastSpinDate !== todaysDate) {
+        delisted = true;
+      }
+
+      if (securities[ticker] === delisted) {
+        continue;
+      }
+      
+      if (delisted) {        
+        const qTicker = cachedKey.split('-')[1];
+
+        try {
+          await Promise.all([
+            sharedCache.del(`${KEY_SECURITY_PERFORMANCE}-${ticker}`),
+            sharedCache.del(`${CACHED_PRICE_OPEN}${qTicker}`),
+            sharedCache.del(`${CACHED_PRICE_15MIN}${qTicker}`),
+            sharedCache.del(`${CACHED_PRICE_REALTIME}${qTicker}`),
+            sharedCache.del(`${CACHED_SYMBOL}${qTicker}`),
+          ]);
+        } finally {
+          delistedSecurities.push(ticker);
+        }
+      } else {
+        activatedSecurities.push(ticker)
+      }
+    }
+
+    if (delistedSecurities.length) {
+      const delistedSecuritiesChunks = getArrayChunks(delistedSecurities, 200);
+
+      for await (let delistedSecuritiesChunk of delistedSecuritiesChunks) {
+        await Promise.all([
+          db(`
+            UPDATE securities
+            SET delisted = true WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
+          `),
+          db(`
+            DELETE FROM portfolio_histories 
+            WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
+          `)
+        ])
+      }
+    }
+
+    if (activatedSecurities.length) {
+      const activatedSecuritiesChunks = getArrayChunks(activatedSecurities, 200);
+
+      for await (let activatedSecuritiesChunk of activatedSecuritiesChunks) {
+        await db(`
+          UPDATE securities 
+          SET delisted = false WHERE ticker IN ('${activatedSecuritiesChunk.join("','")}')
+        `);
+      }
+    }
+
+    console.log(`${delistedSecurities.length} securities delisted!!!`);
+    console.log(`${activatedSecurities.length} securities activated!!!`);
+    console.log(`Delist status update completed!!!`);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 export async function processNewTicker(ticker) {
   const securityDetails = await fetchSecurityDetails(ticker);
 
@@ -420,6 +515,10 @@ export async function processNewTicker(ticker) {
     console.log('Failed to create type specific record', e);
   }
 
+  const sharedCache = connectSharedCache();
+  const date = moment().format('YYYY-MM-DD');
+  
+  sharedCache.set(`${CACHED_SECURITY}-e${ticker}`, date);
   console.log(`new-ticker-${ticker}-added`);
 
   return true;
@@ -552,4 +651,29 @@ const createMutualFund = async (security) => {
       `,
     values: [security.ticker],
   });
+}
+
+const connectSharedCache = () => {
+  let credentials = {
+    host: getEnv("REDIS_HOST_SHARED_CACHE"),
+    port: getEnv("REDIS_PORT_SHARED_CACHE"),
+  };
+
+  const client = redis.createClient(credentials);
+
+  client.on("error", function (error) {
+    //   reportError(error);
+  });
+
+  return asyncRedis.decorate(client);
+};
+
+const getArrayChunks = (arr, chunkSize) => {
+  var chunks = [];
+
+  for (var i=0,len=arr.length; i<len; i+=chunkSize) {
+    chunks.push(arr.slice(i,i+chunkSize));
+  }
+
+  return chunks;
 }

@@ -62,6 +62,7 @@
     "csvtojson": "^2.0.10",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "fast-xml-parser": "^3.19.0",
     "firebase": "^7.6.1",
     "firebase-admin": "^8.12.1",
     "intrinio-sdk": "^5.6.4",

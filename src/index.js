@@ -19,12 +19,15 @@ import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
 import * as userPortfolios from "./controllers/userportfolios";
 import * as ncds from "./controllers/ncds";
+import * as zacks from "./controllers/zacks"
 
 import * as yahoo from "./controllers/yahoo";
 
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
-import redis from "./redis";
+import redis, {
+  syncRedisData
+} from "./redis";
 import {getEnv} from "./env";
 
 var bugsnag = require("@bugsnag/js");
@@ -109,6 +112,24 @@ app.get("/redis/flush", async (req, res) => {
   }
 
   await redis.flushall("ASYNC");
+  res.send("ok");
+});
+
+// redis flush
+app.get("/redis/sync-shared-data", async (req, res) => {
+  if (getEnv("RELEASE_STAGE") == "production") {
+    res.send("fail");
+    return;
+  }
+
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await syncRedisData();
+  
   res.send("ok");
 });
 
@@ -660,9 +681,29 @@ app.get("/fetch_ciks", async (req, res) => {
   res.send("ok");
 });
 
+// Fetch Zacks Rank
+app.get("/fetch_zacks", async (req, res) => {
+  if (process.env.DISABLE_CRON == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await zacks.fetchZackFeeds();
+  res.send("success");
+});
+
 // Start Server
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);
+
+  if (getEnv("DISABLE_CONSUMER") == "true") {
+    console.log("consumer disabled");
+    return;
+  }
 
   //training
   nlp.trainClassifier();
