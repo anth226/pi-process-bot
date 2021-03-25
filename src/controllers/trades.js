@@ -2,6 +2,7 @@ import db from "../db";
 
 import axios from "axios";
 import * as quodd from "./quodd"
+import {getEnv} from "../env";
 
 const symbol = ["ARKF", "ARKG", "ARKK", "ARKQ", "ARKW"];
 
@@ -19,7 +20,7 @@ export async function getTradesFromARK() {
 	
 	checkDateResult = await db(`SELECT to_char("created_at", 'YYYY-MM-DD') as latest_date FROM daily_trades ORDER by created_at DESC limit 1`);
 	for(let i = 0; i < symbol.length; i++){
-		var response = await axios.get(`${process.env.ARK_API_URL}/api/v1/etf/trades?symbol=${symbol[i]}`);
+		var response = await axios.get(`${getEnv("ARK_API_URL")}/api/v1/etf/trades?symbol=${symbol[i]}`);
 		
 		if(response.status === 200 && response.data.trades.length > 0) {
 		let trades = response.data.trades;
