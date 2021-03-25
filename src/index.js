@@ -722,7 +722,11 @@ app.get("/ark/process_trades_and_alert", async (req, res) => {
     }
   } catch (error) {
     console.log(error);
+    res.send("Failed to process ARK trades and Alert! \nReason: " + error);
+    return;
   }  
+   console.log("Successfully processed ARK trades and Alert.");
+   res.send("Successfully processed ARK trades and Alert.");
 });
 
 // Fetch Zacks Rank

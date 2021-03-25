@@ -7,7 +7,7 @@ export async function updateCWDailyAlertMessage() {
   const buyResult = await trades.getTop3Buy();
   const sellResult = await trades.getTop3Sell();
 
-  let message = "Portfolio Insider Prime Alerts\nCathie Woods - Ark Invest Daily Trades\n\n"+
+  let message = "Portfolio Insider Prime Alerts\nCathie Wood - Ark Invest Daily Trades\n\n"+
       "Buys\nTicker | Shares | % of EFT";
 
   for(let i = 0; i < buyResult.length; i++) {
