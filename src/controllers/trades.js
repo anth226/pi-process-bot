@@ -6,12 +6,18 @@ import * as quodd from "./quodd"
 const symbol = ["ARKF", "ARKG", "ARKK", "ARKQ", "ARKW"];
 
 export async function getTradesFromARK() {	
-	let checkTickerResult,
-		checkDateResult,
-		updateQuery,
-		updatedShares = 0,
-		updatedPercentETF = 0,
-		prices;
+	let checkDateResult,
+		prices,
+		tickers30Days,
+		tickerResult,
+		totalShares = 0,
+		totalETFPercent = 0,
+		totalOpenMarketValue = 0,
+		openMarketValueResult,
+		closedMarketValueResult,
+		totalBuyMarketValue = 0,
+		totalSellMarketValue = 0,
+		totalGain = 0;
 	
 	checkDateResult = await db(`SELECT to_char("created_at", 'YYYY-MM-DD') as latest_date FROM daily_trades ORDER by created_at DESC limit 1`);
 	for(let i = 0; i < symbol.length; i++){
@@ -31,8 +37,8 @@ export async function getTradesFromARK() {
 				if(prices.last_price > 0 && prices.open_price > 0) {
 					let query = {
 						text:
-							"INSERT INTO daily_trades(fund, created_at, direction, ticker, cusip, company, shares, etf_percent, current_price, open_price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
-						values: [response.data.symbol, trades[x].date, trades[x].direction, trades[x].ticker, trades[x].cusip, trades[x].company, trades[x].shares, trades[x].etf_percent, prices.last_price, prices.open_price],
+							"INSERT INTO daily_trades(fund, created_at, direction, ticker, cusip, company, shares, etf_percent, open_price, market_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+						values: [response.data.symbol, trades[x].date, trades[x].direction, trades[x].ticker, trades[x].cusip, trades[x].company, trades[x].shares, trades[x].etf_percent, prices.open_price, trades[x].shares * prices.open_price],
 					};
 					
 					await db(query);
@@ -41,6 +47,63 @@ export async function getTradesFromARK() {
 			}
 		}
 	}
+
+	tickers30Days = await db(`
+		SELECT distinct ticker, cusip, company FROM daily_trades WHERE created_at > NOW() - INTERVAL '30 days'
+		ORDER BY ticker
+		`);
+
+	for(let z = 0; z < tickers30Days.length; z++){
+		totalShares = 0;
+		totalETFPercent = 0;
+		totalGain = 0;
+		totalOpenMarketValue = 0;
+		totalBuyMarketValue = 0;
+		totalSellMarketValue = 0;
+
+		tickerResult = await db(`
+			SELECT * FROM daily_trades WHERE created_at > NOW() - INTERVAL '30 days' AND ticker = '${tickers30Days[z].ticker}'
+			ORDER BY created_at
+			`);
+		
+		for(let y = 0; y < tickerResult.length; y++){
+			if(tickerResult[y].direction === "Buy") {
+				totalShares = parseFloat(totalShares) + parseFloat(tickerResult[y].shares);
+				totalETFPercent = parseFloat(totalETFPercent) + parseFloat(tickerResult[y].etf_percent);
+				totalOpenMarketValue = parseFloat(totalOpenMarketValue) + parseFloat(tickerResult[y].market_value);
+				totalBuyMarketValue = parseFloat(totalBuyMarketValue) + parseFloat(tickerResult[y].market_value);
+			} else {
+				totalShares = parseFloat(totalShares) - parseFloat(tickerResult[y].shares);
+				totalETFPercent = parseFloat(totalETFPercent) - parseFloat(tickerResult[y].etf_percent);
+				totalOpenMarketValue = parseFloat(totalOpenMarketValue) - parseFloat(tickerResult[y].market_value);
+				totalSellMarketValue = parseFloat(totalSellMarketValue) + parseFloat(tickerResult[y].market_value);
+			}
+
+		}
+		
+		if(totalShares > 0) {
+			let afterAnalysis = {
+				text:
+					"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, now(), 'open')",
+				values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue],
+			};
+
+			await db(afterAnalysis);
+		} else {
+			if (totalBuyMarketValue > 0) {
+				totalGain = ((totalSellMarketValue / totalBuyMarketValue) - 1) * 100;
+
+				let afterAnalysis = {
+					text:
+						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, now(), 'closed')",
+					values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalBuyMarketValue, totalSellMarketValue, totalGain],
+				};
+
+				await db(afterAnalysis);
+			}
+		}
+
+	}	
 }
 
 export async function getTrades(req) {
@@ -135,16 +198,15 @@ export async function getPortfolioAdditions(top5Only) {
 					shares: result[i].shares,
 					etf_percent: result[i].etf_percent,
 					current_price: prices.last_price,
-					open_price:  prices.open_price, 
-					market_value_current: prices.last_price * result[i].shares,
-					market_value_open:  prices.open_price * result[i].shares,
-					total_gain:  ((prices.last_price / prices.open_price) - 1) * 100
+					open_price:  result[i].open_price,
+					market_value:  result[i].market_value,
+					total_gain:  ((prices.last_price / result[i].open_price) - 1) * 100
 				};
 				response.push(toJson);
 			}
 		}
 		response.sort(function(a, b){
-			return b.market_value_current - a.market_value_current;
+			return b.market_value - a.market_value;
 		});
 	}
 
@@ -180,17 +242,16 @@ export async function getPortfolioDeletions(top5Only) {
 					shares: result[i].shares,
 					etf_percent: result[i].etf_percent,
 					current_price: prices.last_price,
-					open_price:  prices.open_price, 
-					market_value_current: prices.last_price * result[i].shares,
-					market_value_open:  prices.open_price * result[i].shares,
-					total_gain:  ((prices.last_price / prices.open_price) - 1) * 100
+					open_price:   result[i].open_price, 
+					market_value:  result[i].market_value,
+					total_gain:  ((prices.last_price / result[i].open_price) - 1) * 100
 				};
 				response.push(toJson);
 			}
 		}
 
 		response.sort(function(a, b){
-			return b.market_value_current - a.market_value_current;
+			return b.market_value - a.market_value;
 		});
 	}
 
@@ -207,7 +268,8 @@ export async function getOpenPortfolio(top5Only) {
 		prices,
 		toJson;
   	const result = await db(`
-		SELECT * FROM ark_portfolio WHERE status = 'open' 
+		SELECT * FROM ark_portfolio WHERE status = 'open' AND
+		created_at = (SELECT created_at FROM ark_portfolio ORDER BY created_at DESC LIMIT 1)
 		ORDER BY SHARES DESC
 		`);
 	if(result.length > 0) {
@@ -225,16 +287,14 @@ export async function getOpenPortfolio(top5Only) {
 					etf_percent: result[i].etf_percent,
 					status: result[i].status,
 					current_price: prices.last_price,
-					open_price:  prices.open_price, 
-					market_value_current: prices.last_price * result[i].shares,
-					market_value_open:  prices.open_price * result[i].shares,
-					total_gain:  ((prices.last_price / prices.open_price) - 1) * 100
+					open_market_value:  result[i].open_market_value,
+					total_gain:  ((prices.last_price / (result[i].open_market_value / result[i].shares)) - 1) * 100
 				};
 				response.push(toJson);
 			}
 		}
 		response.sort(function(a, b){
-			return b.market_value_current - a.market_value_current;
+			return b.open_market_value - a.open_market_value;
 		});
 	}
 
@@ -250,7 +310,8 @@ export async function getArchivedPortfolio(top5Only) {
 		prices,
 		toJson;
   	const result = await db(`
-		SELECT * FROM ark_portfolio WHERE status = 'closed' AND closed_date > NOW() - INTERVAL '30 days'
+		SELECT * FROM ark_portfolio WHERE status = 'closed' AND
+		created_at = (SELECT created_at FROM ark_portfolio ORDER BY created_at DESC LIMIT 1)
 		ORDER BY SHARES DESC
 		`);
 	if(result.length > 0) {
@@ -260,18 +321,16 @@ export async function getArchivedPortfolio(top5Only) {
 			if(prices.last_price > 0 && prices.open_price > 0) {
 				toJson = {
 					created_at: result[i].created_at,
-					fund: result[i].fund,
 					ticker: result[i].ticker,
 					cusip: result[i].cusip,
 					company: result[i].company,
 					shares: result[i].shares,
 					etf_percent: result[i].etf_percent,
 					status: result[i].status,
-					closed_date: result[i].closed_date,
 					current_price: prices.last_price,
 					open_price:  prices.open_price, 
 					market_value_current: prices.last_price * result[i].shares,
-					market_value_open:  prices.open_price * result[i].shares,
+					open_market_value:  result[i].open_market_value,
 					total_gain:  ((prices.last_price / prices.open_price) - 1) * 100
 				};
 				response.push(toJson);

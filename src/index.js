@@ -92,6 +92,11 @@ function checkAuth(req, res, next) {
   }
 }
 
+var cronJob = require('cron').CronJob;
+const client = require('twilio')(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 /*
 ~~~~~~Routes~~~~~~
 */
