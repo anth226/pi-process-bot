@@ -97,8 +97,8 @@ function checkAuth(req, res, next) {
 
 var cronJob = require('cron').CronJob;
 const client = require('twilio')(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
+  getEnv("TWILIO_ACCOUNT_SID"),
+  getEnv("TWILIO_AUTH_TOKEN")
 );
 /*
 ~~~~~~Routes~~~~~~
@@ -689,84 +689,8 @@ app.get("/fetch_ciks", async (req, res) => {
   res.send("ok");
 });
 
-// Alerts
-
-// app.use("/alerts", checkAuth);
-app.post("/alerts", async (req, res) => {
-  const result = await alerts.createAlert(
-    req.body.name,
-    req.body.message,
-    req.body.isDaily
-  );
-  res.send(result);
-});
-
-//app.use("/alerts/:id", checkAuth);
-app.get("/alerts", async (req, res) => {
-  const result = await alerts.getAlerts(req);
-  res.send(result);
-});
-
-//app.use("/alerts/:id", checkAuth);
-app.get("/alerts/:id", async (req, res) => {
-  const result = await alerts.getAlert(req.params.id);
-  res.send(result);
-});
-
-//app.use("/alerts/:id/users", checkAuth);
-app.get("/alerts/:id/users", async (req, res) => {
-  const result = await alerts.getAlertUsers(req.params.id);
-  res.send(result);
-});
-
-//app.use("/alerts/:id/activate", checkAuth);
-app.get("/alerts/:id/activate", async (req, res) => {
-  const result = await alerts.activateAlert(req.params.id);
-  res.send(result);
-});
-
-//app.use("/alerts/:id/deactivate", checkAuth);
-app.get("/alerts/:id/deactivate", async (req, res) => {
-  const result = await alerts.deactivateAlert(req.params.id);
-  res.send(result);
-});
-
- app.use("/alerts/:id/addUser", checkAuth);
-app.get("/alerts/:id/addUser", async (req, res) => {
-  const result = await alerts.addAlertUser(
-    req.terminal_app.claims.uid,
-    req.params.id,
-    req.body.phone
-  );
-  res.send(result);
-});
-
-app.use("/alerts/:id/subscribe", checkAuth);
-app.get("/alerts/:id/subscribe", async (req, res) => {
-  const result = await alerts.subscribeAlert(
-    req.body.phone,
-    req.params.id
-  );
-  res.send(result);
-});
-
-app.use("/alerts/:id/unsubscribe", checkAuth);
-app.get("/alerts/:id/unsubscribe", async (req, res) => {
-  const result = await alerts.unsubscribeAlert(
-    req.body.phone,
-    req.params.id
-  );
-  res.send(result);
-});
-
-//app.use("/daily_alerts", checkAuth);
-app.get("/daily_alerts", async (req, res) => {
-  const result = await alerts.getDailyAlerts();
-  res.send(result);
-});
-
 // end point to use to get the daily ark trade, processing the last 30 days of those trades into ark_portfolio, sending out daily SMS notif
-app.get("/daily_arkTrades", async (req, res) => {
+app.get("/ark/process_trades_and_alert", async (req, res) => {
   try {
     let dailyArkTrades = await trades.getTradesFromARK();
 
