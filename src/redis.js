@@ -5,6 +5,8 @@ import {getEnv} from "./env";
 // import { reportError } from "./reporting";
 
 let db;
+let sharedCache;
+let sharedCacheProd;
 
 export let KEY_NEWS_HEADLINES = "KEY_NEWS_HEADLINES";
 export let KEY_NEWS_SOURCES = "KEY_NEWS_SOURCES";
@@ -34,7 +36,60 @@ function connectDatabase() {
 
     db = asyncRedis.decorate(client);
   }
+
   return db;
 }
 
 export default connectDatabase();
+
+export const connectSharedCache = () => {
+  let credentials = {
+    host: getEnv("REDIS_HOST_SHARED_CACHE"),
+    port: getEnv("REDIS_PORT_SHARED_CACHE"),
+  };
+
+  if (!sharedCache) {
+    const client = redis.createClient(credentials);
+    client.on("error", function (error) {
+      //   reportError(error);
+    });
+
+    sharedCache = asyncRedis.decorate(client);
+  }
+
+  return sharedCache;
+};
+
+export const connectSharedCacheProd = () => {
+  let credentials = {
+    host: getEnv("PROD_REDIS_HOST_SHARED_CACHE"),
+    port: getEnv("REDIS_PORT_SHARED_CACHE"),
+  };
+
+  if (!sharedCacheProd) {
+    const client = redis.createClient(credentials);
+    client.on("error", function (error) {
+      //   reportError(error);
+    });
+
+    sharedCacheProd = asyncRedis.decorate(client);
+  }
+
+  return sharedCacheProd;
+};
+
+export const syncRedisData = async () => {
+  const sharedCache = connectSharedCache();
+  const sharedCacheProd = connectSharedCacheProd();
+  const keys = await sharedCacheProd.keys('*');
+
+  for await (let key of keys) {
+    try {
+      const value = await sharedCacheProd.get(key);
+
+      await sharedCache.set(key, value);
+    } catch(e) {}
+  }
+
+  return true;
+}

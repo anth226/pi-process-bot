@@ -1454,6 +1454,12 @@ consumer_22.on("processing_error", (err) => {
 export const newTickersConsumer = Consumer.create({
   queueUrl: getEnv("AWS_SQS_URL_PROCESS_NEW_SECURITY"),
   handleMessage: async (message) => {
+    if (message.Body.includes('delist-check')) {
+      await securities.updateSecuritiesDelistStatus();
+      
+      return; 
+    }
+
     let tickers = JSON.parse(message.Body);
 
     console.log("sqs-new-tickers-received");
