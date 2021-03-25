@@ -78,8 +78,8 @@ export async function getTradesFromARK() {
 		if(totalShares > 0) {
 			let afterAnalysis = {
 				text:
-					"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, now(), 'open')",
-				values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue],
+					"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'open')",
+				values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue,tickerResult[tickerResult.length-1].created_at],
 			};
 
 			await db(afterAnalysis);
@@ -99,8 +99,8 @@ export async function getTradesFromARK() {
 
 				let afterAnalysis = {
 					text:
-						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, now(), 'closed')",
-					values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, openMarketValueResult[0].open_price * openMarketValueResult[0].shares, closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares, totalGain],
+						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, $7, 'closed')",
+					values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, openMarketValueResult[0].open_price * openMarketValueResult[0].shares, closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares, totalGain, closedMarketValueResult[0].created_at],
 				};
 
 				await db(afterAnalysis);
