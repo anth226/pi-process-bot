@@ -23,6 +23,9 @@ import * as zacks from "./controllers/zacks"
 
 import * as yahoo from "./controllers/yahoo";
 
+import * as trades from "./controllers/trades";
+import * as alerts from "./controllers/alerts";
+
 import * as queue from "./queue";
 //import * as queue2 from "./queue2";
 import redis, {
@@ -92,6 +95,10 @@ function checkAuth(req, res, next) {
   }
 }
 
+const client = require('twilio')(
+  getEnv("TWILIO_ACCOUNT_SID"),
+  getEnv("TWILIO_AUTH_TOKEN")
+);
 /*
 ~~~~~~Routes~~~~~~
 */
@@ -679,6 +686,47 @@ app.get("/fetch_ciks", async (req, res) => {
   }
   await institutions.fetchAllCiks();
   res.send("ok");
+});
+
+// end point to use to get the daily ark trade, processing the last 30 days of those trades into ark_portfolio, sending out daily SMS notif
+app.get("/ark/process_trades_and_alert", async (req, res) => {
+  try {
+    let dailyArkTrades = await trades.getTradesFromARK();
+
+    let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
+
+    let dailyAlerts = await alerts.getDailyAlerts();
+    var alertUsers;
+
+    if(dailyAlerts.length > 0) {
+      for( var i = 0; i < dailyAlerts.length; i++ ) {
+        alertUsers = await alerts.getAlertActiveUsers(dailyAlerts[i].id);
+        if(alertUsers.length > 0) {
+          for( var x = 0; x < alertUsers.length; x++ ) {
+            client.messages
+            .create({
+              from: process.env.TWILIO_PHONE_NUMBER,
+              to: alertUsers[x].user_phone_number,
+              body: dailyAlerts[i].message
+            })
+            .then(() => {
+              console.log(JSON.stringify({ success: true }));
+            })
+            .catch(err => {
+              console.log(err);
+              console.log(JSON.stringify({ success: false }));
+            });
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    res.send("Failed to process ARK trades and Alert! \nReason: " + error);
+    return;
+  }  
+   console.log("Successfully processed ARK trades and Alert.");
+   res.send("Successfully processed ARK trades and Alert.");
 });
 
 // Fetch Zacks Rank
