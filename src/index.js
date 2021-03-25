@@ -690,6 +690,16 @@ app.get("/fetch_ciks", async (req, res) => {
 
 // end point to use to get the daily ark trade, processing the last 30 days of those trades into ark_portfolio, sending out daily SMS notif
 app.get("/ark/process_trades_and_alert", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
   try {
     let dailyArkTrades = await trades.getTradesFromARK();
 
@@ -705,7 +715,7 @@ app.get("/ark/process_trades_and_alert", async (req, res) => {
           for( var x = 0; x < alertUsers.length; x++ ) {
             client.messages
             .create({
-              from: process.env.TWILIO_PHONE_NUMBER,
+              from: getEnv("TWILIO_PHONE_NUMBER"),
               to: alertUsers[x].user_phone_number,
               body: dailyAlerts[i].message
             })
@@ -731,7 +741,7 @@ app.get("/ark/process_trades_and_alert", async (req, res) => {
 
 // Fetch Zacks Rank
 app.get("/fetch_zacks", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
