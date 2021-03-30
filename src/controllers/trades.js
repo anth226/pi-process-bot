@@ -16,49 +16,34 @@ export async function getTradesFromARK() {
 		totalOpenMarketValue = 0,
 		openMarketValueResult,
 		closedMarketValueResult,
-		totalGain = 0, 
-		arkTrades = [],
-		tradeIndex = -1;
+		totalGain = 0;
 	
 	checkDateResult = await db(`SELECT to_char("created_at", 'YYYY-MM-DD') as latest_date FROM daily_trades ORDER by created_at DESC limit 1`);
 	for(let i = 0; i < symbol.length; i++){
 		var response = await axios.get(`${getEnv("ARK_API_URL")}/api/v1/etf/trades?symbol=${symbol[i]}`);
 		
 		if(response.status === 200 && response.data.trades.length > 0) {
-			let trades = response.data.trades;
+		let trades = response.data.trades;
 		
-			if(trades.length > 0 && checkDateResult.length > 0){
-				if (trades[0].date === checkDateResult[0].latest_date){
-					continue;
-				}
-			}
-
-			for(let z = 0; z < trades.length; z++) {				
-				tradeIndex = arkTrades.findIndex(e => e.ticker === trades[z].ticker);
-				if (tradeIndex === -1) {
-					arkTrades.push(trades[z]);
-				} else {
-					arkTrades[tradeIndex].shares = parseFloat(arkTrades[tradeIndex].shares) + parseFloat(trades[z].shares);
-					arkTrades[tradeIndex].etf_percent = parseFloat(arkTrades[tradeIndex].etf_percent) + parseFloat(trades[z].etf_percent);
-				}
-				
+		if(trades.length > 0 && checkDateResult.length > 0){
+			if (trades[0].date === checkDateResult[0].latest_date){
+				continue;
 			}
 		}
-	}
+			for(let x = 0; x < trades.length; x++) {
+				prices = await quodd.getLastPriceChange(trades[x].ticker);
 
-	for(let x = 0; x < arkTrades.length; x++) {
+				if(prices.last_price > 0 && prices.open_price > 0) {
+					let query = {
+						text:
+							"INSERT INTO daily_trades(fund, created_at, direction, ticker, cusip, company, shares, etf_percent, open_price, market_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
+						values: [response.data.symbol, trades[x].date, trades[x].direction, trades[x].ticker, trades[x].cusip, trades[x].company, trades[x].shares, trades[x].etf_percent, prices.open_price, trades[x].shares * prices.open_price],
+					};
+					
+					await db(query);
 
-		prices = await quodd.getLastPriceChange(arkTrades[x].ticker);
-
-		if(prices.last_price > 0 && prices.open_price > 0) {
-			let query = {
-				text:
-					"INSERT INTO daily_trades(created_at, direction, ticker, cusip, company, shares, etf_percent, open_price, market_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
-				values: [arkTrades[x].date, arkTrades[x].direction, arkTrades[x].ticker, arkTrades[x].cusip, arkTrades[x].company, arkTrades[x].shares, arkTrades[x].etf_percent, prices.open_price, arkTrades[x].shares * prices.open_price],
-			};
-						
-			await db(query);
-
+				}
+			}
 		}
 	}
 

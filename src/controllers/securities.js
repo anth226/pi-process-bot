@@ -427,17 +427,17 @@ export async function updateSecuritiesDelistStatus() {
       if (delisted) {        
         const qTicker = cachedKey.split('-')[1];
 
-        // try {
-          // await Promise.all([
-          //   sharedCache.del(`${KEY_SECURITY_PERFORMANCE}-${ticker}`),
-          //   sharedCache.del(`${CACHED_PRICE_OPEN}${qTicker}`),
-          //   sharedCache.del(`${CACHED_PRICE_15MIN}${qTicker}`),
-          //   sharedCache.del(`${CACHED_PRICE_REALTIME}${qTicker}`),
-          //   sharedCache.del(`${CACHED_SYMBOL}${qTicker}`),
-          // ]);
-        // } finally {
+        try {
+          await Promise.all([
+            sharedCache.del(`${KEY_SECURITY_PERFORMANCE}-${ticker}`),
+            sharedCache.del(`${CACHED_PRICE_OPEN}${qTicker}`),
+            sharedCache.del(`${CACHED_PRICE_15MIN}${qTicker}`),
+            sharedCache.del(`${CACHED_PRICE_REALTIME}${qTicker}`),
+            sharedCache.del(`${CACHED_SYMBOL}${qTicker}`),
+          ]);
+        } finally {
           delistedSecurities.push(ticker);
-        // }
+        }
       } else {
         activatedSecurities.push(ticker)
       }
@@ -452,10 +452,10 @@ export async function updateSecuritiesDelistStatus() {
             UPDATE securities
             SET delisted = true WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
           `),
-          // db(`
-          //   DELETE FROM portfolio_histories 
-          //   WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
-          // `)
+          db(`
+            DELETE FROM portfolio_histories 
+            WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
+          `)
         ])
       }
     }

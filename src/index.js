@@ -489,7 +489,6 @@ app.get("/fetch_institutional_holdings", async (req, res) => {
   res.send("ok");
 });
 
-// deprecated
 // /evaluate_top_10_institutions?token=XXX
 app.get("/evaluate_top_10_institutions", async (req, res) => {
   if (getEnv("DISABLE_CRON") == "true") {
@@ -505,7 +504,6 @@ app.get("/evaluate_top_10_institutions", async (req, res) => {
   res.send("ok");
 });
 
-// deprecated
 // /evaluate_allocations_institutions?token=XXX
 app.get("/evaluate_allocations_institutions", async (req, res) => {
   if (getEnv("DISABLE_CRON") == "true") {
@@ -521,7 +519,6 @@ app.get("/evaluate_allocations_institutions", async (req, res) => {
   res.send("ok");
 });
 
-// deprecated
 // /calculate_performances_institutions?token=XXX
 app.get("/calculate_performances_institutions", async (req, res) => {
   if (getEnv("DISABLE_CRON") == "true") {

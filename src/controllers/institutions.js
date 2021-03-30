@@ -257,7 +257,6 @@ export async function processTop10(id) {
   }
 }
 
-// deprecated
 export async function processSectors(id) {
   let jsonAllocations;
 

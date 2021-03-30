@@ -66,7 +66,6 @@ const cacheTicker = async (id, ticker) => {
   }
 };
 
-// TODO: Remove function/sqs/lambda and replace with new lambda just for fetching cik tickers
 export async function fetchHoldings_Billionaire(
   cik,
   billionaireId,
