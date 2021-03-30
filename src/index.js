@@ -691,8 +691,8 @@ app.get("/fetch_ciks", async (req, res) => {
   res.send("ok");
 });
 
-// end point to use to get the daily ark trade, processing the last 30 days of those trades into ark_portfolio, sending out daily SMS notif
-app.get("/ark/process_trades_and_alert", async (req, res) => {
+// end point to use to get the daily ark trade, processing the last 30 days of those trades into ark_portfolio
+app.get("/ark/process_trades", async (req, res) => {
   if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
@@ -706,6 +706,29 @@ app.get("/ark/process_trades_and_alert", async (req, res) => {
   try {
     let dailyArkTrades = await trades.getTradesFromARK();
 
+  } catch (error) {
+    console.log(error);
+    res.send("Failed to process ARK trades and Alert! \nReason: " + error);
+    return;
+  }  
+   console.log("Successfully processed ARK trades and Alert.");
+   res.send("Successfully processed ARK trades and Alert.");
+});
+
+
+// end point to use to sending out daily SMS notif
+app.get("/ark/process_alert", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  try {
     let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
 
     let dailyAlerts = await alerts.getDailyAlerts();
@@ -735,12 +758,13 @@ app.get("/ark/process_trades_and_alert", async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    res.send("Failed to process ARK trades and Alert! \nReason: " + error);
+    res.send("Failed to process ARK Alert! \nReason: " + error);
     return;
   }  
-   console.log("Successfully processed ARK trades and Alert.");
-   res.send("Successfully processed ARK trades and Alert.");
+   console.log("Successfully processed and sent ARK Alert.");
+   res.send("Successfully processed and sent ARK Alert.");
 });
+
 
 // Fetch Zacks Rank
 app.get("/fetch_zacks", async (req, res) => {
