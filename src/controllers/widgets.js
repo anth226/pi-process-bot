@@ -1605,6 +1605,10 @@ const updateTrendingTitans = async () => {
     SELECT titan_uri, count(titan_uri) FROM titans WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri order by COUNT DESC
   `);
 
+  if (groupByTitans.filter(e => e.titan_uri === 'cathie-wood').length <= 0) {
+    groupByTitans.splice(0, 0, {"titan_uri":"cathie-wood", "count":groupByTitans[0].count + 1});
+  }
+
   let titans = [];
 
   for (const titan of groupByTitans) {
