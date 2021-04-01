@@ -67,10 +67,6 @@ export async function getTradesFromARK() {
 		ORDER BY ticker
 		`);
 
-	await db(`
-		DELETE FROM ark_portfolio
-		`);	
-			
 	for(let z = 0; z < tickers30Days.length; z++){
 		totalShares = 0;
 		totalETFPercent = 0;
