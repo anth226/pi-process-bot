@@ -132,14 +132,14 @@ export async function getTradesFromARK() {
 
 export async function getTop3Buy() {
   	const result = await db(`
-        SELECT * FROM daily_trades WHERE direction = 'Buy' AND created_at = (SELECT created_at FROM public.daily_trades ORDER by created_at DESC limit 1) ORDER BY SHARES DESC Limit 3
+        SELECT * FROM daily_trades WHERE direction = 'Buy' AND created_at = (SELECT created_at FROM public.daily_trades ORDER by created_at DESC limit 1) ORDER BY market_value DESC Limit 3
         `);
   	return result;
 }
 
 export async function getTop3Sell() {
   	const result = await db(`
-        SELECT * FROM daily_trades WHERE direction = 'Sell' AND created_at = (SELECT created_at FROM public.daily_trades ORDER by created_at DESC limit 1) ORDER BY SHARES DESC Limit 3
+        SELECT * FROM daily_trades WHERE direction = 'Sell' AND created_at = (SELECT created_at FROM public.daily_trades ORDER by created_at DESC limit 1) ORDER BY market_value DESC Limit 3
         `);
   	return result;
 }
