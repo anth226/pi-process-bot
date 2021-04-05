@@ -27,8 +27,9 @@ export async function getTradesFromARK() {
 		if(response.status === 200 && response.data.trades.length > 0) {
 			let trades = response.data.trades;
 		
+			
 			if(trades.length > 0 && checkDateResult.length > 0){
-				if (trades[0].date === checkDateResult[0].latest_date){
+				if (trades[0].date <= checkDateResult[0].latest_date){
 					continue;
 				}
 			}
@@ -66,10 +67,6 @@ export async function getTradesFromARK() {
 		SELECT distinct ticker, cusip, company FROM daily_trades WHERE created_at > NOW() - INTERVAL '30 days'
 		ORDER BY ticker
 		`);
-
-	await db(`
-		DELETE FROM ark_portfolio
-		`);	
 			
 	for(let z = 0; z < tickers30Days.length; z++){
 		totalShares = 0;
@@ -98,7 +95,7 @@ export async function getTradesFromARK() {
 		if(totalShares > 0) {
 			let afterAnalysis = {
 				text:
-					"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, 'open')",
+					"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, trade_date, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, now(), 'open')",
 				values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue,tickerResult[tickerResult.length-1].created_at],
 			};
 
@@ -119,7 +116,7 @@ export async function getTradesFromARK() {
 
 				let afterAnalysis = {
 					text:
-						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, $7, 'closed')",
+						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, trade_date, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, $7, now(), 'closed')",
 					values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, openMarketValueResult[0].open_price * openMarketValueResult[0].shares, closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares, totalGain, closedMarketValueResult[0].created_at],
 				};
 
