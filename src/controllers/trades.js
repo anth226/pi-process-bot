@@ -67,7 +67,7 @@ export async function getTradesFromARK() {
 		SELECT distinct ticker, cusip, company FROM daily_trades WHERE created_at > NOW() - INTERVAL '30 days'
 		ORDER BY ticker
 		`);
-			
+
 	for(let z = 0; z < tickers30Days.length; z++){
 		totalShares = 0;
 		totalETFPercent = 0;
