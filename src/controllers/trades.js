@@ -92,12 +92,23 @@ export async function getTradesFromARK() {
 
 		}
 
+		checkDateResult = await db(`SELECT * FROM ark_portfolio WHERE ticker = '${tickers30Days[z].ticker}' AND to_char("created_at", 'YYYY-MM-DD') = to_char(now(), 'YYYY-MM-DD')`);
+
 		if(totalShares > 0) {
-			let afterAnalysis = {
-				text:
-					"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, trade_date, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, now(), 'open')",
-				values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue,tickerResult[tickerResult.length-1].created_at],
-			};
+			let afterAnalysis;
+			if(checkDateResult.length > 0) {
+				afterAnalysis = {
+					text:
+						"UPDATE ark_portfolio SET cusip=($1), company=($2), shares=($3), etf_percent=($4), status='open', open_market_value=($5), trade_date=($6) WHERE ticker = ($7) and to_char(\"created_at\", 'YYYY-MM-DD') = to_char(now(), 'YYYY-MM-DD')",
+					values: [tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue, tickerResult[tickerResult.length-1].created_at, tickers30Days[z].ticker],
+				};
+			} else {
+				afterAnalysis = {
+					text:
+						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, trade_date, created_at, status) VALUES ($1, $2, $3, $4, $5, $6, $7, now(), 'open')",
+					values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, totalShares, totalETFPercent, totalOpenMarketValue,tickerResult[tickerResult.length-1].created_at],
+				};
+			}
 
 			await db(afterAnalysis);
 		} else {
@@ -107,6 +118,7 @@ export async function getTradesFromARK() {
 				`);
 
 			if (openMarketValueResult.length > 0) {
+				let afterAnalysis;
 				closedMarketValueResult = await db(`
 					SELECT * FROM daily_trades WHERE created_at > NOW() - INTERVAL '30 days' AND ticker = '${tickers30Days[z].ticker}' AND direction = 'Sell'
 					ORDER BY created_at DESC LIMIT 1
@@ -114,11 +126,19 @@ export async function getTradesFromARK() {
 
 				totalGain = (((closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares) / (openMarketValueResult[0].open_price * openMarketValueResult[0].shares)) - 1) * 100;
 
-				let afterAnalysis = {
-					text:
-						"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, trade_date, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, $7, now(), 'closed')",
-					values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, openMarketValueResult[0].open_price * openMarketValueResult[0].shares, closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares, totalGain, closedMarketValueResult[0].created_at],
-				};
+				if(checkDateResult.length > 0) {
+					afterAnalysis = {
+						text:
+							"UPDATE ark_portfolio SET cusip=($1), company=($2), shares=0, etf_percent=0, status='closed', open_market_value=($3), close_market_value=($4), total_gain=($5), trade_date=($6) WHERE ticker = ($7) and to_char(\"created_at\", 'YYYY-MM-DD') = to_char(now(), 'YYYY-MM-DD')",
+						values: [tickers30Days[z].cusip, tickers30Days[z].company,  openMarketValueResult[0].open_price * openMarketValueResult[0].shares, closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares, totalGain, closedMarketValueResult[0].created_at, tickers30Days[z].ticker],
+					};
+				} else {
+					afterAnalysis = {
+						text:
+							"INSERT INTO ark_portfolio(ticker, cusip, company, shares, etf_percent, open_market_value, close_market_value, total_gain, trade_date, created_at, status) VALUES ($1, $2, $3, 0, 0, $4, $5, $6, $7, now(), 'closed')",
+						values: [tickers30Days[z].ticker, tickers30Days[z].cusip, tickers30Days[z].company, openMarketValueResult[0].open_price * openMarketValueResult[0].shares, closedMarketValueResult[0].open_price * closedMarketValueResult[0].shares, totalGain, closedMarketValueResult[0].created_at],
+					};
+				}
 
 				await db(afterAnalysis);
 			}
