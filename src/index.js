@@ -20,6 +20,7 @@ import * as nlp from "./controllers/nlp";
 import * as userPortfolios from "./controllers/userportfolios";
 import * as ncds from "./controllers/ncds";
 import * as zacks from "./controllers/zacks"
+import * as crypto from "./controllers/crypto"
 
 import * as yahoo from "./controllers/yahoo";
 
@@ -778,6 +779,21 @@ app.get("/fetch_zacks", async (req, res) => {
     return;
   }
   await zacks.fetchZackFeeds();
+  res.send("success");
+});
+
+// Fetch BTC News
+app.get("/crypto/fetch_news", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await crypto.fetchCryptoNews();
   res.send("success");
 });
 
