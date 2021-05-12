@@ -5,8 +5,10 @@ import {getEnv} from "./env";
 // import { reportError } from "./reporting";
 
 let db;
-let sharedCache;
-let sharedCacheProd;
+let priceCache;
+let priceCacheProd;
+let atsCache;
+let atsFallCache;
 
 export let KEY_NEWS_HEADLINES = "KEY_NEWS_HEADLINES";
 export let KEY_NEWS_SOURCES = "KEY_NEWS_SOURCES";
@@ -15,12 +17,20 @@ export let KEY_FORBES_TITANS = "KEY_FORBES_TITANS";
 export let KEY_CHART_DATA = "KEY_CHART_DATA";
 
 //sharedCache keys
-export let CACHED_SYMBOL = "CS";
-export let CACHED_PRICE_REALTIME = "C_R";
-export let CACHED_PRICE_15MIN = "C_15";
-export let CACHED_PRICE_OPEN = "C_O";
-export let CACHED_SECURITY = "C_SEC";
-export let KEY_SECURITY_PERFORMANCE = "KEY_SEC_PERF";
+export let CACHED_SECURITY = "C_SEC:"; // security master
+export let CACHED_PERF = "PERF:"; // current perf
+export let CACHED_NOW = "NOW:"; // current price
+export let CACHED_THEN = "THEN:"; // delayed price
+export let CACHED_DAY = "DAY:"; // open and close
+
+//ats redis
+export let ATS_CURRENT = "CURRENT:";
+export let ATS_DAY = "DAY:";
+export let ATS_ALL = "ALL";
+export let ATS_DATES = "DATES";
+export let ATS_LAST_TIME = "LAST_TIME";
+export let ATS_SNAPSHOT = "SNAPSHOT:";
+export let ATS_HIGH_DARK_FLOW = "HIGHDARKFLOW";
 
 function connectDatabase() {
   let credentials = {
@@ -42,54 +52,91 @@ function connectDatabase() {
 
 export default connectDatabase();
 
-export const connectSharedCache = () => {
+export const connectPriceCache = () => {
   let credentials = {
-    host: getEnv("REDIS_HOST_SHARED_CACHE"),
-    port: getEnv("REDIS_PORT_SHARED_CACHE"),
+    host: getEnv("REDIS_HOST_PRICE_CACHE"),
+    port: getEnv("REDIS_PORT"),
   };
 
-  if (!sharedCache) {
+  if (!priceCache) {
     const client = redis.createClient(credentials);
     client.on("error", function (error) {
       //   reportError(error);
     });
 
-    sharedCache = asyncRedis.decorate(client);
+    priceCache = asyncRedis.decorate(client);
   }
 
-  return sharedCache;
+  return priceCache;
 };
 
-export const connectSharedCacheProd = () => {
+export const connectPriceCacheProd = () => {
   let credentials = {
-    host: getEnv("PROD_REDIS_HOST_SHARED_CACHE"),
-    port: getEnv("REDIS_PORT_SHARED_CACHE"),
+    host: getEnv("PROD_REDIS_HOST_PRICE_CACHE"),
+    port: getEnv("REDIS_PORT"),
   };
 
-  if (!sharedCacheProd) {
+  if (!priceCacheProd) {
     const client = redis.createClient(credentials);
     client.on("error", function (error) {
       //   reportError(error);
     });
 
-    sharedCacheProd = asyncRedis.decorate(client);
+    priceCacheProd = asyncRedis.decorate(client);
   }
 
-  return sharedCacheProd;
+  return priceCacheProd;
 };
+
+export const connectATSCache = () => {
+  let credentials = {
+    host: getEnv("REDIS_HOST_ATS_CACHE"),
+    port: getEnv("REDIS_PORT"),
+  };
+
+  if (!atsCache) {
+    const client = redis.createClient(credentials);
+    client.on("error", function (error) {
+      //   reportError(error);
+    });
+
+    atsCache = asyncRedis.decorate(client);
+  }
+
+  return atsCache;
+};
+
+export const connectATSFallbackCache = () => {
+  let credentials = {
+    host: getEnv("REDIS_HOST_ATS_FALL_CACHE"),
+    port: getEnv("REDIS_PORT"),
+  };
+
+  if (!atsFallCache) {
+    const client = redis.createClient(credentials);
+    client.on("error", function (error) {
+      //   reportError(error);
+    });
+
+    atsFallCache = asyncRedis.decorate(client);
+  }
+
+  return atsFallCache;
+};
+
 
 export const syncRedisData = async () => {
-  const sharedCache = connectSharedCache();
-  const sharedCacheProd = connectSharedCacheProd();
-  const keys = await sharedCacheProd.keys('*');
+  const priceCache = connectPriceCache();
+  const priceCacheProd = connectPriceCacheProd();
+  const keys = await priceCacheProd.keys('*');
 
   for await (let key of keys) {
     try {
-      const value = await sharedCacheProd.get(key);
+      const value = await priceCacheProd.get(key);
 
-      await sharedCache.set(key, value);
+      await priceCache.set(key, value);
     } catch(e) {}
   }
 
   return true;
-}
+};

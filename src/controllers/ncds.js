@@ -109,4 +109,113 @@ export async function consolidate() {
     });
   }
 }
-//useless comment for commit
+
+export async function archiveOlderOptions() {
+  try {
+    let lastMonthPostfix = '';
+
+    let lastRecord = await db2(`
+      SELECT 
+        EXTRACT(YEAR from to_timestamp(time)::date) as year, 
+        CONCAT('0', EXTRACT(MONTH from to_timestamp(time)::date)) as month 
+      FROM options 
+      ORDER BY time ASC
+      LIMIT 1
+    `);
+
+    if (lastRecord && lastRecord.length > 0) {
+      let year = lastRecord[0].year;
+      let month = lastRecord[0].month;
+
+      if (month.length > 2) {
+        month = month.substring(1);
+      }
+
+      lastMonthPostfix = `${year}_${month}`;
+    }
+
+    if (!lastMonthPostfix) {
+      return true;
+    }
+    
+    await createOptionsArchiveTable(lastMonthPostfix);
+
+    await db2(`
+      INSERT INTO options_${lastMonthPostfix} (
+        SELECT * 
+        FROM options 
+        WHERE EXTRACT(MONTH from to_timestamp(time)::date) = (
+          SELECT EXTRACT(MONTH from to_timestamp(time)::date) 
+          FROM options 
+          ORDER BY time ASC 
+          LIMIT 1
+        ) AND EXTRACT(YEAR from to_timestamp(time)::date) = (
+          SELECT EXTRACT(YEAR from to_timestamp(time)::date) 
+          FROM options 
+          ORDER BY time ASC 
+          LIMIT 1
+        )
+      )
+    `);
+
+    return true;
+  } catch (e) {
+    console.log(e);
+
+    return false;
+  }
+}
+
+export async function deleteOlderOptions() {
+  try {
+    await db2(`
+      DELETE FROM options 
+      WHERE EXTRACT(MONTH from to_timestamp(time)::date) = (
+        SELECT EXTRACT(MONTH from to_timestamp(time)::date) 
+        FROM options 
+        ORDER BY time ASC 
+        LIMIT 1
+      ) AND EXTRACT(YEAR from to_timestamp(time)::date) = (
+        SELECT EXTRACT(YEAR from to_timestamp(time)::date) 
+        FROM options 
+        ORDER BY time ASC 
+        LIMIT 1
+      )
+    `);
+
+    return true;
+  } catch (e) {
+    console.log(e);
+
+    return false;
+  }
+}
+
+export async function deletePreviousOptionRawData() {
+  try {
+    await db2(`
+      DELETE FROM options_raw 
+      WHERE to_timestamp(time)::date < (
+        SELECT to_timestamp(time)::date 
+        FROM options_raw 
+        ORDER BY time DESC 
+        LIMIT 1
+      )
+    `);
+
+    return true;
+  } catch (e) {
+    console.log(e);
+    return true;
+  }
+}
+
+const createOptionsArchiveTable = async function (postfix) {
+  try {
+    await db2(`CREATE TABLE options_${postfix} (LIKE options INCLUDING ALL);`);
+
+    return true;
+  } catch (e) {
+    return true;
+  }
+}

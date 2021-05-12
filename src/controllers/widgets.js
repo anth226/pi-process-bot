@@ -16,7 +16,7 @@ import * as securities from "./securities";
 import * as earnings from "./earnings";
 import * as quodd from "./quodd";
 import { getPortfolioByDashboardID } from "./userportfolios";
-import {getEnv} from "../env";
+import { getEnv } from "../env";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
@@ -118,6 +118,17 @@ export async function getWidgetTypeId(widgetType) {
   let result = await db(`
     SELECT id
     FROM widgets
+    WHERE type = '${widgetType}'
+  `);
+
+  return result;
+}
+
+export async function getWidgetInstanceId(widgetType) {
+  let result = await db(`
+    SELECT wi.id
+    FROM widgets w
+    LEFT JOIN widget_instances wi ON wi.widget_id = w.id
     WHERE type = '${widgetType}'
   `);
 
@@ -474,9 +485,9 @@ export async function getETFHoldings(ticker, count) {
   let result = await axios
     .get(
       `${
-        getEnv("INTRINIO_BASE_PATH")
+      getEnv("INTRINIO_BASE_PATH")
       }/etfs/${ticker.toUpperCase()}/holdings?api_key=${
-        getEnv("INTRINIO_API_KEY")
+      getEnv("INTRINIO_API_KEY")
       }`
     )
     .then(function (res) {
@@ -1024,12 +1035,9 @@ export async function getStrongBuys(list) {
     if (company && company.json) {
       name = company.json.name;
     } else {
-      let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+      let sec = await securities.getSecurityByTicker(ticker);
       if (sec) {
         name = sec.name;
-        if (!compTicker) {
-          compTicker = sec.composite_ticker;
-        }
       }
     }
     if (company && company.logo_url) {
@@ -1272,7 +1280,7 @@ export async function getEarningsCalendar() {
     });
   }
   let sorted = reports.sort(function (a, b) {
-    var aa = a.earnings_datez + "".split("-").join(),
+    let aa = a.earnings_date + "".split("-").join(),
       bb = b.earnings_date + "".split("-").join();
     return aa < bb ? -1 : aa > bb ? 1 : 0;
   });
@@ -1606,7 +1614,7 @@ const updateTrendingTitans = async () => {
   `);
 
   if (groupByTitans.filter(e => e.titan_uri === 'cathie-wood').length <= 0) {
-    groupByTitans.splice(0, 0, {"titan_uri":"cathie-wood", "count":groupByTitans[0].count + 1});
+    groupByTitans.splice(0, 0, { "titan_uri": "cathie-wood", "count": groupByTitans[0].count + 1 });
   }
 
   let titans = [];
