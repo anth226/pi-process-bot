@@ -6,6 +6,7 @@ import bodyParser from "body-parser";
 
 import * as companies from "./controllers/companies";
 import * as securities from "./controllers/securities";
+import * as quodd from "./controllers/quodd"
 import * as earnings from "./controllers/earnings";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
@@ -21,6 +22,7 @@ import * as userPortfolios from "./controllers/userportfolios";
 import * as ncds from "./controllers/ncds";
 import * as zacks from "./controllers/zacks"
 import * as crypto from "./controllers/crypto"
+import * as ats from "./controllers/ats"
 
 import * as yahoo from "./controllers/yahoo";
 
@@ -28,11 +30,14 @@ import * as trades from "./controllers/trades";
 import * as alerts from "./controllers/alerts";
 
 import * as queue from "./queue";
+import moment from "moment";
+
 //import * as queue2 from "./queue2";
 import redis, {
   syncRedisData
 } from "./redis";
-import {getEnv} from "./env";
+import { getEnv } from "./env";
+import {getEarningsCalendar, getWidgetInstanceId} from "./controllers/widgets";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -137,7 +142,7 @@ app.get("/redis/sync-shared-data", async (req, res) => {
   }
 
   await syncRedisData();
-  
+
   res.send("ok");
 });
 
@@ -157,6 +162,47 @@ app.get("/cache_holdings_titans", async (req, res) => {
     return;
   }
   await holdings.cacheHoldings_Billionaires();
+  res.send("ok");
+});
+
+// archive options
+app.get("/archive_options", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await ncds.archiveOlderOptions();
+
+  res.send("ok");
+});
+
+app.get("/delete_last_month_options", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await ncds.deleteOlderOptions();
+
+  res.send("ok");
+});
+
+app.get("/delete_previous_options_raw", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+
+    return;
+  }
+
+  await ncds.deletePreviousOptionRawData();
+
   res.send("ok");
 });
 
@@ -203,7 +249,7 @@ app.get("/get_env", async (req, res) => {
   let env = query.env;
   let result = getEnv(env);
 
-  res.send({result: result});
+  res.send({ result: result });
 });
 
 // /update_networth_titans?token=XXX
@@ -255,22 +301,37 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 
 /* Securities */
 
-//    FETCH BOT
-// /update_metrics_securities?token=XXX
-// app.get("/update_metrics_securities", async (req, res) => {
-//   if (getEnv("DISABLE_CRON") == "true") {
-//     res.send("disabled");
-//     return;
-//   }
-//   let { query } = req;
-//   if (query.token != "XXX") {
-//     res.send("fail");
-//     return;
-//   }
-//   await securities.fillSecurities();
-//   res.send("ok");
-// });
-//    FETCH BOT
+app.get("/fetch-shared-securities", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  securities.fetchCachedSecuritiesFromSharedCache(res);
+});
+
+app.get("/clear-shared-securities", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  securities.clearCachedSecuritiesFromSharedCache(res);
+});
+
+app.get("/migration-script", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await securities.syncExistingSecuritiesWithRedis(req.query.ticker, res);
+
+  res.end();
+});
 
 // /update_performances_securities?token=XXX
 app.get("/update_performances_securities", async (req, res) => {
@@ -285,6 +346,39 @@ app.get("/update_performances_securities", async (req, res) => {
   }
   await securities.fillPerformancesSecurities();
   res.send("ok");
+});
+
+// /update_performances_securities?token=XXX
+app.get("/update_ticker_perf/:ticker", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  let ticker = req.params.ticker.toUpperCase();
+  let performance = await securities.getSecurityPerformance(ticker);
+  res.send(performance);
+});
+
+app.get("/get_ticker_perf/:ticker", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  let ticker = req.params.ticker.toUpperCase();
+  let performance = await quodd.getLastPriceChange(ticker);
+  res.send(performance);
 });
 
 // /fill_earnings_securities?token=XXX
@@ -336,7 +430,7 @@ app.get("/update_eps_earnings", async (req, res) => {
   }
   await earnings.updateEarnings();
 
-  let id = await widgets.getWidgetTypeId("SecuritiesEarningsCalendar");
+  let id = await widgets.getWidgetInstanceId("SecuritiesEarningsCalendar");
   await widgets.processInput(id[0].id);
   res.send("ok");
 });
@@ -647,6 +741,47 @@ app.get("/ncds_consolidate", async (req, res) => {
   res.send("ok");
 });
 
+/* STRONG BUYS */
+app.get("/strongbuys/set", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  if (!query.tickers) {
+    res.send("fail");
+    return;
+  }
+  let ticks = await JSON.parse(query.tickers);
+  if (ticks && ticks.length == 9) {
+    await securities.setStrongBuys(ticks);
+    res.send("ok");
+  } else {
+    res.send("error in tickers param");
+  }
+
+});
+
+// ats
+app.get("/ats/process_high_dark_flow", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  const d = await ats.getHighDarkFlow();
+  res.send(d);
+});
+
+
 /*      DB routes      */
 
 app.get("/bot/institutions/", async (req, res) => {
@@ -672,6 +807,13 @@ app.get("/bot/holdings/", async (req, res) => {
 
 app.get("/bot/widgets/", async (req, res) => {
   let data = await widgets.getLocalWidgets();
+  if (data.length > 0) {
+    res.send({ data });
+  }
+});
+
+app.get("/bot/strongbuys/", async (req, res) => {
+  let data = await securities.getStrongBuys();
   if (data.length > 0) {
     res.send({ data });
   }
@@ -711,9 +853,9 @@ app.get("/ark/process_trades", async (req, res) => {
     console.log(error);
     res.send("Failed to process ARK trades and Alert! \nReason: " + error);
     return;
-  }  
-   console.log("Successfully processed ARK trades and Alert.");
-   res.send("Successfully processed ARK trades and Alert.");
+  }
+  console.log("Successfully processed ARK trades and Alert.");
+  res.send("Successfully processed ARK trades and Alert.");
 });
 
 
@@ -731,6 +873,7 @@ app.get("/ark/process_alert", async (req, res) => {
 
  try {
     let checkData = await trades.checkData();
+    
     if(checkData) {
       let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
 
@@ -801,6 +944,85 @@ app.get("/crypto/fetch_news", async (req, res) => {
   }
   await crypto.fetchCryptoNews();
   res.send("success");
+});
+
+app.get("/find_date", async (req, res) => {
+  let { query } = req;
+
+  let ticker = query.ticker || "AAPL";
+
+  let range = query.range || "MONTH";
+
+  let data = await securities.getDaily(ticker);
+
+  if (!data || !data.daily || data.daily.length < 1) {
+    res.send("fail 1");
+    return;
+  }
+
+  let dailyData = data.daily;
+
+  if (dailyData.length === 1 && !dailyData[0].value) {
+    res.send("fail 2");
+    return;
+  }
+
+  let time;
+
+  let est = moment.tz("America/New_York").format("YYYY-MM-DD");
+
+  let week = moment
+    .tz("America/New_York")
+    .subtract(7, "days")
+    .format("YYYY-MM-DD");
+
+  let twoweek = moment
+    .tz("America/New_York")
+    .subtract(14, "days")
+    .format("YYYY-MM-DD");
+
+  let month = moment
+    .tz("America/New_York")
+    .subtract(1, "months")
+    .format("YYYY-MM-DD");
+
+  let threemonth = moment
+    .tz("America/New_York")
+    .subtract(3, "months")
+    .format("YYYY-MM-DD");
+
+  let year = moment
+    .tz("America/New_York")
+    .subtract(1, "years")
+    .format("YYYY-MM-DD");
+
+  switch (range) {
+    case "TODAY":
+      time = est;
+      break;
+    case "WEEK":
+      time = week;
+      break;
+    case "TWO_WEEK":
+      time = twoweek;
+      break;
+    case "MONTH":
+      time = month;
+      break;
+    case "THREE_MONTH":
+      time = threemonth;
+      break;
+    case "YEAR":
+      time = year;
+      break;
+  }
+
+  let result = await securities.getClosestPriceDate(time, dailyData);
+  if (!result) {
+    res.send("fail");
+  }
+
+  res.send(result);
 });
 
 // Start Server

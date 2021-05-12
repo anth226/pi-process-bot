@@ -8,18 +8,17 @@ import * as institutions from "./institutions";
 import * as quodd from "./quodd";
 import * as getSecurityData from "./intrinio/get_security_data";
 import moment from "moment";
-import asyncRedis from "async-redis";
-import redis from "redis";
 
 import { getEnv } from "../env";
-import { 
+import {
   CACHED_SECURITY,
-  CACHED_PRICE_15MIN,
-  CACHED_PRICE_OPEN,
-  CACHED_SYMBOL,
-  CACHED_PRICE_REALTIME,
-  KEY_SECURITY_PERFORMANCE
+  CACHED_DAY,
+  CACHED_NOW,
+  CACHED_THEN,
+  CACHED_PERF,
+  connectPriceCache,
 } from '../redis';
+import { log } from "winston";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey = getEnv("INTRINIO_API_KEY");
@@ -65,46 +64,50 @@ export async function getSecurities() {
   }
 }
 
-export async function fillPerformancesSecurities() {
-  //get and fill companies
+export async function getStrongBuys() {
   let result = await db(`
-            SELECT *
-            FROM companies
-        `);
-
-  console.log("COMPANIES");
-  for (let i in result) {
-    let ticker = result[i].ticker;
-    await queue.publish_ProcessPerformances_Securities(ticker);
-    console.log(ticker);
-  }
-
-  //get and fill mutual funds
-  result = await db(`
-          SELECT *
-          FROM mutual_funds
-      `);
-
-  console.log("MUTUAL FUNDS");
-  for (let i in result) {
-    let ticker = result[i].ticker;
-    await queue.publish_ProcessPerformances_Securities(ticker);
-    console.log(ticker);
-  }
-
-  //get and fill etfs
-  result = await db(`
         SELECT *
-        FROM etfs
+        FROM strong_buys
     `);
 
-  console.log("ETFS");
+  if (result && result.length > 0) {
+    return result;
+  }
+}
+
+export async function setStrongBuys(ticks) {
+  //let buys = await widgets.getStrongBuys(ticks);
+
+  if (ticks && ticks.length > 0) {
+    for (let t in ticks) {
+      let ticker = ticks[t];
+      let security = await getSecurityByTicker(ticker);
+      if (security) {
+        let query = {
+          text:
+            "UPDATE strong_buys SET ticker = $2, security_id = $3 WHERE position = $1",
+          values: [t, ticker, security.id],
+        };
+        await db(query);
+      }
+    }
+  }
+}
+
+export async function fillPerformancesSecurities() {
+  //get and fill securities
+  let result = await db(`
+    SELECT ticker
+    FROM securities
+    WHERE delisted = FALSE
+  `);
+
   for (let i in result) {
     let ticker = result[i].ticker;
     await queue.publish_ProcessPerformances_Securities(ticker);
     console.log(ticker);
   }
-  console.log("DONE");
+
 }
 
 export async function insertPerformanceSecurity(
@@ -210,54 +213,51 @@ export async function insertHoldingsCountSecurity(ticker, count) {
   // }
 }
 
+export async function getDaily(ticker) {
+  let data = await getSecurityData.getChartData(securityAPI, ticker);
+
+  return data
+}
+
 export async function getClosestPriceDate(date, dailyData) {
-  let current = date;
-  let forward = current;
-  let reverse = current;
-  let checks = 0;
+  let differenceBefore, differenceAfter, differenceBeforeIndex;
 
-  let itemIndex = dailyData.findIndex((dataPoint) => {
-    let dpDate = dataPoint.date;
+  date = date + 'T00:00:00.000Z'; // Match format of intrinio dates
 
-    if (typeof dpDate === "string" || dpDate instanceof String) {
-      dpDate = dpDate.slice(0, 10);
-    } else {
-      let strDate = dpDate.toISOString();
-      dpDate = strDate.slice(0, 10);
+  // data from intrinio is DESC date
+  for (let i = 0; i < dailyData.length; i++) {
+    if (!dailyData[i].value) {
+      continue;
     }
-
-    return (dpDate === current && dataPoint.value);
-  });
-
-  while (itemIndex < 0) {
-    if (checks >= 0 && checks < 7) {
-      forward = moment(forward).add(1, "days").format("YYYY-MM-DD");
-      current = forward;
-    } else {
-      reverse = moment(reverse).subtract(1, "days").format("YYYY-MM-DD");
-      current = reverse;
-    }
-
-    itemIndex = dailyData.findIndex((dataPoint) => {
-      let dpDate = dataPoint.date;
-
-      if (typeof dpDate === "string" || dpDate instanceof String) {
-        dpDate = dpDate.slice(0, 10);
-      } else {
-        let strDate = dpDate.toISOString();
-        dpDate = strDate.slice(0, 10);
+    if (moment(dailyData[i]?.date).isSameOrBefore(date)) {
+      differenceBefore = moment(date).diff(
+        moment(dailyData[i]?.date),
+        "days"
+      );
+      if (dailyData[i - 1] && dailyData[i - 1].value) {
+        differenceAfter = moment(date).diff(
+          moment(dailyData[i - 1]?.date),
+          "days"
+        );
       }
-
-      return (dpDate === current && dataPoint.value);
-    });
-
-    checks += 1;
-    if (checks === 14) {
-      checks = 0;
+      differenceBeforeIndex = i;
+      break;
     }
   }
 
-  return dailyData[itemIndex];
+  let index = differenceBeforeIndex;
+
+  if ((differenceAfter || differenceAfter === 0) && differenceBefore) {
+    if (Math.abs(differenceAfter) < differenceBefore) {
+      index = differenceBeforeIndex - 1
+    }
+  }
+
+  if (index || index === 0) {
+    return dailyData[index];
+  }
+
+  return dailyData[dailyData.length - 1]
 }
 
 export async function getSecurityPerformance(ticker) {
@@ -267,12 +267,16 @@ export async function getSecurityPerformance(ticker) {
   let data = await getSecurityData.getChartData(securityAPI, ticker);
 
   if (!data || !data.daily || data.daily.length < 1) {
+    console.log("No daily data");
+    console.log("----------------END Performance----------------");
     return;
   }
 
   let dailyData = data.daily;
 
   if (dailyData.length === 1 && !dailyData[0].value) {
+    console.log("Null first indicie");
+    console.log("----------------END Performance----------------");
     return;
   }
 
@@ -305,8 +309,6 @@ export async function getSecurityPerformance(ticker) {
 
   let estTimestamp = moment.tz("America/New_York").format("YYYY-MM-DD");
 
-  let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
-
   let todayPrice = await getClosestPriceDate(est, dailyData);
   let weekPrice = await getClosestPriceDate(week, dailyData);
   let twoweekPrice = await getClosestPriceDate(twoweek, dailyData);
@@ -314,80 +316,80 @@ export async function getSecurityPerformance(ticker) {
   let threemonthPrice = await getClosestPriceDate(threemonth, dailyData);
   let yearPrice = await getClosestPriceDate(year, dailyData);
 
-  if (
-    todayPrice &&
-    weekPrice &&
-    twoweekPrice &&
-    monthPrice &&
-    threemonthPrice &&
-    intrinioResponse
-  ) {
-    let earliest;
-    let latest = yearPrice ? yearPrice : data.daily.pop();
+  let earliest;
 
-    console.log("Fetch the open price");
+  console.log("Fetch the open price");
 
-    let cachedOpen = await quodd.getOpenPrice(ticker);
-    let lastPrice = await quodd.getLastPrice(ticker);
+  let open_price = await quodd.getOpenPrice(ticker);
+  let lastPrice = await quodd.getLastPrice(ticker);
 
-    if (cachedOpen) {
-      cachedOpen = cachedOpen / 100;
+  console.log("cached open: ", open_price);
+
+  if (!open_price) {
+    let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
+    if (intrinioResponse) {
+      open_price = intrinioResponse.open_price;
     }
-
-    console.log("cached open: ", cachedOpen);
-
-    let open_price = cachedOpen || intrinioResponse.open_price;
-
-    console.log("open_price: ", open_price);
-
-    if (open_price) {
-      earliest = {
-        date: estTimestamp,
-        value: open_price,
-      };
-    } else {
-      earliest = todayPrice;
-    }
-
-    var todayperf = null;
-    if (earliest.value) {
-      todayperf = ((lastPrice.last_price || earliest.value) / earliest.value - 1) * 100;
-    }
-
-    // console.log("today: ", todayperf);
-    // console.log("week: ", (earliest.value / weekPrice.value - 1) * 100);
-    // console.log("2week: ", (earliest.value / twoweekPrice.value - 1) * 100);
-    // console.log("1month: ", (earliest.value / monthPrice.value - 1) * 100);
-    // console.log("3month: ", (earliest.value / threemonthPrice.value - 1) * 100);
-    // console.log("1year: ", (earliest.value / latest.value - 1) * 100);
-
-    let perf = {
-      price_percent_change_today: todayperf,
-      price_percent_change_7_days: (earliest.value / weekPrice.value - 1) * 100,
-      price_percent_change_14_days:
-        (earliest.value / twoweekPrice.value - 1) * 100,
-      price_percent_change_30_days:
-        (earliest.value / monthPrice.value - 1) * 100,
-      price_percent_change_3_months:
-        (earliest.value / threemonthPrice.value - 1) * 100,
-      price_percent_change_1_year: (earliest.value / latest.value - 1) * 100,
-      values: {
-        today: earliest,
-        week: weekPrice,
-        twoweek: twoweekPrice,
-        month: monthPrice,
-        threemonth: threemonthPrice,
-        year: latest,
-      },
-    };
-    // add to redis
-
-    await quodd.setPerfCache(ticker, perf);
-    return perf;
   }
-  console.log("Failed to getSecurityPerformance for ticker: ", ticker);
+
+  console.log("open_price: ", open_price);
+  console.log("lastPrice: ", lastPrice);
+
+  // console.log("today: ", todayPrice);
+  // console.log("week: ", weekPrice);
+  // console.log("two week: ", twoweekPrice);
+  // console.log("month: ", monthPrice);
+  // console.log("three month: ", threemonthPrice);
+  // console.log("year: ", yearPrice);
+
+  if (open_price) {
+    console.log(estTimestamp);
+    console.log(open_price);
+
+    earliest = {
+      date: estTimestamp,
+      value: open_price,
+    };
+  } else {
+    earliest = todayPrice;
+  }
+
+  var todayperf = null;
+  if (earliest?.value && lastPrice?.last_price) {
+    todayperf = ((lastPrice.last_price || earliest.value) / earliest.value - 1) * 100;
+  }
+
+  // console.log("today: ", todayperf);
+  // console.log("week: ", (earliest.value / weekPrice.value - 1) * 100);
+  // console.log("2week: ", (earliest.value / twoweekPrice.value - 1) * 100);
+  // console.log("1month: ", (earliest.value / monthPrice.value - 1) * 100);
+  // console.log("3month: ", (earliest.value / threemonthPrice.value - 1) * 100);
+  // console.log("1year: ", (earliest.value / latest.value - 1) * 100);
+
+  let perf = {
+    price_percent_change_today: todayperf,
+    price_percent_change_7_days: (earliest.value / weekPrice.value - 1) * 100,
+    price_percent_change_14_days:
+      (earliest.value / twoweekPrice.value - 1) * 100,
+    price_percent_change_30_days:
+      (earliest.value / monthPrice.value - 1) * 100,
+    price_percent_change_3_months:
+      (earliest.value / threemonthPrice.value - 1) * 100,
+    price_percent_change_1_year: (earliest.value / yearPrice.value - 1) * 100,
+    values: {
+      today: earliest,
+      week: weekPrice,
+      twoweek: twoweekPrice,
+      month: monthPrice,
+      threemonth: threemonthPrice,
+      year: yearPrice,
+    },
+  };
+  // add to redis
+
+  await quodd.setPerfCache(ticker, perf);
   console.log("----------------End Performance----------------");
-  return null;
+  return perf;
 }
 
 export async function updateSecuritiesDelistStatus() {
@@ -403,16 +405,16 @@ export async function updateSecuritiesDelistStatus() {
       return securities;
     }, {});
 
-    const sharedCache = connectSharedCache();
+    const sharedCache = connectPriceCache();
     const todaysDate = moment().format('YYYY-MM-DD');
-    const keys = await sharedCache.keys(`${CACHED_SECURITY}-*`);
+    const keys = await sharedCache.keys(`${CACHED_SECURITY}*`);
     let activatedSecurities = [];
     let delistedSecurities = [];
 
     console.log(`${keys.length} securities to be checked for delist status`);
-    
+
     for await (let cachedKey of keys) {
-      const ticker = cachedKey.split('-').pop().substring(1);
+      const ticker = cachedKey.split(':').pop().substring(1);
       const lastSpinDate = await sharedCache.get(cachedKey);
       let delisted = false;
 
@@ -423,17 +425,15 @@ export async function updateSecuritiesDelistStatus() {
       if (securities[ticker] === delisted) {
         continue;
       }
-      
-      if (delisted) {        
-        const qTicker = cachedKey.split('-')[1];
+
+      if (delisted) {
 
         try {
           await Promise.all([
-            sharedCache.del(`${KEY_SECURITY_PERFORMANCE}-${ticker}`),
-            sharedCache.del(`${CACHED_PRICE_OPEN}${qTicker}`),
-            sharedCache.del(`${CACHED_PRICE_15MIN}${qTicker}`),
-            sharedCache.del(`${CACHED_PRICE_REALTIME}${qTicker}`),
-            sharedCache.del(`${CACHED_SYMBOL}${qTicker}`),
+            sharedCache.del(`${CACHED_DAY}${ticker}`),
+            sharedCache.del(`${CACHED_NOW}${ticker}`),
+            sharedCache.del(`${CACHED_THEN}${ticker}`),
+            sharedCache.del(`${CACHED_PERF}${ticker}`),
           ]);
         } finally {
           delistedSecurities.push(ticker);
@@ -515,10 +515,10 @@ export async function processNewTicker(ticker) {
     console.log('Failed to create type specific record', e);
   }
 
-  const sharedCache = connectSharedCache();
+  const priceCache = connectPriceCache();
   const date = moment().format('YYYY-MM-DD');
-  
-  sharedCache.set(`${CACHED_SECURITY}-e${ticker}`, date);
+
+  priceCache.set(`${CACHED_SECURITY}${ticker}`, date);
   console.log(`new-ticker-${ticker}-added`);
 
   return true;
@@ -651,29 +651,60 @@ const createMutualFund = async (security) => {
       `,
     values: [security.ticker],
   });
-}
-
-const connectSharedCache = () => {
-  let credentials = {
-    host: getEnv("REDIS_HOST_SHARED_CACHE"),
-    port: getEnv("REDIS_PORT_SHARED_CACHE"),
-  };
-
-  const client = redis.createClient(credentials);
-
-  client.on("error", function (error) {
-    //   reportError(error);
-  });
-
-  return asyncRedis.decorate(client);
 };
 
 const getArrayChunks = (arr, chunkSize) => {
   var chunks = [];
 
-  for (var i=0,len=arr.length; i<len; i+=chunkSize) {
-    chunks.push(arr.slice(i,i+chunkSize));
+  for (var i = 0, len = arr.length; i < len; i += chunkSize) {
+    chunks.push(arr.slice(i, i + chunkSize));
   }
 
   return chunks;
 }
+
+
+export const fetchCachedSecuritiesFromSharedCache = async (res) => {
+  let sharedCache = connectPriceCache();
+  const keys = await sharedCache.keys('C_SEC:*');
+
+  return res.send(keys);
+}
+
+export const clearCachedSecuritiesFromSharedCache = async (res) => {
+  let sharedCache = connectPriceCache();
+  const keys = await sharedCache.keys('C_SEC:*');
+
+  for (let i = 0; i < keys.length; i++) {
+    await sharedCache.del(keys[i]);
+  }
+
+  return res.send(keys);
+}
+
+export const syncExistingSecuritiesWithRedis = async (ticker, res) => {
+  try {
+    let sharedCache = connectPriceCache();
+
+    let securities = await db(`
+      SELECT ticker
+      FROM securities
+      ${ticker && `WHERE ticker = '${ticker}'`}
+    `);
+
+    res.write(securities.length.toString());
+
+    for (let i = 0; i < securities.length; i++) {
+      res.write(i.toString());
+      await sharedCache.set(`C_SEC:${securities[i].ticker}`, 'true');
+    }
+
+    res.write('done');
+    return 'done';
+  } catch (e) {
+    res.write('error');
+    res.write(e.message);
+
+    return 'error';
+  }
+};

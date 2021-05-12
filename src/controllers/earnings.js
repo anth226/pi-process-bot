@@ -182,7 +182,8 @@ export async function updateEarnings() {
 
     if (result.length > 0) {
       if (!eps_percent_diff && eps_actual && result[0].eps_estimate) {
-        let percentage = (eps_actual / result[0].eps_estimate - 1) * 100;
+        let eps_estimate = result[0].eps_estimate;
+        let percentage = (eps_actual - eps_estimate)/Math.abs(eps_estimate) * 100
         suprise_percentage = percentage.toFixed(2);
       } else {
         suprise_percentage = eps_percent_diff;

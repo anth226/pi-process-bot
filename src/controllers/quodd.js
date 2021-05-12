@@ -6,26 +6,18 @@ const MTZ = require("moment-timezone");
 
 import * as widgets from "../controllers/widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
-import asyncRedis from "async-redis";
-import redis from "redis";
 import moment from "moment";
 
 import {
-  AWS_POSTGRES_DB_DATABASE,
-  AWS_POSTGRES_DB_HOST,
-  AWS_POSTGRES_DB_PORT,
-  AWS_POSTGRES_DB_USER,
-  AWS_POSTGRES_DB_PASSWORD,
-  CACHED_PRICE_REALTIME,
-  CACHED_PRICE_15MIN,
-  CACHED_PRICE_OPEN,
-  KEY_SECURITY_PERFORMANCE,
-  CACHED_PRICE_CLOSE,
+  CACHED_DAY,
+  CACHED_NOW,
+  CACHED_PERF,
+  connectPriceCache
 } from "../redis";
 import {getEnv} from "../env";
+import {connect} from "mqtt";
 
 let dbs = {};
-let sharedCache;
 const isDev = getEnv("IS_DEV");
 
 // const connectDatabase = (credentials) => {
@@ -72,23 +64,6 @@ const isDev = getEnv("IS_DEV");
 //     console.log(error, "---error---");
 //   }
 // };
-
-const connectSharedCache = () => {
-  let credentials = {
-    host: getEnv("REDIS_HOST_SHARED_CACHE"),
-    port: getEnv("REDIS_PORT_SHARED_CACHE"),
-  };
-
-  if (!sharedCache) {
-    const client = redis.createClient(credentials);
-    client.on("error", function (error) {
-      //   reportError(error);
-    });
-
-    sharedCache = asyncRedis.decorate(client);
-  }
-  return sharedCache;
-};
 
 // export const getCredentials = async () => {
 //   connectSharedCache();
@@ -258,11 +233,9 @@ const connectSharedCache = () => {
 
 export async function getLastPrice(ticker) {
   let prices;
-  //let realtime;
-  let delayed;
-  let qTicker = "e" + ticker;
+  let realtime;
 
-  connectSharedCache();
+  let sharedCache = connectPriceCache();
 
   // let cachedPrice_R = await sharedCache.get(
   //   `${CACHED_PRICE_REALTIME}${qTicker}`
@@ -272,14 +245,19 @@ export async function getLastPrice(ticker) {
   //   realtime = cachedPrice_R / 100;
   // }
 
-  let cachedPrice_15 = await sharedCache.get(`${CACHED_PRICE_15MIN}${qTicker}`);
+  let now = await sharedCache.get(`${CACHED_NOW}${ticker}`);
 
-  if (cachedPrice_15) {
-    delayed = cachedPrice_15 / 100;
-    prices = {
-      //last_price_realtime: realtime,
-      last_price: delayed,
-    };
+  if (now) {
+    let parsedNow = JSON.parse(now);
+    let price = Number(parsedNow.price);
+
+    if (price) {
+      realtime = price;
+      prices = {
+        //last_price_realtime: realtime,
+        last_price: realtime,
+      };
+    }
   } else {
     let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
     if (intrinioResponse && intrinioResponse.last_price) {
@@ -295,13 +273,11 @@ export async function getLastPrice(ticker) {
 export async function getLastPriceChange(ticker) {
   console.log("\n\nLAST PRICE CHANGE");
   let response;
-  //let realtime;
-  let delayed;
-  let qTicker = "e" + ticker;
+  let realtime, open, close, prev_close, date;
 
-  console.log("qTicker", qTicker);
+  console.log("ticker", ticker);
 
-  connectSharedCache();
+  let sharedCache = connectPriceCache();
 
   // let cachedPrice_R = await sharedCache.get(
   //   `${CACHED_PRICE_REALTIME}${qTicker}`
@@ -311,85 +287,120 @@ export async function getLastPriceChange(ticker) {
   //   realtime = cachedPrice_R / 100;
   // }
 
-  let cachedPrice_15 = await sharedCache.get(`${CACHED_PRICE_15MIN}${qTicker}`);
-  let closePrice = await sharedCache.get(`${CACHED_PRICE_CLOSE}${qTicker}`);
-  let perf = await sharedCache.get(`${KEY_SECURITY_PERFORMANCE}-${ticker}`);
+  let now = await sharedCache.get(`${CACHED_NOW}${ticker}`);
+  let day = await sharedCache.get(`${CACHED_DAY}${ticker}`);
+  let perf = await sharedCache.get(`${CACHED_PERF}${ticker}`);
 
-  console.log("cachedPrice_15", cachedPrice_15);
-  console.log("closePrice", closePrice);
-  console.log("perf", perf);
+  if (now) {
+    let parsedNow = JSON.parse(now);
+    realtime = Number(parsedNow.price);
+  }
+  if (day) {
+    let parsedDay = JSON.parse(day);
+    close = parsedDay?.close;
+    if (close) {
+      close = Number(close);
+    }
+    prev_close = parsedDay?.prev_close;
+    if (prev_close) {
+      prev_close = Number(prev_close)
+    }
+    open = parsedDay?.open;
+    if (open) {
+      open = Number(open);
+    }
+    date = parsedDay?.date;
+  }
 
-  // intrinioResponse now out here because we're calculating change
-  //  based on open_price from intrinio
-  let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
-  console.log("intrinioResponse", intrinioResponse);
-
-  if (intrinioResponse && perf) {
+  if (perf) {
     let jsonPerf = JSON.parse(perf);
     let vals = jsonPerf.values;
-    let openVal = vals.today.value;
-    let openDate = vals.today.date;
+    let openVal = open || vals.today.value;
+    let openDate = date || vals.today.date;
 
     delete vals["today"];
-
     vals["open"] = {
       date: openDate,
       value: openVal,
     };
 
-    if (cachedPrice_15) {
-      delayed = cachedPrice_15 / 100;
-
-      let percentChange = (delayed / openVal - 1) * 100;
+    if (realtime) {
+      let percentChange = (realtime / openVal - 1) * 100;
 
       response = {
-        //last_price_realtime: realtime,
-        close_price: closePrice / 100,
-        last_price: delayed,
+      //last_price_realtime: realtime,
+      close_price: close,
+      prev_close_price: prev_close,
+      last_price: realtime,
+      open_price: openVal,
+      performance: percentChange,
+      values: vals,
+      };
+    } else {
+      let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
+      console.log("intrinioResponse", intrinioResponse);
+
+      if (intrinioResponse && intrinioResponse.last_price) {
+      let lastPrice = intrinioResponse.last_price;
+      let percentChange = (lastPrice / openVal - 1) * 100;
+
+      response = {
+        //last_price_realtime: intrinioPrice.last_price,
+        close_price: close,
+        prev_close_price: prev_close,
+        last_price: lastPrice,
         open_price: openVal,
         performance: percentChange,
         values: vals,
       };
-    } else {
-      if (intrinioResponse.last_price) {
-        let lastPrice = intrinioResponse.last_price;
-        let percentChange = (lastPrice / openVal - 1) * 100;
-
+      console.log("response 1", response);
+      } else {
         response = {
           //last_price_realtime: intrinioPrice.last_price,
-          close_price: closePrice / 100,
-          last_price: lastPrice,
+          close_price: close,
+          prev_close_price: prev_close,
+          last_price: 0,
           open_price: openVal,
-          performance: percentChange,
+          performance: 0,
           values: vals,
         };
-        console.log("response 1", response);
       }
     }
 
     return response;
   } else {
-    const last_price =
-      (cachedPrice_15 && cachedPrice_15 / 100) ||
+      let intrinioResponse = await getSecurityData.getSecurityLastPrice(ticker);
+      console.log("intrinioResponse", intrinioResponse);
+
+      const last_price =
+      realtime ||
       (intrinioResponse && intrinioResponse.last_price) ||
       0;
-    const open_price = (intrinioResponse && intrinioResponse.open_price) || 0;
 
-    console.log("last_price", last_price);
-    console.log("open_price", open_price);
+      const open_price =
+        open ||
+        (intrinioResponse && intrinioResponse.open_price) || 0;
 
-    return {
-      close_price: closePrice / 100,
-      last_price,
-      open_price,
-      performance: (last_price / open_price - 1) * 100,
-      values: {
-        open: {
-          date: intrinioResponse && intrinioResponse.last_time,
-          value: open_price,
-        },
-      },
-    };
+      const open_date =
+        date ||
+        (intrinioResponse && intrinioResponse.last_time) || "";
+
+      console.log("last_price", last_price);
+      console.log("open_price", open_price);
+
+      return {
+        close_price: close,
+        prev_close_price: prev_close,
+        last_price,
+        open_price,
+        performance: (last_price / open_price - 1) * 100,
+        values: {
+          open: {
+            date: open_date,
+            value: open_price,
+          },
+       },
+     };
   }
 }
 
@@ -398,10 +409,18 @@ export async function getOpenPrice(ticker) {
   if (!ticker) {
     return;
   }
+  let open;
 
-  connectSharedCache();
+  let sharedCache = connectPriceCache();
 
-  let open = await sharedCache.get(`${CACHED_PRICE_OPEN}e${ticker}`);
+  let day = await sharedCache.get(`${CACHED_DAY}${ticker}`);
+  if (day) {
+    let parsed = JSON.parse(day);
+    open = parsed?.open;
+    if (open) {
+      open = Number(open)
+    }
+  }
 
   return open;
 }
@@ -411,11 +430,11 @@ export async function setPerfCache(ticker, perf) {
     return;
   }
 
-  connectSharedCache();
+  const priceCache = connectPriceCache();
 
   let json = JSON.stringify(perf);
 
-  await sharedCache.set(`${KEY_SECURITY_PERFORMANCE}-${ticker}`, json);
+  await priceCache.set(`${CACHED_PERF}${ticker}`, json);
 }
 
 // export async function testCache() {

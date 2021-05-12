@@ -1469,7 +1469,7 @@ export const newTickersConsumer = Consumer.create({
     }
 
     for (let index = 0; index < tickers.length; index++) {
-      const ticker = tickers[index].substring(1);
+      const ticker = tickers[index];
 
       console.log("sqs-new-ticker-", ticker);
 
