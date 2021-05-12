@@ -873,7 +873,7 @@ app.get("/ark/process_alert", async (req, res) => {
 
  try {
     let checkData = await trades.checkData();
-    
+
     if(checkData) {
       let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
 
@@ -905,8 +905,8 @@ app.get("/ark/process_alert", async (req, res) => {
       console.log("Successfully processed and sent ARK Alert.");
       res.send("Successfully processed and sent ARK Alert."); 
     } else {
-      console.log("Failed tp process and send ARK Alert. Data is not upto date!");
-      res.send("Failed tp process and send ARK Alert. Data is not upto date!");
+      console.log("Failed to process and send ARK Alert. Data is not upto date!");
+      res.send("Failed to process and send ARK Alert. Data is not upto date!");
     }
   } catch (error) {
     console.log(error);
