@@ -871,18 +871,21 @@ app.get("/ark/process_alert", async (req, res) => {
     return;
   }
 
-  try {
-    let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
+ try {
+    let checkData = await trades.checkData();
 
-    let dailyAlerts = await alerts.getDailyAlerts();
-    var alertUsers;
+    if(checkData) {
+      let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
 
-    if (dailyAlerts.length > 0) {
-      for (var i = 0; i < dailyAlerts.length; i++) {
-        alertUsers = await alerts.getAlertActiveUsers(dailyAlerts[i].id);
-        if (alertUsers.length > 0) {
-          for (var x = 0; x < alertUsers.length; x++) {
-            client.messages
+      let dailyAlerts = await alerts.getDailyAlerts();
+      var alertUsers;
+
+      if(dailyAlerts.length > 0) {
+        for( var i = 0; i < dailyAlerts.length; i++ ) {
+          alertUsers = await alerts.getAlertActiveUsers(dailyAlerts[i].id);
+          if(alertUsers.length > 0) {
+            for( var x = 0; x < alertUsers.length; x++ ) {
+              client.messages
               .create({
                 from: getEnv("TWILIO_PHONE_NUMBER"),
                 to: alertUsers[x].user_phone_number,
@@ -895,17 +898,21 @@ app.get("/ark/process_alert", async (req, res) => {
                 console.log(err);
                 console.log(JSON.stringify({ success: false }));
               });
+            }
           }
         }
       }
+      console.log("Successfully processed and sent ARK Alert.");
+      res.send("Successfully processed and sent ARK Alert."); 
+    } else {
+      console.log("Failed to process and send ARK Alert. Data is not upto date!");
+      res.send("Failed to process and send ARK Alert. Data is not upto date!");
     }
   } catch (error) {
     console.log(error);
     res.send("Failed to process ARK Alert! \nReason: " + error);
     return;
-  }
-  console.log("Successfully processed and sent ARK Alert.");
-  res.send("Successfully processed and sent ARK Alert.");
+  } 
 });
 
 
