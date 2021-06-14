@@ -13,9 +13,10 @@ import * as etfs from "./controllers/etfs";
 import * as nlp from "./controllers/nlp";
 import * as earnings from "./controllers/earnings";
 import * as userPortfolios from "./controllers/userportfolios";
+import * as zacks from "./controllers/zacks";
 import db from "./db";
 import { getEnv } from "./env";
-import {getInstitutionsHoldings} from "./controllers/institutions";
+import { getInstitutionsHoldings } from "./controllers/institutions";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -795,6 +796,39 @@ export function publish_ProcessCiks(id) {
   });
 }
 
+export function publish_ProcessZacksCategories(id, ticker) {
+  let queueUrl = getEnv("AWS_SQS_URL_ZACKS_CATEGORIES");
+
+  let data = {
+    id,
+    ticker,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "String",
+        StringValue: data.id,
+      },
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
   queueUrl: getEnv("AWS_SQS_URL_BILLIONAIRE_HOLDINGS"),
@@ -1454,30 +1488,39 @@ consumer_22.on("processing_error", (err) => {
 export const newTickersConsumer = Consumer.create({
   queueUrl: getEnv("AWS_SQS_URL_PROCESS_NEW_SECURITY"),
   handleMessage: async (message) => {
-    if (message.Body.includes('delist-check')) {
-      await securities.updateSecuritiesDelistStatus();
-      
-      return; 
-    }
-
-    let tickers = JSON.parse(message.Body);
-
-    console.log("sqs-new-tickers-received");
-
-    if (!Array.isArray(tickers)) {
-      return;
-    }
-
-    for (let index = 0; index < tickers.length; index++) {
-      const ticker = tickers[index];
-
-      console.log("sqs-new-ticker-", ticker);
-
-      try {
-        await securities.processNewTicker(ticker);
-      } catch (e) {
-        console.log(`Failed to add new ticker ${ticker}`, e);
+    try {
+      if (message.Body.includes('delist-check')) {
+        await securities.updateSecuritiesDelistStatus();
+  
+        return;
       }
+
+      console.log(JSON.stringify(message));
+  
+      let tickers = JSON.parse(message.Body);
+  
+      console.log("sqs-new-tickers-received", tickers);
+  
+      if (!Array.isArray(tickers)) {
+        console.log("Not array");
+        return;
+      }
+  
+      for (let index = 0; index < tickers.length; index++) {
+        const ticker = tickers[index];
+  
+        console.log("sqs-new-ticker-", ticker);
+  
+        try {
+          await securities.processNewTicker(ticker);
+        } catch (e) {
+          console.log(`Failed to add new ticker ${ticker}`, e);
+        }
+      }
+    } catch (e) {
+      console.log('sqs-new-tickers-error', e.message);
+
+      return;
     }
   },
 });
@@ -1505,5 +1548,28 @@ cikConsumer.on("error", (err) => {
 });
 
 cikConsumer.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+
+// AWS_SQS_URL_INSTITUTIONAL_HOLDINGS
+export const zacksCategoriesConsumer = Consumer.create({
+  queueUrl: getEnv("AWS_SQS_URL_ZACKS_CATEGORIES"),
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    let sector = await zacks.scrapeZackCategory(sqsMessage.ticker);
+
+    if (sector) {
+      await zacks.updateZackCategories(Number(sqsMessage.id), sector);
+    }
+  },
+});
+
+zacksCategoriesConsumer.on("error", (err) => {
+  console.error(err.message);
+});
+
+zacksCategoriesConsumer.on("processing_error", (err) => {
   console.error(err.message);
 });

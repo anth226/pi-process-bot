@@ -1,18 +1,18 @@
 //import axios from "axios";
 import "dotenv/config";
+import moment from "moment-timezone"
 const { Client } = require("pg");
-
-const MTZ = require("moment-timezone");
 
 import * as widgets from "../controllers/widgets";
 import * as getSecurityData from "./intrinio/get_security_data";
-import moment from "moment";
 
 import {
   CACHED_DAY,
   CACHED_NOW,
   CACHED_PERF,
-  connectPriceCache
+  connectPriceCache,
+  C_CHART,
+  connectChartRedis
 } from "../redis";
 import {getEnv} from "../env";
 import {connect} from "mqtt";
@@ -425,6 +425,26 @@ export async function getOpenPrice(ticker) {
   return open;
 }
 
+export async function getPreviousClose(ticker) {
+  if (!ticker) {
+    return;
+  }
+  let prevClose;
+
+  let sharedCache = connectPriceCache();
+
+  let day = await sharedCache.get(`${CACHED_DAY}${ticker}`);
+  if (day) {
+    let parsed = JSON.parse(day);
+    prevClose = parsed?.prev_close;
+    if (prevClose) {
+      prevClose = Number(prevClose)
+    }
+  }
+
+  return prevClose;
+}
+
 export async function setPerfCache(ticker, perf) {
   if (!ticker || !perf) {
     return;
@@ -437,9 +457,66 @@ export async function setPerfCache(ticker, perf) {
   await priceCache.set(`${CACHED_PERF}${ticker}`, json);
 }
 
-// export async function testCache() {
-//   connectSharedCache();
+export async function getCurrentChart(ticker, fetchLD) {
+  let data;
+  let chartCache = connectChartRedis();
 
-//   let data = await sharedCache.get(`${KEY_SECURITY_PERFORMANCE}-TSLA`);
-//   return data;
-// }
+  data = await chartCache.get(`${C_CHART}${ticker}`);
+  if (fetchLD && !data) {
+    data = await chartCache.get(`${C_CHART_LD}${ticker}`);
+  }
+
+  if (data) {
+    let parsed = JSON.parse(data);
+    data = parsed?.data;
+  }
+
+  return data;
+}
+
+export function getTrendingMarketState() {
+  const today = moment().tz("America/New_York");
+  const marketOpenTime = moment.tz("09:30:00", "HH:mm:ss", "America/New_York")
+  const marketATSPreMarketTime = moment.tz("08:05:00", "HH:mm:ss", "America/New_York")
+
+  // if the time is before 8:05am, use previous_close
+  if (today.isSameOrBefore(marketATSPreMarketTime)) {
+    return "previous_close";
+  }
+
+  // if the time is between 8:05 and 9:30, use pre
+  if (today.isAfter(marketATSPreMarketTime) && today.isBefore(marketOpenTime)) {
+    return "pre";
+  }
+
+  // if the time is after 9:30, use open
+  return "open";
+}
+
+// fetch pre market starting price or open based on time
+export async function getTrendOpenPrice(ticker) {
+  let open;
+
+  let marketState = getTrendingMarketState();
+  switch (marketState) {
+    case "previous_close":
+      // fetch previous close price
+      open = await getPreviousClose(ticker);
+      break;
+    case "pre":
+      // fetch the fetch the first price in premarket
+      let chart = await getCurrentChart(ticker, false);
+      if (chart && chart[0]) {
+        let firstTrade = JSON.parse(chart[0]);
+        let firstPrice = Number(firstTrade.last);
+        open = firstPrice;
+      }
+      break;
+    default:
+      // fetch open price
+      open = await getOpenPrice(ticker);
+      break;
+  }
+
+  return open;
+}

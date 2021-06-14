@@ -147,6 +147,29 @@ export async function getTradesFromARK() {
 	}
 }
 
+export async function checkData() {
+	let result;
+	var date = new Date();
+
+	if(date.getUTCDay() == 1) 
+	{
+		result = await db(`
+			SELECT * FROM public.daily_trades WHERE DATE_TRUNC('day',created_at) >= DATE_TRUNC('day',now()) - interval '3 day'
+			`);
+	} else {
+		result = await db(`
+			SELECT * FROM public.daily_trades WHERE DATE_TRUNC('day',created_at) >= DATE_TRUNC('day',now()) - interval '1 day'
+			`);
+	}
+
+	if(result.length > 0) {
+		return true;
+	} else {
+		return false;
+	}
+  	
+}
+
 export async function getTop3Buy() {
   	const result = await db(`
         SELECT * FROM daily_trades WHERE direction = 'Buy' AND created_at = (SELECT created_at FROM public.daily_trades ORDER by created_at DESC limit 1) ORDER BY market_value DESC Limit 3

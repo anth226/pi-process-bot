@@ -1,4 +1,5 @@
 import db2 from "../db2";
+import moment from "moment-timezone";
 
 //TODO: add time check for getRawData
 
@@ -168,6 +169,30 @@ export async function archiveOlderOptions() {
 
 export async function deleteOlderOptions() {
   try {
+    // define current and previous month
+    let today = moment().tz("America/New_York");
+    let currentMonth = today.format("YYYY-MM");
+    let previousMonth = today.subtract(1, "month").format("YYYY-MM");
+
+    //check for current month and previous month data
+    let monthQuery = `SELECT MIN(to_timestamp(time)::date) AS previous,
+                      MAX(to_timestamp(time)::date) AS current
+                      FROM options
+                      `;
+    let results = await db2(monthQuery);
+
+    if (!results || !results[0]) {
+      return false;
+    }
+
+    // check if table contains both the current and previous month
+    let current = moment(results[0].current, "YYYY-MM-DD").format("YYYY-MM");
+    let previous = moment(results[0].previous, "YYYY-MM-DD").format("YYYY-MM");
+    if (currentMonth != current || previousMonth != previous) {
+      console.log("dont run");
+      return false;
+    }
+    
     await db2(`
       DELETE FROM options 
       WHERE EXTRACT(MONTH from to_timestamp(time)::date) = (

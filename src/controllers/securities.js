@@ -1,4 +1,5 @@
 import axios from "axios";
+import cheerio from "cheerio";
 
 import db from "../db";
 
@@ -57,6 +58,20 @@ export async function getSecurities() {
   let result = await db(`
         SELECT *
         FROM securities
+    `);
+
+  if (result && result.length > 0) {
+    return result;
+  }
+}
+
+export async function getHighestPerformingSecurities() {
+  let result = await db(`
+      SELECT *
+      FROM securities
+      WHERE delisted = FALSE
+      AND today_performance > 0
+      ORDER BY today_performance DESC
     `);
 
   if (result && result.length > 0) {
@@ -453,7 +468,7 @@ export async function updateSecuritiesDelistStatus() {
             SET delisted = true WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
           `),
           db(`
-            DELETE FROM portfolio_histories 
+            DELETE FROM portfolio_histories
             WHERE ticker IN ('${delistedSecuritiesChunk.join("','")}')
           `)
         ])
@@ -465,7 +480,7 @@ export async function updateSecuritiesDelistStatus() {
 
       for await (let activatedSecuritiesChunk of activatedSecuritiesChunks) {
         await db(`
-          UPDATE securities 
+          UPDATE securities
           SET delisted = false WHERE ticker IN ('${activatedSecuritiesChunk.join("','")}')
         `);
       }
@@ -531,18 +546,42 @@ const fetchSecurityDetails = async (ticker) => {
     CEF: 'mutual_fund',
   };
 
-  const intrinioResponse = await axios.get(
-    `${getEnv("INTRINIO_BASE_PATH")}/securities/${ticker}?api_key=${getEnv("INTRINIO_API_KEY")}`
-  );
-
-  const securityDetails = intrinioResponse.data;
-
-  return {
+  let response = {
     ticker,
-    type: codesMap[securityDetails.code],
-    cik: securityDetails.cik || null,
-    name: securityDetails.name || null
+    type: 'common_stock',
+    cik: null,
+    name: ''
   };
+
+  try {
+    const intrinioResponse = await axios.get(
+      `${getEnv("INTRINIO_BASE_PATH")}/securities/${ticker}?api_key=${getEnv("INTRINIO_API_KEY")}`
+    );
+
+    const securityDetails = intrinioResponse.data;
+
+    response.type = codesMap[securityDetails.code] || 'common_stock';
+    response.cik = securityDetails.cik || null;
+    response.name = securityDetails.name || '';
+  } catch (e) {
+    response.name = await getSecurityName(ticker.toLowerCase());
+  }
+
+  return response;
+}
+
+const getSecurityName = async (ticker) => {
+
+  try {
+    const response = await axios.get(`https://www.marketwatch.com/investing/stock/${ticker}`);
+    const html = response.data;
+    const domReference = cheerio.load(html);
+
+    return (domReference('.company__name').text() || '').trim();
+  } catch (e) {
+    console.log(e);
+    return '';
+  }
 }
 
 const createNewSecurity = async (security) => {
@@ -708,3 +747,54 @@ export const syncExistingSecuritiesWithRedis = async (ticker, res) => {
     return 'error';
   }
 };
+
+export const populateSecuritiesNames = async () => {
+  try {
+    let securities = await db(`
+      SELECT ticker
+      FROM securities
+      WHERE name IS NULL OR name = ''
+    `);
+
+    for (let index = 0; index < securities.length; index++) {
+      try {
+        const ticker = securities[index].ticker;
+        const name = await getSecurityName(ticker.toLowerCase());
+
+        if (!name) {
+          continue;
+        }
+
+        await db({
+          text: "UPDATE securities SET name = $1 WHERE ticker = $2",
+          values: [name, ticker],
+        });
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    return true;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
+
+export const filterSecurityNames = async (data) => {
+  let tickers = data.map(s => s.ticker).join(",");
+
+  const securities = await db(`
+                SELECT ticker, name FROM securities WHERE ticker = ANY('{${tickers}}')
+                `);
+
+  const securityMap = securities.reduce((s, security) => ({ ...s, [security.ticker]: security.name }), {});
+
+  // filter by securities we have
+  let results = data.map(s => {
+    s.name = securityMap[s.ticker];
+    return s;
+  }).filter(s => s.name);
+
+  return results;
+}

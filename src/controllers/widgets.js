@@ -1618,6 +1618,7 @@ const updateTrendingTitans = async () => {
   }
 
   let titans = [];
+  let portfolioData;
 
   for (const titan of groupByTitans) {
     const { titan_uri, count } = titan;
@@ -1626,7 +1627,17 @@ const updateTrendingTitans = async () => {
       SELECT * FROM billionaires WHERE uri = '${titan_uri}'
     `);
 
-    if (titanData && titanData.length > 0) {
+    const primaryCik = await db(`
+      SELECT bc.cik FROM billionaires b JOIN billionaire_ciks bc ON b.id = bc.titan_id WHERE b.uri = '${titan_uri}' AND bc.is_primary = true
+    `);
+
+    if (primaryCik && primaryCik.length > 0) {
+      portfolioData = await db(`
+      SELECT * FROM cik_holdings WHERE cik = '${primaryCik[0]?.cik}'
+    `);
+    }
+
+    if (titanData && titanData.length > 0 && portfolioData && portfolioData[0] && portfolioData[0]?.json_holdings && portfolioData[0]?.json_holdings?.length > 0) {
       titans.push({
         id: titanData[0].id,
         name: titanData[0].name,

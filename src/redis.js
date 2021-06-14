@@ -1,6 +1,6 @@
 import asyncRedis from "async-redis";
 import redis from "redis";
-import {getEnv} from "./env";
+import { getEnv } from "./env";
 
 // import { reportError } from "./reporting";
 
@@ -9,6 +9,7 @@ let priceCache;
 let priceCacheProd;
 let atsCache;
 let atsFallCache;
+let chartdb;
 
 export let KEY_NEWS_HEADLINES = "KEY_NEWS_HEADLINES";
 export let KEY_NEWS_SOURCES = "KEY_NEWS_SOURCES";
@@ -23,6 +24,12 @@ export let CACHED_NOW = "NOW:"; // current price
 export let CACHED_THEN = "THEN:"; // delayed price
 export let CACHED_DAY = "DAY:"; // open and close
 
+export const C_CHART = "CHART:";
+export const C_CURRENT = "CURRENT:";
+export const C_CHART_LD = "LD:CHART:";
+export const C_CHART_DL = "DL:CHART:";
+export const C_CHART_DL_LD = "LD:DL:CHART:";
+
 //ats redis
 export let ATS_CURRENT = "CURRENT:";
 export let ATS_DAY = "DAY:";
@@ -31,6 +38,9 @@ export let ATS_DATES = "DATES";
 export let ATS_LAST_TIME = "LAST_TIME";
 export let ATS_SNAPSHOT = "SNAPSHOT:";
 export let ATS_HIGH_DARK_FLOW = "HIGHDARKFLOW";
+export let ATS_TRENDING_HIGH_DARK_FLOW = "TRENDINGHIGHDARKFLOW";
+export let ATS_HISTORICAL_TRENDING_HIGH_DARK_FLOW = "HISTTRENDINGHIGHDARKFLOW";
+export let ATS_TOP_TICKERS = "TOPTICKERS";
 
 function connectDatabase() {
   let credentials = {
@@ -124,6 +134,23 @@ export const connectATSFallbackCache = () => {
   return atsFallCache;
 };
 
+export const connectChartRedis = () => {
+  let credentials = {
+    host: getEnv("REDIS_HOST_CHART_CACHE"),
+    port: getEnv("REDIS_PORT"),
+  };
+
+  if (!chartdb) {
+    const client = redis.createClient(credentials);
+    client.on("error", function (error) {
+      //   reportError(error);
+    });
+
+    chartdb = asyncRedis.decorate(client);
+  }
+  return chartdb;
+}
+
 
 export const syncRedisData = async () => {
   const priceCache = connectPriceCache();
@@ -135,7 +162,7 @@ export const syncRedisData = async () => {
       const value = await priceCacheProd.get(key);
 
       await priceCache.set(key, value);
-    } catch(e) {}
+    } catch (e) { }
   }
 
   return true;

@@ -37,7 +37,9 @@ import redis, {
   syncRedisData
 } from "./redis";
 import { getEnv } from "./env";
-import {getEarningsCalendar, getWidgetInstanceId} from "./controllers/widgets";
+import { getEarningsCalendar, getWidgetInstanceId } from "./controllers/widgets";
+import { getTrendingHighDarkflow, processHighDarkFlow } from "./controllers/ats";
+import * as buys from "./controllers/buys";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
@@ -300,6 +302,19 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 });
 
 /* Securities */
+
+app.get("/populate-missing-securities-names", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await securities.populateSecuritiesNames();
+
+  return res.send("success");
+});
 
 app.get("/fetch-shared-securities", async (req, res) => {
   let { query } = req;
@@ -742,7 +757,31 @@ app.get("/ncds_consolidate", async (req, res) => {
 });
 
 /* STRONG BUYS */
-app.get("/strongbuys/set", async (req, res) => {
+
+// app.get("/strongbuys/set", async (req, res) => {
+//   if (getEnv("DISABLE_CRON") == "true") {
+//     res.send("disabled");
+//     return;
+//   }
+//   let { query } = req;
+//   if (query.token != "XXX") {
+//     res.send("fail");
+//     return;
+//   }
+//   if (!query.tickers) {
+//     res.send("fail");
+//     return;
+//   }
+//   let ticks = await JSON.parse(query.tickers);
+//   if (ticks && ticks.length == 9) {
+//     await securities.setStrongBuys(ticks);
+//     res.send("ok");
+//   } else {
+//     res.send("error in tickers param");
+//   }
+
+// });
+app.get("/get_strong_buys", async (req, res) => {
   if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
@@ -752,18 +791,23 @@ app.get("/strongbuys/set", async (req, res) => {
     res.send("fail");
     return;
   }
-  if (!query.tickers) {
+  const data = await buys.getBuys();
+  res.send(data);
+});
+
+
+app.get("/strong_buys/set_hard_data", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
     res.send("fail");
     return;
   }
-  let ticks = await JSON.parse(query.tickers);
-  if (ticks && ticks.length == 9) {
-    await securities.setStrongBuys(ticks);
-    res.send("ok");
-  } else {
-    res.send("error in tickers param");
-  }
-
+  const data = await buys.getHardcodedBuys();
+  res.send(data);
 });
 
 // ats
@@ -777,8 +821,55 @@ app.get("/ats/process_high_dark_flow", async (req, res) => {
     res.send("fail");
     return;
   }
-  const d = await ats.getHighDarkFlow();
-  res.send(d);
+  const data = await ats.processHighDarkFlow();
+  res.send(data);
+});
+
+app.get("/ats/process_trending_high_dark_flow", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  ats.processTrendingHighDarkflow();
+  res.send("woo!");
+});
+
+app.get("/ats/process_historical_trending_high_dark_flow", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  const data = await ats.processHistoricalTrendingHighDarkflow();
+  res.send(data);
+});
+
+
+// Suggested Titans
+
+app.get("/get_suggested_titans", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  titans.findSuggestedTitans();
+  res.send("AWOOGGAH!");
 });
 
 
@@ -872,40 +963,48 @@ app.get("/ark/process_alert", async (req, res) => {
   }
 
   try {
-    let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
+    let checkData = await trades.checkData();
 
-    let dailyAlerts = await alerts.getDailyAlerts();
-    var alertUsers;
+    if (checkData) {
+      let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
 
-    if (dailyAlerts.length > 0) {
-      for (var i = 0; i < dailyAlerts.length; i++) {
-        alertUsers = await alerts.getAlertActiveUsers(dailyAlerts[i].id);
-        if (alertUsers.length > 0) {
-          for (var x = 0; x < alertUsers.length; x++) {
-            client.messages
-              .create({
-                from: getEnv("TWILIO_PHONE_NUMBER"),
-                to: alertUsers[x].user_phone_number,
-                body: dailyAlerts[i].message
-              })
-              .then(() => {
-                console.log(JSON.stringify({ success: true }));
-              })
-              .catch(err => {
-                console.log(err);
-                console.log(JSON.stringify({ success: false }));
-              });
+      let dailyAlerts = await alerts.getDailyAlerts();
+      var alertUsers;
+
+      if (dailyAlerts.length > 0) {
+        for (var i = 0; i < dailyAlerts.length; i++) {
+          alertUsers = await alerts.getAlertActiveUsers(dailyAlerts[i].id);
+          if (alertUsers.length > 0) {
+            for (var x = 0; x < alertUsers.length; x++) {
+              await sleep(1000);
+              client.messages
+                .create({
+                  from: getEnv("TWILIO_PHONE_NUMBER"),
+                  to: alertUsers[x].user_phone_number,
+                  body: dailyAlerts[i].message
+                })
+                .then(() => {
+                  console.log(JSON.stringify({ success: true }));
+                })
+                .catch(err => {
+                  console.log(err);
+                  console.log(JSON.stringify({ success: false }));
+                });
+            }
           }
         }
       }
+      console.log("Successfully processed and sent ARK Alert.");
+      res.send("Successfully processed and sent ARK Alert.");
+    } else {
+      console.log("Failed tp process and send ARK Alert. Data is not upto date!");
+      res.send("Failed tp process and send ARK Alert. Data is not upto date!");
     }
   } catch (error) {
     console.log(error);
     res.send("Failed to process ARK Alert! \nReason: " + error);
     return;
   }
-  console.log("Successfully processed and sent ARK Alert.");
-  res.send("Successfully processed and sent ARK Alert.");
 });
 
 
@@ -922,6 +1021,20 @@ app.get("/fetch_zacks", async (req, res) => {
   }
   await zacks.fetchZackFeeds();
   res.send("success");
+});
+
+app.get("/categorize_zacks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("awwww");
+    return;
+  }
+  await zacks.setZackCategories();
+  res.send("yaaass");
 });
 
 // Fetch BTC News
@@ -1017,6 +1130,12 @@ app.get("/find_date", async (req, res) => {
 
   res.send(result);
 });
+/**
+ * Helper function
+*/
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 // Start Server
 app.listen(process.env.PORT || 8080, () => {
@@ -1053,6 +1172,7 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_21.start();
   queue.consumer_22.start();
   queue.cikConsumer.start();
+  queue.zacksCategoriesConsumer.start();
   if (getEnv("RELEASE_STAGE") == "production") {
     queue.newTickersConsumer.start();
   }

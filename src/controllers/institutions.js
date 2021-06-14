@@ -463,28 +463,28 @@ export async function getSnapshotByCik(cik, data) {
         top_performing: {
           ticker: get(topPerf, "ticker") ? topPerf.ticker : null,
           name: get(topPerf, "security_name") ? topPerf.security_name : null,
-          open_date: get(topPerf, "filing_date").substring(0,10) ? topPerf.filing_date.substring(0,10) : null,
+          open_date: get(topPerf, "filing_date").substring(0, 10) ? topPerf.filing_date.substring(0, 10) : null,
           open_price: topPerfPrice ? topPerfPrice : null,
           price_percent_change_1_year: get(topPerfSec, "price_percent_change_1_year") ? topPerfSec.price_percent_change_1_year : null,
         },
         common: {
           ticker: get(common, "ticker") ? common.ticker : null,
           name: get(common, "security_name") ? common.security_name : null,
-          open_date: get(common, "filing_date").substring(0,10) ? common.filing_date.substring(0,10) : null,
+          open_date: get(common, "filing_date").substring(0, 10) ? common.filing_date.substring(0, 10) : null,
           open_price: commonPrice ? commonPrice : null,
           price_percent_change_1_year: get(commonSec, "price_percent_change_1_year") ? commonSec.price_percent_change_1_year : null,
         },
         uncommon: {
           ticker: get(uncommon, "ticker") ? uncommon.ticker : null,
           name: get(uncommon, "security_name") ? uncommon.security_name : null,
-          open_date: get(uncommon, "filing_date").substring(0,10) ? uncommon.filing_date.substring(0,10) : null,
+          open_date: get(uncommon, "filing_date").substring(0, 10) ? uncommon.filing_date.substring(0, 10) : null,
           open_price: uncommonPrice ? uncommonPrice : null,
           price_percent_change_1_year: get(uncommonSec, "price_percent_change_1_year") ? uncommonSec.price_percent_change_1_year : null,
         },
         largest: {
           ticker: get(largest, "ticker") ? largest.ticker : null,
           name: get(largest, "security_name") ? largest.security_name : null,
-          open_date: get(largest, "filing_date").substring(0,10) ? largest.filing_date.substring(0,10) : null,
+          open_date: get(largest, "filing_date").substring(0, 10) ? largest.filing_date.substring(0, 10) : null,
           open_price: largestPrice ? largestPrice : null,
           price_percent_change_1_year: get(largestSec, "price_percent_change_1_year") ? largestSec.price_percent_change_1_year : null,
         },
@@ -634,7 +634,7 @@ export async function getInstitutionLargestNewHolding(currentHoldings, cik) {
     let ticker = currentHoldings[i].ticker;
     let value = currentHoldings[i].value;
     if (ticker && value) {
-      currentTickers.push({ticker: ticker, value: value});
+      currentTickers.push({ ticker: ticker, value: value });
     }
   }
 
@@ -647,7 +647,7 @@ export async function getInstitutionLargestNewHolding(currentHoldings, cik) {
     let ticker = previousHoldings[j].ticker;
     let value = previousHoldings[j].value;
     if (ticker && value) {
-      previousTickers.push({ticker: ticker, value: value});
+      previousTickers.push({ ticker: ticker, value: value });
     }
   }
 
@@ -658,7 +658,7 @@ export async function getInstitutionLargestNewHolding(currentHoldings, cik) {
     // find tickers that are new
     let newTickers = [];
 
-    currentTickers.forEach( function (i) {
+    currentTickers.forEach(function (i) {
       let found = previousTickers.find(h => {
         return h.ticker === i.ticker
       })
@@ -699,7 +699,7 @@ export async function processCiks(type) {
     for (let i in result) {
       let id = result[i].id;
       let cik = result[i].cik;
-      switch(type) {
+      switch (type) {
         case "snapshots":
           await queue.publish_ProcessSnapshot_ciks(id, cik);
           break;
@@ -804,4 +804,32 @@ export const processHoldingsOfCik = async (id) => {
   }
 
   return allHoldings
+}
+
+
+export const getLargestHoldingsOfTicker = async (ticker) => {
+  let holds = [];
+  let result = await db(`
+    SELECT *
+    FROM cik_holdings
+    WHERE json_holdings::json::text LIKE '%${ticker}%'
+  `);
+
+  for (let inst of result) {
+    let holdings = inst.json_holdings;
+    for (let holding of holdings) {
+      if (holding.ticker == ticker) {
+        let hold = {
+          cik: inst.cik,
+          amount: holding.amount,
+        }
+        holds.push(hold);
+      }
+    }
+  }
+  holds.sort((a, b) => parseInt(b.amount) - parseInt(a.amount))
+  if (holds.length > 10) {
+    holds.length = 10;
+  }
+  return holds;
 }
