@@ -13,7 +13,10 @@ import * as etfs from "./controllers/etfs";
 import * as nlp from "./controllers/nlp";
 import * as earnings from "./controllers/earnings";
 import * as userPortfolios from "./controllers/userportfolios";
+import * as zacks from "./controllers/zacks";
 import db from "./db";
+import { getEnv } from "./env";
+import { getInstitutionsHoldings } from "./controllers/institutions";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -22,7 +25,7 @@ AWS.config.update({ region: "us-east-1" });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 
 export function publish_ProcessHoldings(cik, id, batchId, cache) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_HOLDINGS");
 
   let data = {
     cik,
@@ -67,7 +70,7 @@ export function publish_ProcessHoldings(cik, id, batchId, cache) {
 }
 
 export function publish_ProcessPerformances(cik, id, batchId, cache) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_PERFORMANCES");
 
   let data = {
     cik,
@@ -112,7 +115,7 @@ export function publish_ProcessPerformances(cik, id, batchId, cache) {
 }
 
 export function publish_ProcessCompanyLookup(identifier) {
-  let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
+  let queueUrl = getEnv("AWS_SQS_URL_COMPANY_LOOKUP");
 
   let data = {
     identifier,
@@ -142,7 +145,7 @@ export function publish_ProcessCompanyLookup(identifier) {
 }
 
 export function publish_ProcessSecurityPrices(identifier) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITY_PRICES;
+  let queueUrl = getEnv("AWS_SQS_URL_SECURITY_PRICES");
 
   let data = {
     identifier,
@@ -172,7 +175,7 @@ export function publish_ProcessSecurityPrices(identifier) {
 }
 
 export function publish_ProcessSummaries(cik) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_SUMMARIES");
 
   let data = {
     cik,
@@ -202,7 +205,7 @@ export function publish_ProcessSummaries(cik) {
 }
 
 export function publish_ProcessNetWorth(id) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_NETWORTH;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_NETWORTH");
 
   let data = {
     id,
@@ -232,7 +235,7 @@ export function publish_ProcessNetWorth(id) {
 }
 
 export function publish_ProcessJsonMutualFunds(json, fundId, ticker) {
-  let queueUrl = process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES;
+  let queueUrl = getEnv("AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES");
 
   let data = {
     json,
@@ -272,7 +275,7 @@ export function publish_ProcessJsonMutualFunds(json, fundId, ticker) {
 }
 
 export function publish_ProcessMetricsCompanies(ticker, metrics) {
-  let queueUrl = process.env.AWS_SQS_URL_COMPANIES_METRICS;
+  let queueUrl = getEnv("AWS_SQS_URL_COMPANIES_METRICS");
 
   let data = {
     ticker,
@@ -307,7 +310,7 @@ export function publish_ProcessMetricsCompanies(ticker, metrics) {
 }
 
 export function publish_UpdateGlobalDashboard(widgetInstanceId) {
-  let queueUrl = process.env.AWS_SQS_URL_GLOBAL_DASHBOARD;
+  let queueUrl = getEnv("AWS_SQS_URL_GLOBAL_DASHBOARD");
 
   let data = {
     widgetInstanceId,
@@ -337,7 +340,7 @@ export function publish_UpdateGlobalDashboard(widgetInstanceId) {
 }
 
 export function publish_UpdateLocalDashboards(widgetInstanceId) {
-  let queueUrl = process.env.AWS_SQS_URL_LOCAL_DASHBOARDS;
+  let queueUrl = getEnv("AWS_SQS_URL_LOCAL_DASHBOARDS");
 
   let data = {
     widgetInstanceId,
@@ -367,7 +370,7 @@ export function publish_UpdateLocalDashboards(widgetInstanceId) {
 }
 
 export function publish_ProcessJsonETFs(ticker) {
-  let queueUrl = process.env.AWS_SQS_URL_ETF_DATA_COMPLIER;
+  let queueUrl = getEnv("AWS_SQS_URL_ETF_DATA_COMPLIER");
 
   let data = {
     ticker,
@@ -397,7 +400,7 @@ export function publish_ProcessJsonETFs(ticker) {
 }
 
 export function publish_ProcessCategorization(ticker, table) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITY_CATEGORIZATION;
+  let queueUrl = getEnv("AWS_SQS_URL_SECURITY_CATEGORIZATION");
 
   let data = {
     ticker,
@@ -432,7 +435,7 @@ export function publish_ProcessCategorization(ticker, table) {
 }
 
 export function publish_ProcessInstitutionalHoldings(id) {
-  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONAL_HOLDINGS;
+  let queueUrl = getEnv("AWS_SQS_URL_INSTITUTIONAL_HOLDINGS");
 
   let data = {
     id,
@@ -462,7 +465,7 @@ export function publish_ProcessInstitutionalHoldings(id) {
 }
 
 export function publish_ProcessTop10_Institutions(id) {
-  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_TOP_10;
+  let queueUrl = getEnv("AWS_SQS_URL_INSTITUTIONS_TOP_10");
 
   let data = {
     id,
@@ -492,7 +495,7 @@ export function publish_ProcessTop10_Institutions(id) {
 }
 
 export function publish_ProcessAllocations_Institutions(id) {
-  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS;
+  let queueUrl = getEnv("AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS");
 
   let data = {
     id,
@@ -522,7 +525,7 @@ export function publish_ProcessAllocations_Institutions(id) {
 }
 
 export function publish_ProcessInstitutionalPerformance(cik) {
-  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES;
+  let queueUrl = getEnv("AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES");
 
   let data = {
     cik,
@@ -552,7 +555,7 @@ export function publish_ProcessInstitutionalPerformance(cik) {
 }
 
 export function publish_ProcessPerformances_Securities(ticker) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES;
+  let queueUrl = getEnv("AWS_SQS_URL_SECURITIES_PERFORMANCES");
 
   let data = {
     ticker,
@@ -589,7 +592,7 @@ export function publish_ProcessEarningsDate_Securities(
   fiscal_year,
   fiscal_quarter
 ) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITIES_EARNINGS;
+  let queueUrl = getEnv("AWS_SQS_URL_SECURITIES_EARNINGS");
 
   let data = {
     ticker,
@@ -644,7 +647,7 @@ export function publish_ProcessEarningsDate_Securities(
 }
 
 export function publish_ProcessSnapshot_Titans(id) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS");
 
   let data = {
     id,
@@ -673,18 +676,48 @@ export function publish_ProcessSnapshot_Titans(id) {
   });
 }
 
-export function publish_ProcessSnapshot_Institutions(id) {
-  let queueUrl = process.env.AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS;
+export function publish_ProcessSnapshot_ciks(id, cik) {
+  let queueUrl = getEnv("AWS_SQS_URL_CIK_SNAPSHOTS");
 
   let data = {
-    id,
+    cik,
   };
 
   let params = {
     MessageAttributes: {
-      id: {
-        DataType: "Number",
-        StringValue: data.id,
+      cik: {
+        DataType: "String",
+        StringValue: data.cik,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+export function publish_ProcessTop10_and_Allocations_ciks(id, cik) {
+  let queueUrl = getEnv("AWS_SQS_URL_CIK_TOP10_AND_ALLOCATIONS");
+
+  let data = {
+    cik,
+  };
+
+  let params = {
+    MessageAttributes: {
+      cik: {
+        DataType: "String",
+        StringValue: data.cik,
       },
     },
     MessageBody: JSON.stringify(data),
@@ -704,7 +737,7 @@ export function publish_ProcessSnapshot_Institutions(id) {
 }
 
 export function publish_ProcessPerformances_UserPortfolios(id) {
-  let queueUrl = process.env.AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES;
+  let queueUrl = getEnv("AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES");
 
   let data = {
     id,
@@ -733,9 +766,72 @@ export function publish_ProcessPerformances_UserPortfolios(id) {
   });
 }
 
+export function publish_ProcessCiks(id) {
+  let queueUrl = getEnv("AWS_SQS_URL_CIKS");
+
+  let data = {
+    id,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "String",
+        StringValue: data.id,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    MessageDeduplicationId: `${id}-${queueUrl}`,
+    MessageGroupId: this.constructor.name,
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
+export function publish_ProcessZacksCategories(id, ticker) {
+  let queueUrl = getEnv("AWS_SQS_URL_ZACKS_CATEGORIES");
+
+  let data = {
+    id,
+    ticker,
+  };
+
+  let params = {
+    MessageAttributes: {
+      id: {
+        DataType: "String",
+        StringValue: data.id,
+      },
+      ticker: {
+        DataType: "String",
+        StringValue: data.ticker,
+      },
+    },
+    MessageBody: JSON.stringify(data),
+    QueueUrl: queueUrl,
+  };
+
+  // Send the order data to the SQS queue
+  sqs.sendMessage(params, (err, data) => {
+    if (err) {
+      console.log("error", err);
+    } else {
+      console.log("queue success =>", data.MessageId);
+    }
+  });
+}
+
 // AWS_SQS_URL_BILLIONAIRE_HOLDINGS (Individual)
 export const consumer_1 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
+  queueUrl: getEnv("AWS_SQS_URL_BILLIONAIRE_HOLDINGS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -765,7 +861,7 @@ consumer_1.on("processing_error", (err) => {
 
 // AWS_SQS_URL_BILLIONAIRE_PERFORMANCES (Individual)
 export const consumer_2 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES,
+  queueUrl: getEnv("AWS_SQS_URL_BILLIONAIRE_PERFORMANCES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -792,7 +888,7 @@ consumer_2.on("processing_error", (err) => {
 
 // AWS_SQS_URL_COMPANY_LOOKUP (Individual)
 export const consumer_3 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_COMPANY_LOOKUP,
+  queueUrl: getEnv("AWS_SQS_URL_COMPANY_LOOKUP"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -812,7 +908,7 @@ consumer_3.on("processing_error", (err) => {
 
 // AWS_SQS_URL_SECURITY_PRICES (Individual)
 export const consumer_4 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_SECURITY_PRICES,
+  queueUrl: getEnv("AWS_SQS_URL_SECURITY_PRICES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -832,7 +928,7 @@ consumer_4.on("processing_error", (err) => {
 
 // AWS_SQS_URL_BILLIONAIRE_SUMMARIES
 export const consumer_5 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES,
+  queueUrl: getEnv("AWS_SQS_URL_BILLIONAIRE_SUMMARIES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -852,7 +948,7 @@ consumer_5.on("processing_error", (err) => {
 
 // AWS_SQS_URL_BILLIONAIRE_NETWORTH
 export const consumer_6 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_NETWORTH,
+  queueUrl: getEnv("AWS_SQS_URL_BILLIONAIRE_NETWORTH"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -872,7 +968,7 @@ consumer_6.on("processing_error", (err) => {
 
 // AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES
 export const consumer_7 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES,
+  queueUrl: getEnv("AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -915,7 +1011,7 @@ consumer_7.on("processing_error", (err) => {
 
 // AWS_SQS_URL_COMPANIES_METRICS
 export const consumer_8 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_COMPANIES_METRICS,
+  queueUrl: getEnv("AWS_SQS_URL_COMPANIES_METRICS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -935,7 +1031,7 @@ consumer_8.on("processing_error", (err) => {
 
 // AWS_SQS_URL_GLOBAL_DASHBOARD
 export const consumer_9 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_GLOBAL_DASHBOARD,
+  queueUrl: getEnv("AWS_SQS_URL_GLOBAL_DASHBOARD"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -955,7 +1051,7 @@ consumer_9.on("processing_error", (err) => {
 
 // AWS_SQS_URL_LOCAL_DASHBOARDS
 export const consumer_10 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_LOCAL_DASHBOARDS,
+  queueUrl: getEnv("AWS_SQS_URL_LOCAL_DASHBOARDS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -975,7 +1071,7 @@ consumer_10.on("processing_error", (err) => {
 
 // AWS_SQS_URL_ETFS_UPDATE
 export const consumer_11 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_ETF_DATA_COMPLIER,
+  queueUrl: getEnv("AWS_SQS_URL_ETF_DATA_COMPLIER"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1005,7 +1101,7 @@ consumer_11.on("processing_error", (err) => {
 
 // AWS_SQS_URL_SECURITY_CATEGORIZATION
 export const consumer_12 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_SECURITY_CATEGORIZATION,
+  queueUrl: getEnv("AWS_SQS_URL_SECURITY_CATEGORIZATION"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1025,7 +1121,7 @@ consumer_12.on("processing_error", (err) => {
 
 // AWS_SQS_URL_INSTITUTIONAL_HOLDINGS
 export const consumer_13 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONAL_HOLDINGS,
+  queueUrl: getEnv("AWS_SQS_URL_INSTITUTIONAL_HOLDINGS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1045,13 +1141,13 @@ consumer_13.on("processing_error", (err) => {
 
 // AWS_SQS_URL_INSTITUTIONS_TOP_10
 export const consumer_14 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_TOP_10,
+  queueUrl: getEnv("AWS_SQS_URL_INSTITUTIONS_TOP_10"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
     console.log(sqsMessage);
 
-    await institutions.processTop10(sqsMessage.id);
+    // await institutions.processTop10(sqsMessage.id);
   },
 });
 
@@ -1065,7 +1161,7 @@ consumer_14.on("processing_error", (err) => {
 
 // AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS
 export const consumer_15 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS,
+  queueUrl: getEnv("AWS_SQS_URL_INSTITUTIONS_ALLOCATIONS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1085,7 +1181,7 @@ consumer_15.on("processing_error", (err) => {
 
 // AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES
 export const consumer_16 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES,
+  queueUrl: getEnv("AWS_SQS_URL_INSTITUTIONAL_PERFORMANCES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1105,7 +1201,7 @@ consumer_16.on("processing_error", (err) => {
 
 // AWS_SQS_URL_SECURITIES_PERFORMANCES
 export const consumer_17 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_SECURITIES_PERFORMANCES,
+  queueUrl: getEnv("AWS_SQS_URL_SECURITIES_PERFORMANCES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1150,7 +1246,7 @@ consumer_17.on("processing_error", (err) => {
 
 // AWS_SQS_URL_SECURITIES_EARNINGS
 export const consumer_18 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_SECURITIES_EARNINGS,
+  queueUrl: getEnv("AWS_SQS_URL_SECURITIES_EARNINGS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1174,7 +1270,7 @@ export const consumer_18 = Consumer.create({
 
     if (ticker) {
       try {
-        let url = `${process.env.INTRINIO_BASE_PATH}/zacks/eps_estimates?identifier=${ticker}&end_date=${earningsDate}&api_key=${process.env.INTRINIO_API_KEY}`;
+        let url = `${getEnv("INTRINIO_BASE_PATH")}/zacks/eps_estimates?identifier=${ticker}&end_date=${earningsDate}&api_key=${getEnv("INTRINIO_API_KEY")}`;
 
         let res = await axios.get(url);
 
@@ -1186,7 +1282,7 @@ export const consumer_18 = Consumer.create({
       }
 
       try {
-        let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+        let url = `${getEnv("INTRINIO_BASE_PATH")}/securities/${ticker}/zacks/analyst_ratings?api_key=${getEnv("INTRINIO_API_KEY")}`;
 
         let res = await axios.get(url);
 
@@ -1236,7 +1332,7 @@ consumer_18.on("processing_error", (err) => {
 
 // AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS
 export const consumer_19 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS,
+  queueUrl: getEnv("AWS_SQS_URL_BILLIONAIRE_SNAPSHOTS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
@@ -1265,36 +1361,44 @@ consumer_19.on("processing_error", (err) => {
 
 // AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES
 export const consumer_20 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES,
+  queueUrl: getEnv("AWS_SQS_URL_USER_PORTFOLIOS_PERFORMANCES"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
+
+    console.log("----start user portfolio performance-----");
 
     console.log(sqsMessage);
 
     let portId = sqsMessage.id;
 
+    console.log("get portfolio histories");
     const portfoliosHistories = await db(`
       SELECT * from portfolio_histories
-      WHERE portfolio_histories.portfolio_id = ${portId} AND close_date is null AND type in ('common_stock', 'etf');
+      WHERE portfolio_histories.portfolio_id = ${portId} AND close_date is null AND type in ('common_stock', 'etf', 'mutual_fund');
     `);
 
+    console.log("get stocks historical");
     let stocksHistorical = await userPortfolios.getStocksHistorical(
       portfoliosHistories
     );
 
-    let stocks = await userPortfolios.getStocks(portId);
-
-    let titans = await userPortfolios.getTitans(portId);
+    // console.log("get stocks");
+    // let stocks = await userPortfolios.getStocks(portId);
+    //
+    // console.log("get titans");
+    // let titans = await userPortfolios.getTitans(portId);
     console.log("stocksHistorical", stocksHistorical);
-    console.log("stocks", stocks);
-    console.log("titans", titans);
+    // console.log("stocks", stocks);
+    // console.log("titans", titans);
 
-    await userPortfolios.insertUserPortPerf(
-      portId,
-      stocksHistorical,
-      stocks,
-      titans ? titans : null
-    );
+    if (stocksHistorical) {
+      await userPortfolios.insertUserPortPerf(
+        portId,
+        stocksHistorical
+      );
+    }
+
+    console.log("----end user portfolio performance-----");
   },
 });
 
@@ -1306,24 +1410,28 @@ consumer_20.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-// AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS
+// AWS_SQS_URL_CIK_SNAPSHOTS
 export const consumer_21 = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_INSTITUTIONS_SNAPSHOTS,
+  queueUrl: getEnv("AWS_SQS_URL_CIK_SNAPSHOTS"),
   handleMessage: async (message) => {
     let sqsMessage = JSON.parse(message.Body);
 
     console.log("sqsMessage--", sqsMessage);
 
-    let strId = sqsMessage.id;
+    let cik = sqsMessage.cik;
 
-    let id = parseInt(strId);
+    let holdings = await getInstitutionsHoldings(cik);
+    if (!holdings || holdings.length === 0) {
+      console.log("data: ", holdings);
+      console.log("Found no holdings data for this cik: ", cik);
+      return;
+    }
 
-    let snapshot = await institutions.getInstitutionSnapshot(id);
-    console.log("snapshot data")
-
+    console.log("Fetch Snapshot Data");
+    let snapshot = await institutions.getSnapshotByCik(cik, holdings);
     if (snapshot) {
-      let json = JSON.stringify(snapshot);
-      await institutions.insertSnapshotInstitution(id, json);
+      let jsonSnapshot = JSON.stringify(snapshot);
+      await institutions.insertSnapshotCik(cik, jsonSnapshot);
     }
   },
 });
@@ -1336,27 +1444,83 @@ consumer_21.on("processing_error", (err) => {
   console.error(err.message);
 });
 
-export const newTickersConsumer = Consumer.create({
-  queueUrl: process.env.AWS_SQS_URL_PROCESS_NEW_SECURITY,
+// AWS_SQS_URL_CIK_TOP10_AND_ALLOCATIONS
+export const consumer_22 = Consumer.create({
+  queueUrl: getEnv("AWS_SQS_URL_CIK_TOP10_AND_ALLOCATIONS"),
   handleMessage: async (message) => {
-    let tickers = JSON.parse(message.Body);
+    let sqsMessage = JSON.parse(message.Body);
 
-    console.log("sqs-new-tickers-received");
+    console.log("sqsMessage--", sqsMessage);
 
-    if (!Array.isArray(tickers)) {
+    let cik = sqsMessage.cik;
+
+    let holdings = await getInstitutionsHoldings(cik);
+    if (!holdings || holdings.length === 0) {
+      console.log("data: ", holdings);
+      console.log("Found no holdings data for this cik: ", cik);
       return;
     }
 
-    for(let index = 0; index < tickers.length; index++) {
-      const ticker = tickers[index].substring(1);
+    console.log("Fetch Top Stocks");
+    let top10 = await institutions.evaluateTopStocks(holdings);
+    if (top10) {
+      let jsonTop10 = JSON.stringify(top10);
+      await institutions.insertTop10Cik(cik, jsonTop10);
+    }
 
-      console.log("sqs-new-ticker-", ticker);
+    console.log("Fetch Sectors");
+    let allocations = await institutions.evaluateSectorCompositions(holdings);
+    if (allocations) {
+      let jsonAllocations = JSON.stringify(allocations);
+      await institutions.insertAllocationsCik(cik, jsonAllocations);
+    }
+  },
+});
 
-      try {
-        await securities.processNewTicker(ticker);
-      } catch (e) {
-        console.log(`Failed to add new ticker ${ticker}`, e);
+consumer_22.on("error", (err) => {
+  console.error(err.message);
+});
+
+consumer_22.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+export const newTickersConsumer = Consumer.create({
+  queueUrl: getEnv("AWS_SQS_URL_PROCESS_NEW_SECURITY"),
+  handleMessage: async (message) => {
+    try {
+      if (message.Body.includes('delist-check')) {
+        await securities.updateSecuritiesDelistStatus();
+  
+        return;
       }
+
+      console.log(JSON.stringify(message));
+  
+      let tickers = JSON.parse(message.Body);
+  
+      console.log("sqs-new-tickers-received", tickers);
+  
+      if (!Array.isArray(tickers)) {
+        console.log("Not array");
+        return;
+      }
+  
+      for (let index = 0; index < tickers.length; index++) {
+        const ticker = tickers[index];
+  
+        console.log("sqs-new-ticker-", ticker);
+  
+        try {
+          await securities.processNewTicker(ticker);
+        } catch (e) {
+          console.log(`Failed to add new ticker ${ticker}`, e);
+        }
+      }
+    } catch (e) {
+      console.log('sqs-new-tickers-error', e.message);
+
+      return;
     }
   },
 });
@@ -1366,5 +1530,46 @@ newTickersConsumer.on("error", (err) => {
 });
 
 newTickersConsumer.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+// AWS_SQS_URL_INSTITUTIONAL_HOLDINGS
+export const cikConsumer = Consumer.create({
+  queueUrl: getEnv("AWS_SQS_URL_CIKS"),
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    await institutions.processHoldingsOfCik(sqsMessage.id)
+  },
+});
+
+cikConsumer.on("error", (err) => {
+  console.error(err.message);
+});
+
+cikConsumer.on("processing_error", (err) => {
+  console.error(err.message);
+});
+
+
+// AWS_SQS_URL_INSTITUTIONAL_HOLDINGS
+export const zacksCategoriesConsumer = Consumer.create({
+  queueUrl: getEnv("AWS_SQS_URL_ZACKS_CATEGORIES"),
+  handleMessage: async (message) => {
+    let sqsMessage = JSON.parse(message.Body);
+
+    let sector = await zacks.scrapeZackCategory(sqsMessage.ticker);
+
+    if (sector) {
+      await zacks.updateZackCategories(Number(sqsMessage.id), sector);
+    }
+  },
+});
+
+zacksCategoriesConsumer.on("error", (err) => {
+  console.error(err.message);
+});
+
+zacksCategoriesConsumer.on("processing_error", (err) => {
   console.error(err.message);
 });

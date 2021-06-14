@@ -1,4 +1,5 @@
 import db2 from "../db2";
+import moment from "moment-timezone";
 
 //TODO: add time check for getRawData
 
@@ -102,9 +103,144 @@ export async function consolidate() {
             optContract,
           ],
         };
+        console.log("hello");
         await db2(query);
         console.log("smart option trade added");
       }
     });
+  }
+}
+
+export async function archiveOlderOptions() {
+  try {
+    let lastMonthPostfix = '';
+
+    let lastRecord = await db2(`
+      SELECT 
+        EXTRACT(YEAR from to_timestamp(time)::date) as year, 
+        CONCAT('0', EXTRACT(MONTH from to_timestamp(time)::date)) as month 
+      FROM options 
+      ORDER BY time ASC
+      LIMIT 1
+    `);
+
+    if (lastRecord && lastRecord.length > 0) {
+      let year = lastRecord[0].year;
+      let month = lastRecord[0].month;
+
+      if (month.length > 2) {
+        month = month.substring(1);
+      }
+
+      lastMonthPostfix = `${year}_${month}`;
+    }
+
+    if (!lastMonthPostfix) {
+      return true;
+    }
+    
+    await createOptionsArchiveTable(lastMonthPostfix);
+
+    await db2(`
+      INSERT INTO options_${lastMonthPostfix} (
+        SELECT * 
+        FROM options 
+        WHERE EXTRACT(MONTH from to_timestamp(time)::date) = (
+          SELECT EXTRACT(MONTH from to_timestamp(time)::date) 
+          FROM options 
+          ORDER BY time ASC 
+          LIMIT 1
+        ) AND EXTRACT(YEAR from to_timestamp(time)::date) = (
+          SELECT EXTRACT(YEAR from to_timestamp(time)::date) 
+          FROM options 
+          ORDER BY time ASC 
+          LIMIT 1
+        )
+      )
+    `);
+
+    return true;
+  } catch (e) {
+    console.log(e);
+
+    return false;
+  }
+}
+
+export async function deleteOlderOptions() {
+  try {
+    // define current and previous month
+    let today = moment().tz("America/New_York");
+    let currentMonth = today.format("YYYY-MM");
+    let previousMonth = today.subtract(1, "month").format("YYYY-MM");
+
+    //check for current month and previous month data
+    let monthQuery = `SELECT MIN(to_timestamp(time)::date) AS previous,
+                      MAX(to_timestamp(time)::date) AS current
+                      FROM options
+                      `;
+    let results = await db2(monthQuery);
+
+    if (!results || !results[0]) {
+      return false;
+    }
+
+    // check if table contains both the current and previous month
+    let current = moment(results[0].current, "YYYY-MM-DD").format("YYYY-MM");
+    let previous = moment(results[0].previous, "YYYY-MM-DD").format("YYYY-MM");
+    if (currentMonth != current || previousMonth != previous) {
+      console.log("dont run");
+      return false;
+    }
+    
+    await db2(`
+      DELETE FROM options 
+      WHERE EXTRACT(MONTH from to_timestamp(time)::date) = (
+        SELECT EXTRACT(MONTH from to_timestamp(time)::date) 
+        FROM options 
+        ORDER BY time ASC 
+        LIMIT 1
+      ) AND EXTRACT(YEAR from to_timestamp(time)::date) = (
+        SELECT EXTRACT(YEAR from to_timestamp(time)::date) 
+        FROM options 
+        ORDER BY time ASC 
+        LIMIT 1
+      )
+    `);
+
+    return true;
+  } catch (e) {
+    console.log(e);
+
+    return false;
+  }
+}
+
+export async function deletePreviousOptionRawData() {
+  try {
+    await db2(`
+      DELETE FROM options_raw 
+      WHERE to_timestamp(time)::date < (
+        SELECT to_timestamp(time)::date 
+        FROM options_raw 
+        ORDER BY time DESC 
+        LIMIT 1
+      )
+    `);
+
+    return true;
+  } catch (e) {
+    console.log(e);
+    return true;
+  }
+}
+
+const createOptionsArchiveTable = async function (postfix) {
+  try {
+    await db2(`CREATE TABLE options_${postfix} (LIKE options INCLUDING ALL);`);
+
+    return true;
+  } catch (e) {
+    return true;
   }
 }

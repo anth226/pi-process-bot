@@ -1,4 +1,5 @@
 import "dotenv/config";
+import {getEnv} from "../env";
 
 import axios from "axios";
 
@@ -9,8 +10,8 @@ const chalk = require("chalk");
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
+  secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
 });
 
 import * as titans from "./titans";
@@ -22,7 +23,7 @@ import { getInstitutionalHoldings } from "../controllers/intrinio/get_institutio
 
 const uploadToS3 = async (key, data) => {
   let params = {
-    Bucket: process.env.AWS_BUCKET_INTRINIO_ZAKS,
+    Bucket: getEnv("AWS_BUCKET_INTRINIO_ZAKS"),
     Key: key,
     Body: JSON.stringify(data),
     ContentType: "application/json",
@@ -65,6 +66,7 @@ const cacheTicker = async (id, ticker) => {
   }
 };
 
+// TODO: Remove function/sqs/lambda and replace with new lambda just for fetching cik tickers
 export async function fetchHoldings_Billionaire(
   cik,
   billionaireId,

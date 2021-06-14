@@ -4,18 +4,19 @@ const chalk = require("chalk");
 
 import * as titans from "./titans";
 import * as queue from "../queue";
+import {getEnv} from "../env";
 // import * as queue from "../queue2";
 
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
+  secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
 });
 
 const uploadToS3 = async (key, data) => {
   let params = {
-    Bucket: process.env.AWS_BUCKET_INTRINIO_ZAKS,
+    Bucket: getEnv("AWS_BUCKET_INTRINIO_ZAKS"),
     Key: key,
     Body: JSON.stringify(data),
     ContentType: "application/json",
@@ -31,15 +32,15 @@ const uploadToS3 = async (key, data) => {
 
 export async function getPortfolios() {
   return {
-    url: `https://${process.env.AWS_BUCKET_RI}.s3.amazonaws.com/portfolios.json`,
+    url: `https://${getEnv("AWS_BUCKET_RI")}.s3.amazonaws.com/portfolios.json`,
   };
 }
 
 export function getHistoricalData(cik, frequency, next_page = null) {
-  let url = `${process.env.INTRINIO_BASE_PATH}/historical_data/${cik}/marketcap?frequency=${frequency}&api_key=${process.env.INTRINIO_API_KEY}`;
+  let url = `${getEnv("INTRINIO_BASE_PATH")}/historical_data/${cik}/marketcap?frequency=${frequency}&api_key=${getEnv("INTRINIO_API_KEY")}`;
 
   if (next_page) {
-    url = `${process.env.INTRINIO_BASE_PATH}/historical_data/${cik}/marketcap?frequency=${frequency}&next_page=${next_page}&api_key=${process.env.INTRINIO_API_KEY}`;
+    url = `${getEnv("INTRINIO_BASE_PATH")}/historical_data/${cik}/marketcap?frequency=${frequency}&next_page=${next_page}&api_key=${getEnv("INTRINIO_API_KEY")}`;
   }
 
   let data = axios

@@ -1,4 +1,4 @@
-import {getEnv} from "./env";
+import { getEnv } from "./env";
 
 const { Client } = require("pg");
 
@@ -10,7 +10,7 @@ function connectDatabase() {
   if (!db) {
     const client = new Client({
       database: getEnv("DATABASE_NAME"),
-      host: getEnv("DATABASE_HOST_NCDS"),
+      host: getEnv("DATABASE_HOST_CHART_HISTORY"),
       port: getEnv("DATABASE_PORT"),
       user: getEnv("DATABASE_USER"),
       password: getEnv("DATABASE_PASSWORD"),

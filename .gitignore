@@ -20,3 +20,6 @@ users.csv
 .idea/pi-process-bot.iml
 .idea/vcs.xml
 .idea/workspace.xml
+pi-process-bot-env-local.json
+pi-process-bot-env-stag.json
+pi-process-bot-env-prod.json

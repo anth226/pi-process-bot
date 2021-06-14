@@ -1,6 +1,7 @@
 import "dotenv/config";
 import db from "../db";
 import { orderBy } from "lodash";
+import {getEnv} from "../env";
 
 export async function parseHoldings_Portfolios() {
   let result = await db(`
@@ -53,7 +54,7 @@ export async function parseHoldings_Portfolios() {
 
     try {
       await uploadToS3(
-        process.env.AWS_BUCKET_PAGES_INSTITUTIONS,
+        getEnv("AWS_BUCKET_PAGES_INSTITUTIONS"),
         `default/${n + 1}.json`,
         pages[n]
       );
@@ -86,8 +87,8 @@ function chunk(arr, len) {
 const AWS = require("aws-sdk");
 
 const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  accessKeyId: getEnv("AWS_ACCESS_KEY_ID"),
+  secretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY"),
 });
 
 const uploadToS3 = async (bucket, key, data) => {
@@ -109,7 +110,7 @@ const uploadToS3 = async (bucket, key, data) => {
 export async function generate_Portfolios() {
   let n = 0;
   await uploadToS3(
-    process.env.AWS_BUCKET_PAGES_INSTITUTIONS,
+    getEnv("AWS_BUCKET_PAGES_INSTITUTIONS"),
     `default/${n}.json`,
     []
   );

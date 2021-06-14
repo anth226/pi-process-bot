@@ -7,10 +7,11 @@ import db from "../db";
 
 import * as queue from "../queue";
 import * as titans from "./titans";
+import {getEnv} from "../env";
 // import * as queue from "../queue2";
 
 async function lookup(identifier) {
-  let url = `${process.env.INTRINIO_BASE_PATH}/companies/${identifier}?api_key=${process.env.INTRINIO_API_KEY}`;
+  let url = `${getEnv("INTRINIO_BASE_PATH")}/companies/${identifier}?api_key=${getEnv("INTRINIO_API_KEY")}`;
 
   let data = {};
   try {
@@ -46,7 +47,7 @@ export async function lookupCompany(identifier) {
 }
 
 export async function updateJson_InsiderCompanies() {
-  const response = await axios.get(`${process.env.PROD_API_URL}/all-insider`);
+  const response = await axios.get(`${getEnv("PROD_API_URL")}/all-insider`);
   if (response.status === 200 && response.data.length > 0) {
     let data = response.data;
     for (let item of data) {

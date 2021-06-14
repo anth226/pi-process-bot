@@ -10,7 +10,7 @@ function connectDatabase() {
   if (!db) {
     const client = new Client({
       database: getEnv("DATABASE_NAME"),
-      host: getEnv("DATABASE_HOST_NCDS"),
+      host: getEnv("DATABASE_HOST_PROD_NCDS"),
       port: getEnv("DATABASE_PORT"),
       user: getEnv("DATABASE_USER"),
       password: getEnv("DATABASE_PASSWORD"),

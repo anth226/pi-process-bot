@@ -5,6 +5,7 @@ import * as institutions from "./controllers/institutions";
 import * as performances from "./controllers/performances";
 import * as prices from "./controllers/prices";
 import * as mutualfunds from "./controllers/mutualfunds";
+import {getEnv} from "./env";
 
 const { Consumer } = require("sqs-consumer");
 
@@ -13,7 +14,7 @@ AWS.config.update({ region: "us-east-1" });
 const sqs = new AWS.SQS({ apiVersion: "2012-11-05" });
 
 export function publish_ProcessHoldings(cik, id, batchId, cache) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_HOLDINGS");
 
   let data = {
     cik,
@@ -58,7 +59,7 @@ export function publish_ProcessHoldings(cik, id, batchId, cache) {
 }
 
 export function publish_ProcessPerformances(cik, id, batchId, cache) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_PERFORMANCES");
 
   let data = {
     cik,
@@ -103,7 +104,7 @@ export function publish_ProcessPerformances(cik, id, batchId, cache) {
 }
 
 export function publish_ProcessCompanyLookup(identifier) {
-  let queueUrl = process.env.AWS_SQS_URL_COMPANY_LOOKUP;
+  let queueUrl = getEnv("AWS_SQS_URL_COMPANY_LOOKUP");
 
   let data = {
     identifier,
@@ -133,7 +134,7 @@ export function publish_ProcessCompanyLookup(identifier) {
 }
 
 export function publish_ProcessSecurityPrices(identifier) {
-  let queueUrl = process.env.AWS_SQS_URL_SECURITY_PRICES;
+  let queueUrl = getEnv("AWS_SQS_URL_SECURITY_PRICES");
 
   let data = {
     identifier,
@@ -163,7 +164,7 @@ export function publish_ProcessSecurityPrices(identifier) {
 }
 
 export function publish_ProcessSummaries(cik) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_SUMMARIES");
 
   let data = {
     cik,
@@ -193,7 +194,7 @@ export function publish_ProcessSummaries(cik) {
 }
 
 export function publish_ProcessNetWorth(id) {
-  let queueUrl = process.env.AWS_SQS_URL_BILLIONAIRE_NETWORTH;
+  let queueUrl = getEnv("AWS_SQS_URL_BILLIONAIRE_NETWORTH");
 
   let data = {
     id,
@@ -223,7 +224,7 @@ export function publish_ProcessNetWorth(id) {
 }
 
 export function publish_ProcessMutualFunds(id) {
-  let queueUrl = process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES;
+  let queueUrl = getEnv("AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES");
 
   let data = {
     id,
@@ -253,13 +254,13 @@ export function publish_ProcessMutualFunds(id) {
 }
 
 export const consumerURLS = [
-  process.env.AWS_SQS_URL_BILLIONAIRE_HOLDINGS,
-  process.env.AWS_SQS_URL_BILLIONAIRE_PERFORMANCES,
-  process.env.AWS_SQS_URL_COMPANY_LOOKUP,
-  process.env.AWS_SQS_URL_SECURITY_PRICES,
-  process.env.AWS_SQS_URL_BILLIONAIRE_SUMMARIES,
-  process.env.AWS_SQS_URL_BILLIONAIRE_NETWORTH,
-  process.env.AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES,
+  getEnv("AWS_SQS_URL_BILLIONAIRE_HOLDINGS"),
+  getEnv("AWS_SQS_URL_BILLIONAIRE_PERFORMANCES"),
+  getEnv("AWS_SQS_URL_COMPANY_LOOKUP"),
+  getEnv("AWS_SQS_URL_SECURITY_PRICES"),
+  getEnv("AWS_SQS_URL_BILLIONAIRE_SUMMARIES"),
+  getEnv("AWS_SQS_URL_BILLIONAIRE_NETWORTH"),
+  getEnv("AWS_SQS_URL_MUTUAL_FUNDS_DAILY_PRICES"),
 ];
 
 export const consumerFunctions = [

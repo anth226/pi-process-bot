@@ -1,5 +1,6 @@
 import axios from "axios";
 import redis, { KEY_CHART_DATA } from "../../redis";
+import {getEnv} from "../../env";
 
 export function getIntradayPrices(intrinioApi, identifier) {
   const opts = {
@@ -89,7 +90,7 @@ export async function getChartData(intrinioApi, identifier) {
 export async function getSecurityLastPrice(symbol) {
   let lastPrice = axios
     .get(
-      `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=iex&api_key=${process.env.INTRINIO_API_KEY}`
+      `${getEnv("INTRINIO_BASE_PATH")}/securities/${symbol}/prices/realtime?source=iex&api_key=${getEnv("INTRINIO_API_KEY")}`
     )
     .then(function (res) {
       return res;
@@ -105,7 +106,7 @@ export async function getSecurityLastPrice(symbol) {
   } else {
     let backupLastPrice = axios
       .get(
-        `${process.env.INTRINIO_BASE_PATH}/securities/${symbol}/prices/realtime?source=bats_delayed&api_key=${process.env.INTRINIO_API_KEY}`
+        `${getEnv("INTRINIO_BASE_PATH")}/securities/${symbol}/prices/realtime?source=bats_delayed&api_key=${getEnv("INTRINIO_API_KEY")}`
       )
       .then(function (res) {
         return res;

@@ -155,7 +155,7 @@ export const getPinnedPortfolios = async () => {
     SELECT portfolios.id
     from portfolios
     JOIN portfolio_histories ON portfolios.id = portfolio_histories.portfolio_id 
-    WHERE close_date is null and type in ('common_stock', 'etf') GROUP BY portfolios.id
+    WHERE close_date is null and type in ('common_stock', 'etf', 'mutual_fund') GROUP BY portfolios.id
   `);
   return result
 }
@@ -344,17 +344,15 @@ export async function getTitans(portId) {
 
 export async function insertUserPortPerf(
   portId,
-  stocksHistorical,
-  stocks,
-  titans
+  stocksHistorical
 ) {
   try {
     //update
-    let query = {
-      text:
-        "UPDATE portfolios SET stocks_historical = $2, stocks = $3, titans = $4 WHERE id = $1",
-      values: [portId, stocksHistorical, stocks, titans],
-    };
+    // let query = {
+    //   text:
+    //     "UPDATE portfolios SET stocks_historical = $2, stocks = $3, titans = $4 WHERE id = $1",
+    //   values: [portId, stocksHistorical, stocks, titans],
+    // };
 
     const performanceData = await db(`
       SELECT * FROM portfolio_performances WHERE portfolio_id = ${portId}
@@ -363,7 +361,7 @@ export async function insertUserPortPerf(
     if (size(performanceData) !== 0) {
       const updateQuery = {
         text:
-          "UPDATE portfolio_performances SET price_percent_change_7_days = $2, price_percent_change_14_days = $3, price_percent_change_30_days = $4, price_percent_change_3_months = $5 WHERE id = $1",
+          "UPDATE portfolio_performances SET price_percent_change_7_days = $2, price_percent_change_14_days = $3, price_percent_change_30_days = $4, price_percent_change_3_months = $5 WHERE portfolio_id = $1",
         values: [portId, stocksHistorical.price_percent_change_7_days, stocksHistorical.price_percent_change_14_days, stocksHistorical.price_percent_change_30_days, stocksHistorical.price_percent_change_3_months],
       }
 
@@ -378,7 +376,7 @@ export async function insertUserPortPerf(
       await db(insertQuery);
     }
 
-    await db(query);
+    // await db(query);
     console.log("portfolio updated");
   } catch (error) {
     console.error(error)

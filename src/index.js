@@ -6,6 +6,7 @@ import bodyParser from "body-parser";
 
 import * as companies from "./controllers/companies";
 import * as securities from "./controllers/securities";
+import * as quodd from "./controllers/quodd"
 import * as earnings from "./controllers/earnings";
 import * as titans from "./controllers/titans";
 import * as holdings from "./controllers/holdings";
@@ -19,19 +20,33 @@ import * as pages from "./controllers/pages";
 import * as nlp from "./controllers/nlp";
 import * as userPortfolios from "./controllers/userportfolios";
 import * as ncds from "./controllers/ncds";
+import * as zacks from "./controllers/zacks"
+import * as crypto from "./controllers/crypto"
+import * as ats from "./controllers/ats"
 
 import * as yahoo from "./controllers/yahoo";
 
+import * as trades from "./controllers/trades";
+import * as alerts from "./controllers/alerts";
+
 import * as queue from "./queue";
+import moment from "moment";
+
 //import * as queue2 from "./queue2";
-import redis from "./redis";
+import redis, {
+  syncRedisData
+} from "./redis";
+import { getEnv } from "./env";
+import { getEarningsCalendar, getWidgetInstanceId } from "./controllers/widgets";
+import { getTrendingHighDarkflow, processHighDarkFlow } from "./controllers/ats";
+import * as buys from "./controllers/buys";
 
 var bugsnag = require("@bugsnag/js");
 var bugsnagExpress = require("@bugsnag/plugin-express");
 
 var bugsnagClient = bugsnag({
-  apiKey: process.env.BUGSNAG_KEY,
-  otherOption: process.env.RELEASE_STAGE,
+  apiKey: getEnv("BUGSNAG_KEY"),
+  otherOption: getEnv("RELEASE_STAGE"),
 });
 
 bugsnagClient.use(bugsnagExpress);
@@ -88,6 +103,10 @@ function checkAuth(req, res, next) {
   }
 }
 
+const client = require('twilio')(
+  getEnv("TWILIO_ACCOUNT_SID"),
+  getEnv("TWILIO_AUTH_TOKEN")
+);
 /*
 ~~~~~~Routes~~~~~~
 */
@@ -111,13 +130,31 @@ app.get("/redis/flush", async (req, res) => {
   res.send("ok");
 });
 
+// redis flush
+app.get("/redis/sync-shared-data", async (req, res) => {
+  if (getEnv("RELEASE_STAGE") == "production") {
+    res.send("fail");
+    return;
+  }
+
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await syncRedisData();
+
+  res.send("ok");
+});
+
 /*      SQS routes      */
 
 /* Billionaires */
 
 // /cache_holdings_titans?token=XXX
 app.get("/cache_holdings_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -130,9 +167,50 @@ app.get("/cache_holdings_titans", async (req, res) => {
   res.send("ok");
 });
 
+// archive options
+app.get("/archive_options", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await ncds.archiveOlderOptions();
+
+  res.send("ok");
+});
+
+app.get("/delete_last_month_options", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await ncds.deleteOlderOptions();
+
+  res.send("ok");
+});
+
+app.get("/delete_previous_options_raw", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+
+    return;
+  }
+
+  await ncds.deletePreviousOptionRawData();
+
+  res.send("ok");
+});
+
 // /cache_performances_titans?token=XXX
 app.get("/cache_performances_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -147,7 +225,7 @@ app.get("/cache_performances_titans", async (req, res) => {
 
 // /generate_summaries_titans?token=XXX
 app.get("/generate_summaries_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -160,9 +238,25 @@ app.get("/generate_summaries_titans", async (req, res) => {
   res.send("ok");
 });
 
+app.get("/get_env", async (req, res) => {
+  let { query } = req;
+
+  if (query.env && query.env.length > 0) {
+    //console.log(query.env);
+  } else {
+    res.send("failed, no env");
+    return;
+  }
+
+  let env = query.env;
+  let result = getEnv(env);
+
+  res.send({ result: result });
+});
+
 // /update_networth_titans?token=XXX
 app.get("/update_networth_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -175,9 +269,11 @@ app.get("/update_networth_titans", async (req, res) => {
   res.send("ok");
 });
 
+// TODO: Remove titans snapshots sqs, lambda, and functions
+// deprecated
 // /process_snapshots_titans?token=XXX
 app.get("/process_snapshots_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -192,7 +288,7 @@ app.get("/process_snapshots_titans", async (req, res) => {
 
 // /billionaires/:id/generate_summary?token=XXX
 app.get("/billionaires/:id/generate_summary", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -207,26 +303,54 @@ app.get("/billionaires/:id/generate_summary", async (req, res) => {
 
 /* Securities */
 
-//    FETCH BOT
-// /update_metrics_securities?token=XXX
-// app.get("/update_metrics_securities", async (req, res) => {
-//   if (process.env.DISABLE_CRON == "true") {
-//     res.send("disabled");
-//     return;
-//   }
-//   let { query } = req;
-//   if (query.token != "XXX") {
-//     res.send("fail");
-//     return;
-//   }
-//   await securities.fillSecurities();
-//   res.send("ok");
-// });
-//    FETCH BOT
+app.get("/populate-missing-securities-names", async (req, res) => {
+  let { query } = req;
+
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await securities.populateSecuritiesNames();
+
+  return res.send("success");
+});
+
+app.get("/fetch-shared-securities", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  securities.fetchCachedSecuritiesFromSharedCache(res);
+});
+
+app.get("/clear-shared-securities", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  securities.clearCachedSecuritiesFromSharedCache(res);
+});
+
+app.get("/migration-script", async (req, res) => {
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  await securities.syncExistingSecuritiesWithRedis(req.query.ticker, res);
+
+  res.end();
+});
 
 // /update_performances_securities?token=XXX
 app.get("/update_performances_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -239,9 +363,42 @@ app.get("/update_performances_securities", async (req, res) => {
   res.send("ok");
 });
 
+// /update_performances_securities?token=XXX
+app.get("/update_ticker_perf/:ticker", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  let ticker = req.params.ticker.toUpperCase();
+  let performance = await securities.getSecurityPerformance(ticker);
+  res.send(performance);
+});
+
+app.get("/get_ticker_perf/:ticker", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  let ticker = req.params.ticker.toUpperCase();
+  let performance = await quodd.getLastPriceChange(ticker);
+  res.send(performance);
+});
+
 // /fill_earnings_securities?token=XXX
 app.get("/fill_earnings_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -256,7 +413,7 @@ app.get("/fill_earnings_securities", async (req, res) => {
 
 // /fill_holdings_count_securities?token=XXX
 app.get("/fill_holdings_count_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -277,7 +434,7 @@ app.get("/fill_holdings_count_securities", async (req, res) => {
 
 // /update_eps_earnings?token=XXX
 app.get("/update_eps_earnings", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -288,7 +445,7 @@ app.get("/update_eps_earnings", async (req, res) => {
   }
   await earnings.updateEarnings();
 
-  let id = await widgets.getWidgetTypeId("SecuritiesEarningsCalendar");
+  let id = await widgets.getWidgetInstanceId("SecuritiesEarningsCalendar");
   await widgets.processInput(id[0].id);
   res.send("ok");
 });
@@ -297,7 +454,7 @@ app.get("/update_eps_earnings", async (req, res) => {
 
 // /update_json_mutualfunds?token=XXX
 app.get("/update_json_mutualfunds", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -314,7 +471,7 @@ app.get("/update_json_mutualfunds", async (req, res) => {
 
 // /update_metrics_companies?token=XXX
 app.get("/update_metrics_companies", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -332,7 +489,7 @@ app.get("/update_metrics_companies", async (req, res) => {
 
 // /update_global_widgets?token=XXX
 app.get("/update_global_widgets", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -347,7 +504,7 @@ app.get("/update_global_widgets", async (req, res) => {
 
 // /update_local_widgets?token=XXX
 app.get("/update_local_widgets", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -361,7 +518,7 @@ app.get("/update_local_widgets", async (req, res) => {
 });
 
 app.get("/widgets/:id/process_input", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -378,7 +535,7 @@ app.get("/widgets/:id/process_input", async (req, res) => {
 
 // /update_user_portfolios?token=XXX
 app.get("/update_user_portfolios", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -387,6 +544,7 @@ app.get("/update_user_portfolios", async (req, res) => {
     res.send("fail");
     return;
   }
+
   await userPortfolios.fillUsersPortPerfs();
   res.send("ok");
 });
@@ -394,7 +552,7 @@ app.get("/update_user_portfolios", async (req, res) => {
 // /user_portfolios/:id/update?token=XXX
 app.get("/user_portfolios/:id/update", async (req, res) => {
   console.log("here");
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -411,7 +569,7 @@ app.get("/user_portfolios/:id/update", async (req, res) => {
 
 // /update_etfs?token=XXX
 app.get("/update_etfs", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -428,7 +586,7 @@ app.get("/update_etfs", async (req, res) => {
 
 // /fetch_institutional_holdings?token=XXX
 app.get("/fetch_institutional_holdings", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -441,9 +599,10 @@ app.get("/fetch_institutional_holdings", async (req, res) => {
   res.send("ok");
 });
 
+// deprecated
 // /evaluate_top_10_institutions?token=XXX
 app.get("/evaluate_top_10_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -456,9 +615,10 @@ app.get("/evaluate_top_10_institutions", async (req, res) => {
   res.send("ok");
 });
 
+// deprecated
 // /evaluate_allocations_institutions?token=XXX
 app.get("/evaluate_allocations_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -471,9 +631,10 @@ app.get("/evaluate_allocations_institutions", async (req, res) => {
   res.send("ok");
 });
 
+// deprecated
 // /calculate_performances_institutions?token=XXX
 app.get("/calculate_performances_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -486,8 +647,8 @@ app.get("/calculate_performances_institutions", async (req, res) => {
   res.send("ok");
 });
 
-app.get("/process_snapshots_institutions", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+app.get("/process_snapshots_ciks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -496,7 +657,21 @@ app.get("/process_snapshots_institutions", async (req, res) => {
     res.send("fail");
     return;
   }
-  await institutions.processInstitutionsSnapshots();
+  await institutions.processCiks("snapshots");
+  res.send("ok");
+});
+
+app.get("/process_top10_and_allocations_ciks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.processCiks("top10andallocations");
   res.send("ok");
 });
 
@@ -504,7 +679,7 @@ app.get("/process_snapshots_institutions", async (req, res) => {
 
 // /create_indices_candles_daily?token=XXX
 app.get("/create_indices_candles_daily", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -521,7 +696,7 @@ app.get("/create_indices_candles_daily", async (req, res) => {
 
 // /generate_pages_portfolios?token=XXX
 app.get("/generate_pages_portfolios", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -536,7 +711,7 @@ app.get("/generate_pages_portfolios", async (req, res) => {
 
 // /generate_pages_titans?token=XXX
 app.get("/generate_pages_titans", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -553,7 +728,7 @@ app.get("/generate_pages_titans", async (req, res) => {
 
 // /categorize_securities?token=XXX
 app.get("/categorize_securities", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -568,7 +743,7 @@ app.get("/categorize_securities", async (req, res) => {
 
 /* NCDS */
 app.get("/ncds_consolidate", async (req, res) => {
-  if (process.env.DISABLE_CRON == "true") {
+  if (getEnv("DISABLE_CRON") == "true") {
     res.send("disabled");
     return;
   }
@@ -580,6 +755,123 @@ app.get("/ncds_consolidate", async (req, res) => {
   await ncds.consolidate();
   res.send("ok");
 });
+
+/* STRONG BUYS */
+
+// app.get("/strongbuys/set", async (req, res) => {
+//   if (getEnv("DISABLE_CRON") == "true") {
+//     res.send("disabled");
+//     return;
+//   }
+//   let { query } = req;
+//   if (query.token != "XXX") {
+//     res.send("fail");
+//     return;
+//   }
+//   if (!query.tickers) {
+//     res.send("fail");
+//     return;
+//   }
+//   let ticks = await JSON.parse(query.tickers);
+//   if (ticks && ticks.length == 9) {
+//     await securities.setStrongBuys(ticks);
+//     res.send("ok");
+//   } else {
+//     res.send("error in tickers param");
+//   }
+
+// });
+app.get("/get_strong_buys", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  const data = await buys.getBuys();
+  res.send(data);
+});
+
+
+app.get("/strong_buys/set_hard_data", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  const data = await buys.getHardcodedBuys();
+  res.send(data);
+});
+
+// ats
+app.get("/ats/process_high_dark_flow", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  const data = await ats.processHighDarkFlow();
+  res.send(data);
+});
+
+app.get("/ats/process_trending_high_dark_flow", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  ats.processTrendingHighDarkflow();
+  res.send("woo!");
+});
+
+app.get("/ats/process_historical_trending_high_dark_flow", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  const data = await ats.processHistoricalTrendingHighDarkflow();
+  res.send(data);
+});
+
+
+// Suggested Titans
+
+app.get("/get_suggested_titans", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  titans.findSuggestedTitans();
+  res.send("AWOOGGAH!");
+});
+
 
 /*      DB routes      */
 
@@ -611,9 +903,248 @@ app.get("/bot/widgets/", async (req, res) => {
   }
 });
 
+app.get("/bot/strongbuys/", async (req, res) => {
+  let data = await securities.getStrongBuys();
+  if (data.length > 0) {
+    res.send({ data });
+  }
+});
+
+// Fetch all Ciks
+app.get("/fetch_ciks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await institutions.fetchAllCiks();
+  res.send("ok");
+});
+
+// end point to use to get the daily ark trade, processing the last 30 days of those trades into ark_portfolio
+app.get("/ark/process_trades", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  try {
+    let dailyArkTrades = await trades.getTradesFromARK();
+
+  } catch (error) {
+    console.log(error);
+    res.send("Failed to process ARK trades and Alert! \nReason: " + error);
+    return;
+  }
+  console.log("Successfully processed ARK trades and Alert.");
+  res.send("Successfully processed ARK trades and Alert.");
+});
+
+
+// end point to use to sending out daily SMS notif
+app.get("/ark/process_alert", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+
+  try {
+    let checkData = await trades.checkData();
+
+    if (checkData) {
+      let updatedDailyAlert = await alerts.updateCWDailyAlertMessage();
+
+      let dailyAlerts = await alerts.getDailyAlerts();
+      var alertUsers;
+
+      if (dailyAlerts.length > 0) {
+        for (var i = 0; i < dailyAlerts.length; i++) {
+          alertUsers = await alerts.getAlertActiveUsers(dailyAlerts[i].id);
+          if (alertUsers.length > 0) {
+            for (var x = 0; x < alertUsers.length; x++) {
+              await sleep(1000);
+              client.messages
+                .create({
+                  from: getEnv("TWILIO_PHONE_NUMBER"),
+                  to: alertUsers[x].user_phone_number,
+                  body: dailyAlerts[i].message
+                })
+                .then(() => {
+                  console.log(JSON.stringify({ success: true }));
+                })
+                .catch(err => {
+                  console.log(err);
+                  console.log(JSON.stringify({ success: false }));
+                });
+            }
+          }
+        }
+      }
+      console.log("Successfully processed and sent ARK Alert.");
+      res.send("Successfully processed and sent ARK Alert.");
+    } else {
+      console.log("Failed tp process and send ARK Alert. Data is not upto date!");
+      res.send("Failed tp process and send ARK Alert. Data is not upto date!");
+    }
+  } catch (error) {
+    console.log(error);
+    res.send("Failed to process ARK Alert! \nReason: " + error);
+    return;
+  }
+});
+
+
+// Fetch Zacks Rank
+app.get("/fetch_zacks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await zacks.fetchZackFeeds();
+  res.send("success");
+});
+
+app.get("/categorize_zacks", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("awwww");
+    return;
+  }
+  await zacks.setZackCategories();
+  res.send("yaaass");
+});
+
+// Fetch BTC News
+app.get("/crypto/fetch_news", async (req, res) => {
+  if (getEnv("DISABLE_CRON") == "true") {
+    res.send("disabled");
+    return;
+  }
+  let { query } = req;
+  if (query.token != "XXX") {
+    res.send("fail");
+    return;
+  }
+  await crypto.fetchCryptoNews();
+  res.send("success");
+});
+
+app.get("/find_date", async (req, res) => {
+  let { query } = req;
+
+  let ticker = query.ticker || "AAPL";
+
+  let range = query.range || "MONTH";
+
+  let data = await securities.getDaily(ticker);
+
+  if (!data || !data.daily || data.daily.length < 1) {
+    res.send("fail 1");
+    return;
+  }
+
+  let dailyData = data.daily;
+
+  if (dailyData.length === 1 && !dailyData[0].value) {
+    res.send("fail 2");
+    return;
+  }
+
+  let time;
+
+  let est = moment.tz("America/New_York").format("YYYY-MM-DD");
+
+  let week = moment
+    .tz("America/New_York")
+    .subtract(7, "days")
+    .format("YYYY-MM-DD");
+
+  let twoweek = moment
+    .tz("America/New_York")
+    .subtract(14, "days")
+    .format("YYYY-MM-DD");
+
+  let month = moment
+    .tz("America/New_York")
+    .subtract(1, "months")
+    .format("YYYY-MM-DD");
+
+  let threemonth = moment
+    .tz("America/New_York")
+    .subtract(3, "months")
+    .format("YYYY-MM-DD");
+
+  let year = moment
+    .tz("America/New_York")
+    .subtract(1, "years")
+    .format("YYYY-MM-DD");
+
+  switch (range) {
+    case "TODAY":
+      time = est;
+      break;
+    case "WEEK":
+      time = week;
+      break;
+    case "TWO_WEEK":
+      time = twoweek;
+      break;
+    case "MONTH":
+      time = month;
+      break;
+    case "THREE_MONTH":
+      time = threemonth;
+      break;
+    case "YEAR":
+      time = year;
+      break;
+  }
+
+  let result = await securities.getClosestPriceDate(time, dailyData);
+  if (!result) {
+    res.send("fail");
+  }
+
+  res.send(result);
+});
+/**
+ * Helper function
+*/
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Start Server
 app.listen(process.env.PORT || 8080, () => {
   console.log(`listening on ${process.env.PORT || 8080}`);
+
+  if (getEnv("DISABLE_CONSUMER") == "true") {
+    console.log("consumer disabled");
+    return;
+  }
 
   //training
   nlp.trainClassifier();
@@ -639,7 +1170,11 @@ app.listen(process.env.PORT || 8080, () => {
   queue.consumer_19.start();
   queue.consumer_20.start();
   queue.consumer_21.start();
-  if (process.env.RELEASE_STAGE == "production") {
+  queue.consumer_22.start();
+  queue.cikConsumer.start();
+  queue.zacksCategoriesConsumer.start();
+  if (getEnv("RELEASE_STAGE") == "production") {
     queue.newTickersConsumer.start();
   }
 });
+// debug

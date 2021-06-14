@@ -12,6 +12,11 @@ import redis, { KEY_FORBES_TITANS } from "../redis";
 import * as performances from "./performances";
 import * as securities from "./securities";
 import * as institutions from "./institutions";
+import { getEnv } from "../env";
+import { getInstitutionsHoldings } from "./institutions";
+import { getInstitutionLargestNewHolding } from "./institutions";
+import { connectATSCache, connectChartRedis, connectPriceCache } from '../redis';
+
 
 export async function getTitans({ sort = [], page = 0, size = 100, ...query }) {
   return await db(`
@@ -45,6 +50,24 @@ export async function getBillionaire(id) {
     WHERE ${id} = id
   `);
   return result[0];
+}
+
+export async function getBillionaireByPrimaryCik(cik) {
+  let result = await db(`
+    SELECT b.*, b_c.*
+    FROM billionaire_ciks AS b_c
+    LEFT JOIN (
+      SELECT *
+      FROM billionaires
+    ) AS b ON b.id = b_c.titan_id
+    WHERE b_c.cik = '${cik}'
+    AND is_primary = TRUE;
+  `);
+  if (result.length > 0) {
+    console.log("result", result);
+    return result[0];
+  }
+  return null;
 }
 
 export async function getBillionaireURI(id) {
@@ -319,7 +342,7 @@ const evaluateSectorCompositions = async (data) => {
 };
 
 const evaluateFundPerformace = async (cik) => {
-  let data_url = `https://${process.env.AWS_BUCKET_INTRINIO_ZAKS}.s3.amazonaws.com/marketcaps/${cik}.json`;
+  let data_url = `https://${getEnv("AWS_BUCKET_INTRINIO_ZAKS")}.s3.amazonaws.com/marketcaps/${cik}.json`;
 
   try {
     let result = await axios.get(data_url, {
@@ -672,8 +695,8 @@ export async function getTitanHoldings(titanId) {
 }
 
 export async function calculateHoldingPrice(holding) {
-  let shares = holding.shares_held;
-  let marketValue = holding.market_value;
+  let shares = holding.amount;
+  let marketValue = holding.value;
   if (shares > 0 && marketValue > 0) {
     return marketValue / shares;
   } else {
@@ -806,4 +829,84 @@ export async function processTitansSnapshots() {
       await queue.publish_ProcessSnapshot_Titans(id);
     }
   }
+}
+
+
+export async function findSuggestedTitans() {
+  let all = new Map();
+  let suggestedTitans = [];
+  let result = await securities.getHighestPerformingSecurities();
+  result.length = 24;
+
+  for (let sec of result) {
+    let holdings = await institutions.getLargestHoldingsOfTicker(sec.ticker);
+    if (holdings?.length > 0) {
+      // console.log("ticker", sec.ticker);
+      // console.log("holdings", holdings);
+      for (let holding of holdings) {
+        let holdingCik = holding.cik;
+        let holdingAmt = holding.amount;
+        //check if titan exists
+        let titan = await getBillionaireByPrimaryCik(holdingCik);
+
+        if (titan && titan.name?.length > 0) {
+          console.log(`TITAN FOUND: ${titan.name}`);
+          let hold = { ticker: sec.ticker, amount: holdingAmt, titan_uri: titan?.uri, titan_name: titan?.name, titan_photo_url: titan?.photo_url };
+          if (!all.has(holdingCik)) {
+            console.log("TITAN SET");
+            all.set(holdingCik, hold);
+            break;
+          } else {
+            console.log(`\nCIK ALREADY TAKEN!!!!!\nTICKER:\n${sec.ticker}\n\n \nHOLDING:\n${hold.titan_name}\n\n\n\n`);
+          }
+        }
+
+        let inst = await institutions.getInstitutionByCIK(holdingCik);
+        if (inst.length > 0) {
+          inst = inst[0];
+        }
+        console.log("inst", inst);
+        if (inst && inst.name?.length > 0) {
+          console.log(`INSTITUTION FOUND: ${inst.name}`);
+          let hold = { ticker: sec.ticker, amount: holdingAmt, inst_id: inst?.id, inst_name: inst?.name };
+          if (!all.has(holdingCik)) {
+            console.log("INSTITUTION SET");
+            all.set(holdingCik, hold);
+            break;
+          } else {
+            console.log(`\nCIK ALREADY TAKEN!!!!!\nTICKER:\n${sec.ticker}\n\n \nHOLDING:\n${hold.titan_name}\n\n\n\n`);
+          }
+        }
+      }
+    } else {
+      console.log(`${sec.ticker} NO HOLDINGS`);
+    }
+  }
+
+  for (let [key, val] of all) {
+    console.log(`key: ${key} ticker: ${val.ticker}`);
+    let tick = val.ticker;
+
+    let priceCache = connectPriceCache();
+    let day = await priceCache.get(`DAY:${tick}`);
+    day = await JSON.parse(day);
+
+    let suggestion = {
+      val,
+      stock: {
+        ticker: tick,
+        date: day?.date,
+        open: parseFloat(day?.open),
+        close: parseFloat(day?.close),
+        prev_close: parseFloat(day?.prev_close)
+      }
+    }
+
+    if (suggestion.stock.date) {
+      suggestedTitans.push(suggestion);
+    }
+  }
+
+  console.log("suggestedTitans", suggestedTitans);
+  return suggestedTitans;
 }

@@ -16,12 +16,13 @@ import * as securities from "./securities";
 import * as earnings from "./earnings";
 import * as quodd from "./quodd";
 import { getPortfolioByDashboardID } from "./userportfolios";
+import { getEnv } from "../env";
 
 // init intrinio
 intrinioSDK.ApiClient.instance.authentications["ApiKeyAuth"].apiKey =
-  process.env.INTRINIO_API_KEY;
+  getEnv("INTRINIO_API_KEY");
 
-intrinioSDK.ApiClient.instance.basePath = `${process.env.INTRINIO_BASE_PATH}`;
+intrinioSDK.ApiClient.instance.basePath = `${getEnv("INTRINIO_BASE_PATH")}`;
 
 const companyAPI = new intrinioSDK.CompanyApi();
 const securityAPI = new intrinioSDK.SecurityApi();
@@ -29,7 +30,7 @@ const indexAPI = new intrinioSDK.IndexApi();
 
 /* START API */
 
-const s3AllInsider = `https://${process.env.AWS_BUCKET_TERMINAL_SCRAPE}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
+const s3AllInsider = `https://${getEnv("AWS_BUCKET_TERMINAL_SCRAPE")}.s3.amazonaws.com/all-insider-trading/allInsider.json`;
 
 async function getAllInsider() {
   try {
@@ -117,6 +118,17 @@ export async function getWidgetTypeId(widgetType) {
   let result = await db(`
     SELECT id
     FROM widgets
+    WHERE type = '${widgetType}'
+  `);
+
+  return result;
+}
+
+export async function getWidgetInstanceId(widgetType) {
+  let result = await db(`
+    SELECT wi.id
+    FROM widgets w
+    LEFT JOIN widget_instances wi ON wi.widget_id = w.id
     WHERE type = '${widgetType}'
   `);
 
@@ -464,18 +476,18 @@ export async function processInput(widgetInstanceId) {
 export async function getETFHoldings(ticker, count) {
   // .get(
   //   `${
-  //     process.env.INTRINIO_BASE_PATH
+  //     getEnv("INTRINIO_BASE_PATH")
   //   }/zacks/etf_holdings?etf_ticker=${ticker.toUpperCase()}&api_key=${
-  //     process.env.INTRINIO_API_KEY
+  //     getEnv("INTRINIO_API_KEY")
   //   }`
   // )
   let holdings = [];
   let result = await axios
     .get(
       `${
-        process.env.INTRINIO_BASE_PATH
+      getEnv("INTRINIO_BASE_PATH")
       }/etfs/${ticker.toUpperCase()}/holdings?api_key=${
-        process.env.INTRINIO_API_KEY
+      getEnv("INTRINIO_API_KEY")
       }`
     )
     .then(function (res) {
@@ -970,7 +982,7 @@ export async function getETFsTopNDataBySector(count, sector, data_key) {
 export async function getStrongBuys(list) {
   let buys = [];
   //    INTRINIO SCREENER
-  // const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${process.env.INTRINIO_API_KEY}`;
+  // const url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=zacks_analyst_rating_strong_buys&order_direction=desc&page_size=9&api_key=${getEnv("INTRINIO_API_KEY")}`;
   // const body = {
   //   operator: "AND",
   //   clauses: [
@@ -1002,7 +1014,7 @@ export async function getStrongBuys(list) {
     let ticker = data[i];
 
     try {
-      let url = `${process.env.INTRINIO_BASE_PATH}/securities/${ticker}/zacks/analyst_ratings?api_key=${process.env.INTRINIO_API_KEY}`;
+      let url = `${getEnv("INTRINIO_BASE_PATH")}/securities/${ticker}/zacks/analyst_ratings?api_key=${getEnv("INTRINIO_API_KEY")}`;
 
       let res = await axios.get(url);
 
@@ -1023,12 +1035,9 @@ export async function getStrongBuys(list) {
     if (company && company.json) {
       name = company.json.name;
     } else {
-      let sec = await getSecurityData.lookupSecurity(securityAPI, ticker);
+      let sec = await securities.getSecurityByTicker(ticker);
       if (sec) {
         name = sec.name;
-        if (!compTicker) {
-          compTicker = sec.composite_ticker;
-        }
       }
     }
     if (company && company.logo_url) {
@@ -1066,7 +1075,7 @@ export async function getStrongBuys(list) {
 export async function getAggRatings() {
   let comps = [];
   let aMonthAgo = moment().subtract(1, "months").format("YYYY-MM-DD");
-  const url = `${process.env.INTRINIO_BASE_PATH}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${process.env.INTRINIO_API_KEY}`;
+  const url = `${getEnv("INTRINIO_BASE_PATH")}/securities/screen?order_column=zacks_analyst_rating_mean&order_direction=asc&page_size=66&api_key=${getEnv("INTRINIO_API_KEY")}`;
   const body = {
     operator: "AND",
     clauses: [
@@ -1128,7 +1137,7 @@ export async function getAggRatings() {
 export async function getTrendingTitans() {
   let titans = [];
   const response = await axios.get(
-    `https://${process.env.PROD_API_URL}/billionaires/list`
+    `https://${getEnv("PROD_API_URL")}/billionaires/list`
   );
 
   const formatted = response.data.map((item) => {
@@ -1271,7 +1280,7 @@ export async function getEarningsCalendar() {
     });
   }
   let sorted = reports.sort(function (a, b) {
-    var aa = a.earnings_datez + "".split("-").join(),
+    let aa = a.earnings_date + "".split("-").join(),
       bb = b.earnings_date + "".split("-").join();
     return aa < bb ? -1 : aa > bb ? 1 : 0;
   });
@@ -1604,7 +1613,12 @@ const updateTrendingTitans = async () => {
     SELECT titan_uri, count(titan_uri) FROM titans WHERE created_at BETWEEN '${start}' AND '${end}' group by titan_uri order by COUNT DESC
   `);
 
+  if (groupByTitans.filter(e => e.titan_uri === 'cathie-wood').length <= 0) {
+    groupByTitans.splice(0, 0, { "titan_uri": "cathie-wood", "count": groupByTitans[0].count + 1 });
+  }
+
   let titans = [];
+  let portfolioData;
 
   for (const titan of groupByTitans) {
     const { titan_uri, count } = titan;
@@ -1613,7 +1627,17 @@ const updateTrendingTitans = async () => {
       SELECT * FROM billionaires WHERE uri = '${titan_uri}'
     `);
 
-    if (titanData && titanData.length > 0) {
+    const primaryCik = await db(`
+      SELECT bc.cik FROM billionaires b JOIN billionaire_ciks bc ON b.id = bc.titan_id WHERE b.uri = '${titan_uri}' AND bc.is_primary = true
+    `);
+
+    if (primaryCik && primaryCik.length > 0) {
+      portfolioData = await db(`
+      SELECT * FROM cik_holdings WHERE cik = '${primaryCik[0]?.cik}'
+    `);
+    }
+
+    if (titanData && titanData.length > 0 && portfolioData && portfolioData[0] && portfolioData[0]?.json_holdings && portfolioData[0]?.json_holdings?.length > 0) {
       titans.push({
         id: titanData[0].id,
         name: titanData[0].name,

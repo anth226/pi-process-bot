@@ -1,6 +1,7 @@
 import "dotenv/config";
 import axios from "axios";
 import db from "../db";
+import {getEnv} from "../env";
 
 import * as queue from "../queue";
 // import * as queue from "../queue2";
@@ -43,10 +44,10 @@ export async function getAllETFs() {
 }
 
 export async function getETFs(next_page = null) {
-  let url = `${process.env.INTRINIO_BASE_PATH}/etfs?api_key=${process.env.INTRINIO_API_KEY}`;
+  let url = `${getEnv("INTRINIO_BASE_PATH")}/etfs?api_key=${getEnv("INTRINIO_API_KEY")}`;
 
   if (next_page) {
-    url = `${process.env.INTRINIO_BASE_PATH}/etfs?next_page=${next_page}&api_key=${process.env.INTRINIO_API_KEY}`;
+    url = `${getEnv("INTRINIO_BASE_PATH")}/etfs?next_page=${next_page}&api_key=${getEnv("INTRINIO_API_KEY")}`;
   }
 
   let data = axios
@@ -65,7 +66,7 @@ export async function getETFs(next_page = null) {
 export async function getJsonETF(ticker) {
   let data;
   try {
-    let url = `${process.env.INTRINIO_BASE_PATH}/etfs/${ticker}?api_key=${process.env.INTRINIO_API_KEY}`;
+    let url = `${getEnv("INTRINIO_BASE_PATH")}/etfs/${ticker}?api_key=${getEnv("INTRINIO_API_KEY")}`;
     const result = await axios.get(url);
     data = result.data;
   } catch (e) {
@@ -77,7 +78,7 @@ export async function getJsonETF(ticker) {
 export async function getStatsETF(ticker) {
   let data;
   try {
-    let url = `${process.env.INTRINIO_BASE_PATH}/etfs/${ticker}/stats?api_key=${process.env.INTRINIO_API_KEY}`;
+    let url = `${getEnv("INTRINIO_BASE_PATH")}/etfs/${ticker}/stats?api_key=${getEnv("INTRINIO_API_KEY")}`;
     const result = await axios.get(url);
     data = result.data;
   } catch (e) {
@@ -89,7 +90,7 @@ export async function getStatsETF(ticker) {
 export async function getAnalyticsETF(ticker) {
   let data;
   try {
-    let url = `${process.env.INTRINIO_BASE_PATH}/etfs/${ticker}/analytics?api_key=${process.env.INTRINIO_API_KEY}`;
+    let url = `${getEnv("INTRINIO_BASE_PATH")}/etfs/${ticker}/analytics?api_key=${getEnv("INTRINIO_API_KEY")}`;
     const result = await axios.get(url);
     data = result.data;
   } catch (e) {
